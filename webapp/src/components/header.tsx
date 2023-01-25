@@ -1,8 +1,9 @@
 //src/components/header.tsx
 import NextLink from "next/link"
 import { Flex, Button, useColorModeValue, Spacer, Heading, LinkBox, LinkOverlay } from '@chakra-ui/react'
+import { ConnectKitButton } from 'connectkit';
 
-const siteTitle="FirstDAPP"
+const siteTitle="Unilend"
 export default function Header() {
 
   return (
@@ -15,7 +16,7 @@ export default function Header() {
         </NextLink>
       </LinkBox>      
       <Spacer />
-      <Button >Button for Account </Button>
+      <ConnectKitButton showBalance={true} showAvatar={false} />
     </Flex>
   )
 }

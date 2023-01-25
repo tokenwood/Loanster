@@ -59,10 +59,12 @@ const Home: NextPage = () => {
   return (
     <>
       <Head>
-        <title>My DAPP</title>
+        <title>Unilend</title>
       </Head>
 
-      <Heading as="h3"  my={4}>Explore Web3</Heading>          
+      <Heading as="h4"  my={4}>Explore Web3</Heading> 
+      <Heading as="h2"  my={1}>test</Heading>    
+
       <VStack>
         <Box w='100%' my={4}>
         {currentAccount  
@@ -105,19 +107,6 @@ const Home: NextPage = () => {
           <Text>local chain with hardhat</Text>
         </Box>
 
-        <Box  my={4} p={4} w='100%' borderWidth="1px" borderRadius="lg">
-          <Heading my={4}  fontSize='xl'>Task 2</Heading>
-          <Text>DAPP with React/NextJS/Chakra</Text>
-        </Box>
-
-        <LinkBox  my={4} p={4} w='100%' borderWidth="1px" borderRadius="lg">
-          <NextLink href="https://github.com/NoahZinsmeister/web3-react/tree/v6" passHref>
-          <LinkOverlay>
-            <Heading my={4} fontSize='xl'>Task 3 with link</Heading>
-            <Text>Read docs of Web3-React V6</Text>
-          </LinkOverlay>
-          </NextLink>
-        </LinkBox>
       </VStack>
     </>
   )
