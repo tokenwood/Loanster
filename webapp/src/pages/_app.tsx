@@ -10,7 +10,7 @@ import { ConnectKitProvider, getDefaultClient } from 'connectkit';
 
 const client = createClient(
   getDefaultClient({
-    appName: 'ConnectKit CRA demo',
+    appName: 'Unilend',
     infuraId: process.env.REACT_APP_INFURA_ID,
     //alchemyId:  process.env.REACT_APP_ALCHEMY_ID,
     chains: [mainnet, hardhat, goerli],

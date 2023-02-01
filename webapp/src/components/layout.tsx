@@ -14,9 +14,9 @@ export function Layout(props: Props) {
       <Container maxW="container.md" py='8'>
         {props.children}
       </Container>
-      <Center as="footer" bg={useColorModeValue('gray.100', 'gray.700')} p={6}>
+      {/* <Center as="footer" bg={useColorModeValue('gray.100', 'gray.700')} p={6}>
           <Text fontSize="md">first dapp by W3BCD - 2022</Text>
-      </Center>
+      </Center> */}
     </div>
   )
 }
