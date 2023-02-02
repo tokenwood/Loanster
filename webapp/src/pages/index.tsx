@@ -26,16 +26,23 @@ const Home: NextPage = () => {
       <VStack>
 
        <Box  mb={0} p={4} w='100%' borderWidth="1px" borderRadius="lg">
-          <Heading my={4}  fontSize='xl'>Account info</Heading>
+
+          <VStack spacing={'5'} align='left'>
+          <Heading my={1}  fontSize='xl'>Account info</Heading>
+
+          <Heading as='h6' size='sm'>{"Supply Tokens"}</Heading>
           <Balance 
               account={account}
               token='0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984'
             />
-          
+    
+          <Heading as='h6' size='sm'>{"Positions"}</Heading>
           <Positions
             posManager={posManager}
             account={account}/>
+          </VStack>
         </Box>
+
 
       </VStack>
     </>
