@@ -4,7 +4,7 @@ import type { AppProps } from 'next/app'
 import { Layout } from 'components/layout'
 
 import { WagmiConfig, createClient } from 'wagmi';
-import { mainnet, arbitrum, hardhat , goerli} from 'wagmi/chains';
+import { mainnet, arbitrum, hardhat, goerli } from 'wagmi/chains';
 import { ConnectKitProvider, getDefaultClient } from 'connectkit';
 
 
@@ -24,7 +24,7 @@ function MyApp({ Component, pageProps }: AppProps) {
       <ConnectKitProvider theme="soft">
         <ChakraProvider>
           <Layout>
-          <Component {...pageProps} />
+            <Component {...pageProps} />
           </Layout>
         </ChakraProvider>
       </ConnectKitProvider>

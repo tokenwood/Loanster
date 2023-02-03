@@ -1,5 +1,5 @@
 import { BigNumber } from 'ethers'
-import {ADDRESS_TO_TOKEN} from './constants'
+import { ADDRESS_TO_TOKEN } from './constants'
 
 export interface PositionInfo {
     tickLower: number
@@ -11,10 +11,10 @@ export interface PositionInfo {
     tokensOwed1: BigNumber
     token0: string
     token1: string
-  }
+}
 
 
-  export function getTokenName(address: string) {
+export function getTokenName(address: string) {
 
     if (ADDRESS_TO_TOKEN[address] !== undefined) {
         return ADDRESS_TO_TOKEN[address].symbol!
@@ -23,4 +23,4 @@ export interface PositionInfo {
         return address
     }
 
-  }
+}

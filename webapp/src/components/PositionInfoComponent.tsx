@@ -1,28 +1,28 @@
-import React, { useEffect,useState, useMemo } from 'react'
-import { Text, Button} from '@chakra-ui/react'
-import { Box} from "@chakra-ui/layout"
-import { useContractRead, useContractReads} from 'wagmi'
-import {nonfungiblePositionManagerABI as managerABI}  from 'abi/NonfungiblePositionManagerABI'
-import { PositionInfo, getTokenName} from 'utils/uni_utils'
+import React, { useEffect, useState, useMemo } from 'react'
+import { Text, Button } from '@chakra-ui/react'
+import { Box } from "@chakra-ui/layout"
+import { useContractRead, useContractReads } from 'wagmi'
+import { nonfungiblePositionManagerABI as managerABI } from 'abi/NonfungiblePositionManagerABI'
+import { PositionInfo, getTokenName } from 'utils/uni_utils'
 import { BigNumber } from 'ethers'
 
 // import {PositionInfo} from "@uniswap/lib/liquidity"
 
 
 interface Props {
-    posManager:`0x${string}` | undefined
-    account:`0x${string}` | undefined
+    posManager: `0x${string}` | undefined
+    account: `0x${string}` | undefined
     positionId: BigNumber | undefined
 }
 
-export default function PositionInfoComponent(props:Props) {
+export default function PositionInfoComponent(props: Props) {
 
     const [text, setText] = useState<string>('position info')
 
-    const { data: positionInfo, refetch: refetchPositionInfo} = useContractRead({
-        address:props.posManager,
+    const { data: positionInfo, refetch: refetchPositionInfo } = useContractRead({
+        address: props.posManager,
         abi: managerABI,
-        functionName:'positions',
+        functionName: 'positions',
         args: [props.positionId],
         enabled: true,
         onSuccess(positionInfo: PositionInfo) {
@@ -36,9 +36,9 @@ export default function PositionInfoComponent(props:Props) {
     })
 
     return (
-        <Box>        
+        <Box>
             <Text>{text}</Text>
         </Box>
-      )    
+    )
 
 }
