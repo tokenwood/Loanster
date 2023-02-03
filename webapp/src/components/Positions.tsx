@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react'
-import { Text, Button, Heading } from '@chakra-ui/react'
+import { Text, Button, Heading, Card, CardBody, CardHeader, Stack, StackDivider, VStack } from '@chakra-ui/react'
 import { Box } from "@chakra-ui/layout"
 import { useContractRead } from 'wagmi'
 import { nonfungiblePositionManagerABI as managerABI } from 'abi/NonfungiblePositionManagerABI'
 import { BigNumber } from 'ethers'
-import PositionInfoComponent from './PositionInfoComponent'
+import Position from './Position'
 import { PositionInfo } from 'utils/uni_utils'
 
 interface Props {
@@ -34,22 +34,23 @@ export default function Positions(props: Props) {
   })
 
   return (
-    <Box>
+
+    <VStack>
       {positionIds.map((s, i) => (
-        <PositionInfoFromIndex account={props.account} posManager={props.posManager} index={i} key={i}></PositionInfoFromIndex>
+        <PositionFromIndex account={props.account} posManager={props.posManager} index={i} key={i}></PositionFromIndex>
       ))}
-    </Box>
+    </VStack>
   )
 
 }
 
-interface PositionInfoFromIndexProps {
+interface PositionFromIndexProps {
   posManager: `0x${string}` | undefined
   account: `0x${string}` | undefined
   index: number
 }
 
-function PositionInfoFromIndex(props: PositionInfoFromIndexProps) {
+function PositionFromIndex(props: PositionFromIndexProps) {
 
   const { data: positionId, isLoading } = useContractRead({
     address: props.posManager,
@@ -65,6 +66,6 @@ function PositionInfoFromIndex(props: PositionInfoFromIndexProps) {
   })
 
   return (
-    positionId ? <PositionInfoComponent posManager={props.posManager} account={props.account} positionId={positionId}></PositionInfoComponent> : <Text>loading...</Text>
+    positionId ? <Position posManager={props.posManager} account={props.account} positionId={positionId} ></Position > : <Text size='md'> Loading </Text>
   )
 }
