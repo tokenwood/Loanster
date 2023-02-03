@@ -31,20 +31,10 @@ const Home: NextPage = () => {
               <Heading as="h6" size="sm" mb="3">
                 {"Supply Tokens"}
               </Heading>
-              <Card>
-                <CardBody margin={-2}>
-                  <Flex>
-                    <Balance
-                      account={account}
-                      token="0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984"
-                    />
-                    <Spacer />
-                    <Button colorScheme="gray" size="xs">
-                      Deposit
-                    </Button>
-                  </Flex>
-                </CardBody>
-              </Card>
+              <Balance
+                account={account}
+                token="0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984"
+              />
             </Box>
 
             <Box>
