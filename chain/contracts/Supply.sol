@@ -1,19 +1,20 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.0;
+pragma solidity 0.7.6;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-
-// import "@uniswap/v3-periphery/contracts/interfaces/INonFungiblePositionManager.sol";
+import "@uniswap/v3-periphery/contracts/interfaces/INonfungiblePositionManager.sol";
 
 contract Supply is ERC721, Ownable {
+    mapping(address => bool) private _allowedDepositTokens;
+    mapping(uint256 => address) private _positionOwners;
     mapping(uint256 => Deposit) private _deposits;
     uint256 private _nextDepositId = 1;
-    mapping(address => bool) private _allowedDepositTokens;
-    address nonfungiblePositionManager;
+    address private _nonfungiblePositionManager;
 
     event DepositTokenChange(address token, bool isAllowed);
+    event NewDeposit(uint256 depositId);
 
     struct Deposit {
         address token;
@@ -23,8 +24,32 @@ contract Supply is ERC721, Ownable {
         uint256 interestRateBPS;
     }
 
-    constructor(address nonfungiblePositionManager_) ERC721("DepositNFT", "ULD") {
-        nonfungiblePositionManager = nonfungiblePositionManager_;
+    constructor(
+        address nonfungiblePositionManager
+    ) ERC721("DepositNFT", "ULD") {
+        _nonfungiblePositionManager = nonfungiblePositionManager;
+    }
+
+    function getDeposit(
+        uint256 depositId
+    )
+        public
+        view
+        returns (
+            address token,
+            uint256 amountDeposited,
+            uint256 amountBorrowed,
+            uint256 expiration,
+            uint256 interestRateBPS
+        )
+    {
+        return (
+            _deposits[depositId].token,
+            _deposits[depositId].amountDeposited,
+            _deposits[depositId].amountBorrowed,
+            _deposits[depositId].expiration,
+            _deposits[depositId].interestRateBPS
+        );
     }
 
     function addDepositToken(address token) public onlyOwner {
@@ -38,18 +63,27 @@ contract Supply is ERC721, Ownable {
         emit DepositTokenChange(token, false);
     }
 
-    function makeDeposit(address token, uint256 amount, uint256 expiration, uint256 interestRateBPS)
-        public
-        returns (uint256)
-    {
+    function getDepositId() public view returns (uint256) {
+        return (_nextDepositId);
+    }
+
+    function makeDeposit(
+        address token,
+        uint256 amount,
+        uint256 expiration,
+        uint256 interestRateBPS
+    ) public {
         require(_allowedDepositTokens[token], "unauthorized deposit token");
-        require(ERC20(token).transferFrom(msg.sender, address(this), amount), "transfer failed");
+        require(
+            ERC20(token).transferFrom(msg.sender, address(this), amount),
+            "transfer failed"
+        );
 
-        uint256 nextDepositId = _nextDepositId++;
+        uint256 depositId = _nextDepositId++;
 
-        _safeMint(msg.sender, nextDepositId);
+        _safeMint(msg.sender, depositId);
 
-        _deposits[nextDepositId] = Deposit({
+        _deposits[depositId] = Deposit({
             token: token,
             amountDeposited: amount,
             amountBorrowed: 0,
@@ -57,31 +91,54 @@ contract Supply is ERC721, Ownable {
             interestRateBPS: interestRateBPS
         });
 
-        return (nextDepositId);
+        emit NewDeposit(depositId);
     }
 
-    function changeAmountDeposited(uint256 depositId, uint256 newAmount) public {
-        Deposit memory deposit = _deposits[depositId];
-        require(ownerOf(depositId) == msg.sender);
-        require(deposit.expiration <= block.timestamp);
+    function changeAmountDeposited(
+        uint256 depositId,
+        uint256 newAmount
+    ) public {
+        Deposit storage deposit = _deposits[depositId];
+        require(
+            ownerOf(depositId) == msg.sender,
+            "sender is not owner of deposit"
+        );
+        // require(deposit.expiration <= block.timestamp, "sender is not owner of deposit");
         ERC20 token = ERC20(deposit.token);
 
         if (newAmount > deposit.amountDeposited) {
             // adding
             uint256 amountToAdd = newAmount - deposit.amountDeposited;
-            require(token.transferFrom(msg.sender, address(this), amountToAdd), "transfer failed");
+            require(
+                token.transferFrom(msg.sender, address(this), amountToAdd),
+                "transfer failed"
+            );
         } else {
             // removing
-            require(newAmount > deposit.amountBorrowed);
+            require(
+                newAmount >= deposit.amountBorrowed,
+                "attempting to withdraw borrowed funds"
+            );
             uint256 amountToRemove = deposit.amountDeposited - newAmount;
-            require(token.transferFrom(address(this), msg.sender, amountToRemove), "transfer failed");
+            require(
+                token.transferFrom(address(this), msg.sender, amountToRemove),
+                "transfer failed"
+            );
         }
         deposit.amountDeposited = newAmount;
-
         // burn if new amount is 0 ?
     }
 
-    function depositPosition(uint256 positionId) public {}
+    function depositPosition(uint256 positionId) public {
+        INonfungiblePositionManager(_nonfungiblePositionManager)
+            .safeTransferFrom(msg.sender, address(this), positionId);
+        _positionOwners[positionId] = msg.sender;
+    }
 
-    function withdrawPosition(uint256 positionId) public {}
+    function withdrawPosition(uint256 positionId) public {
+        require(msg.sender == _positionOwners[positionId]);
+        INonfungiblePositionManager(_nonfungiblePositionManager)
+            .safeTransferFrom(address(this), msg.sender, positionId);
+        delete _positionOwners[positionId];
+    }
 }
