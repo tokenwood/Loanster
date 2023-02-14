@@ -4,14 +4,12 @@ pragma solidity 0.7.6;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@uniswap/v3-periphery/contracts/interfaces/INonfungiblePositionManager.sol";
 
 contract Supply is ERC721, Ownable {
     mapping(address => bool) private _allowedDepositTokens;
-    mapping(uint256 => address) private _positionOwners;
+
     mapping(uint256 => Deposit) private _deposits;
     uint256 private _nextDepositId = 1;
-    address private _nonfungiblePositionManager;
 
     event DepositTokenChange(address token, bool isAllowed);
     event NewDeposit(uint256 depositId);
@@ -24,11 +22,7 @@ contract Supply is ERC721, Ownable {
         uint256 interestRateBPS;
     }
 
-    constructor(
-        address nonfungiblePositionManager
-    ) ERC721("DepositNFT", "ULD") {
-        _nonfungiblePositionManager = nonfungiblePositionManager;
-    }
+    constructor() ERC721("DepositNFT", "ULD") {}
 
     function getDeposit(
         uint256 depositId
@@ -127,18 +121,5 @@ contract Supply is ERC721, Ownable {
         }
         deposit.amountDeposited = newAmount;
         // burn if new amount is 0 ?
-    }
-
-    function depositPosition(uint256 positionId) public {
-        INonfungiblePositionManager(_nonfungiblePositionManager)
-            .safeTransferFrom(msg.sender, address(this), positionId);
-        _positionOwners[positionId] = msg.sender;
-    }
-
-    function withdrawPosition(uint256 positionId) public {
-        require(msg.sender == _positionOwners[positionId]);
-        INonfungiblePositionManager(_nonfungiblePositionManager)
-            .safeTransferFrom(address(this), msg.sender, positionId);
-        delete _positionOwners[positionId];
     }
 }

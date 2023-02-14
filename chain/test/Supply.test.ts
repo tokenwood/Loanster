@@ -4,33 +4,9 @@ import { Contract, BigNumber, ContractReceipt } from "ethers";
 import { NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS } from "../../webapp/src/utils/constants";
 import { loadFixture, time } from "@nomicfoundation/hardhat-network-helpers";
 
+import { deployTokensFixture, deploySupplyFixture } from "./utils";
+
 describe("Supply", function () {
-  async function deployTokensFixture() {
-    const [owner, account1, account2] = await ethers.getSigners();
-    const TestToken = await ethers.getContractFactory("TestToken");
-    const tokens = [];
-
-    for (let i = 0; i < 2; i++) {
-      const testToken = await TestToken.deploy();
-      console.log("deploying token " + i);
-
-      await testToken.mint(account1.address, 1000);
-      await testToken.mint(account2.address, 1000);
-      tokens.push(testToken);
-    }
-    return { token: tokens[0], token2: tokens[1] };
-  }
-
-  async function deploySupplyFixture() {
-    const Supply = await ethers.getContractFactory("Supply");
-    const supply = await Supply.deploy(
-      NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS
-    );
-    await supply.deployed();
-
-    return { supply };
-  }
-
   it("add and remove token should only work if owner", async function () {
     const [owner, account1] = await ethers.getSigners();
     const { token } = await loadFixture(deployTokensFixture);
@@ -88,7 +64,7 @@ describe("Supply", function () {
       .connect(account1)
       .makeDeposit(token.address, 500, unlockTime, 0);
 
-    const receipt: ContractReceipt = await deposit.wait();
+    const receipt = await deposit.wait();
     const depositId: BigNumber = receipt.events?.filter((x) => {
       return x.event == "NewDeposit";
     })[0].args!["depositId"];
@@ -108,15 +84,4 @@ describe("Supply", function () {
       supply.connect(account2).changeAmountDeposited(depositId, 0)
     ).to.be.revertedWith("sender is not owner of deposit");
   });
-
-  // test make deposit
-
-  // it("make deposit should work with allowed token", async function () {
-  //   const initialSupply = ethers.utils.parseEther('10000.0')
-  //   const ClassToken = await ethers.getContractFactory("ClassToken");
-  //   const token = await ClassToken.deploy(initialSupply);
-  //   await token.deployed();
-
-  //   expect(await token.totalSupply()).to.equal(initialSupply);
-  // });
 });

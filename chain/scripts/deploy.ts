@@ -1,19 +1,35 @@
 import { ethers } from "hardhat";
 
+import { NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS } from "../../webapp/src/utils/constants";
+
 async function main() {
-  const currentTimestampInSeconds = Math.round(Date.now() / 1000);
-  const ONE_YEAR_IN_SECS = 365 * 24 * 60 * 60;
-  const unlockTime = currentTimestampInSeconds + ONE_YEAR_IN_SECS;
+  const Supply = await ethers.getContractFactory("Supply");
+  const supply = await Supply.deploy();
 
-  const lockedAmount = ethers.utils.parseEther("1");
+  const CollateralVault = await ethers.getContractFactory("CollateralVault");
+  const collateralVault = await CollateralVault.deploy(
+    NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS
+  );
 
-  const Lock = await ethers.getContractFactory("Lock");
-  const lock = await Lock.deploy(unlockTime, { value: lockedAmount });
+  await supply.deployed();
+  await collateralVault.deployed();
 
-  await lock.deployed();
+  console.log(`supply deployed to ${supply.address}`);
+  console.log(`collateral vault deployed to ${collateralVault.address}`);
+  const deployments = {
+    supply: supply.address,
+    collateralVault: collateralVault.address,
+  };
 
-  console.log(
-    `Lock with 1 ETH and unlock timestamp ${unlockTime} deployed to ${lock.address}`
+  var fs = require("fs");
+  fs.writeFile(
+    "./cache/deployments.json",
+    JSON.stringify(deployments),
+    function (err: any) {
+      if (err) {
+        console.log(err);
+      }
+    }
   );
 }
 
