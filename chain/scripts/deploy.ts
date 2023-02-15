@@ -1,6 +1,10 @@
 import { ethers } from "hardhat";
 
-import { NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS } from "../../webapp/src/utils/constants";
+import {
+  NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS,
+  USDC_TOKEN,
+  WETH_TOKEN,
+} from "../../webapp/src/libs/constants";
 
 async function main() {
   const Supply = await ethers.getContractFactory("Supply");
@@ -14,8 +18,12 @@ async function main() {
   await supply.deployed();
   await collateralVault.deployed();
 
+  await supply.addDepositToken(USDC_TOKEN.address);
+  await supply.addDepositToken(WETH_TOKEN.address);
+
   console.log(`supply deployed to ${supply.address}`);
   console.log(`collateral vault deployed to ${collateralVault.address}`);
+
   const deployments = {
     supply: supply.address,
     collateralVault: collateralVault.address,

@@ -1,7 +1,5 @@
 import { SupportedChainId, Token } from "@uniswap/sdk-core";
 
-// Addresses // https://docs.uniswap.org/contracts/v3/reference/deployments
-
 export const POOL_FACTORY_CONTRACT_ADDRESS =
   "0x1F98431c8aD98523631AE4a59f267346ea31F984";
 export const NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS =
@@ -39,4 +37,5 @@ export const DAI_TOKEN = new Token(
 export const ADDRESS_TO_TOKEN: { [key: string]: Token } = {
   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48": USDC_TOKEN,
   "0x6B175474E89094C44Da98b954EedeAC495271d0F": DAI_TOKEN,
+  "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2": WETH_TOKEN,
 };

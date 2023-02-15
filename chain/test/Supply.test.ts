@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import { Contract, BigNumber, ContractReceipt } from "ethers";
-import { NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS } from "../../webapp/src/utils/constants";
+import { NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS } from "../../webapp/src/libs/constants";
 import { loadFixture, time } from "@nomicfoundation/hardhat-network-helpers";
 
 import { deployTokensFixture, deploySupplyFixture } from "./utils";

@@ -15,7 +15,7 @@ import { useContractRead } from "wagmi";
 import { nonfungiblePositionManagerABI as managerABI } from "abi/NonfungiblePositionManagerABI";
 import { BigNumber } from "ethers";
 import Position from "./Position";
-import { PositionInfo } from "utils/uni_utils";
+import { PositionInfo } from "libs/uniswap_utils";
 
 interface Props {
   posManager: `0x${string}` | undefined;

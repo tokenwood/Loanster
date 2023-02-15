@@ -6,7 +6,7 @@ import {
   WETH_TOKEN,
   USDC_TOKEN,
   V3_SWAP_ROUTER_ADDRESS,
-} from "../../webapp/src/utils/constants";
+} from "../../webapp/src/libs/constants";
 import { loadFixture, time } from "@nomicfoundation/hardhat-network-helpers";
 import { Token } from "@uniswap/sdk-core";
 import {

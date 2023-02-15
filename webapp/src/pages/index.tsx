@@ -3,13 +3,11 @@ import type { NextPage } from "next";
 import Head from "next/head";
 import { VStack, Heading, Box, Flex } from "@chakra-ui/layout";
 import { Button, Card, CardBody, StackDivider, Spacer } from "@chakra-ui/react";
-import { useAccount } from "wagmi";
-import Balance from "components/Balance";
+import { Address, useAccount } from "wagmi";
+import Balances from "components/Balances";
 import Positions from "components/Positions";
 
-import { NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS as posManager } from "utils/constants";
-
-declare let window: any;
+import { NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS as posManager } from "libs/constants";
 
 const Home: NextPage = () => {
   const { address: account, isConnecting, isDisconnected } = useAccount();
@@ -31,10 +29,7 @@ const Home: NextPage = () => {
               <Heading as="h6" size="sm" mb="3">
                 {"Supply Tokens"}
               </Heading>
-              <Balance
-                account={account}
-                token="0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984"
-              />
+              <Balances account={account} />
             </Box>
 
             <Box>

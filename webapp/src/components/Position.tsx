@@ -16,7 +16,7 @@ import {
 import { Box } from "@chakra-ui/layout";
 import { useContractRead, useContractReads } from "wagmi";
 import { nonfungiblePositionManagerABI as managerABI } from "abi/NonfungiblePositionManagerABI";
-import { PositionInfo, getTokenName } from "utils/uni_utils";
+import { PositionInfo, getTokenName } from "libs/uniswap_utils";
 import { BigNumber } from "ethers";
 
 // import {PositionInfo} from "@uniswap/lib/liquidity"
@@ -38,8 +38,6 @@ export default function Position(props: Props) {
     args: [props.positionId],
     enabled: true,
     onSuccess(positionInfo: PositionInfo) {
-      console.log(positionInfo);
-
       setHeaderText(
         getTokenName(positionInfo.token0) +
           " / " +
