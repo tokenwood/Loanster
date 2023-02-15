@@ -4,7 +4,6 @@ import { Box } from "@chakra-ui/layout";
 import { Address, useProvider } from "wagmi";
 import Balance from "./Balance";
 import { getSupplyTokens } from "libs/unilend_utils";
-import { ADDRESS_TO_TOKEN } from "libs/constants";
 
 interface Props {
   account: Address | undefined;
@@ -31,7 +30,7 @@ export default function Balances(props: Props) {
       {supplyTokens.map((tokenAddress, i) => (
         <Balance
           account={props.account!}
-          token={ADDRESS_TO_TOKEN[tokenAddress]}
+          tokenAddress={tokenAddress}
           key={tokenAddress}
         />
       ))}

@@ -20,16 +20,14 @@ import {
   useContractWrite,
   usePrepareContractWrite,
 } from "wagmi";
-import { parse } from "@ethersproject/transactions";
 import supplyContractJSON from "../../../chain/artifacts/contracts/Supply.sol/Supply.json";
 import { BigNumber } from "ethers";
 import { getSupplyAddress } from "libs/unilend_utils";
-import { Token } from "@uniswap/sdk-core";
 import { ethers } from "ethers";
 
 interface Props {
   account: `0x${string}`;
-  token: Token;
+  tokenAddress: Address;
 }
 
 const SIZE = "sm";
@@ -60,7 +58,7 @@ export default function Balance(props: Props) {
     isLoading: allowanceIsLoading,
     refetch: allowanceRefetch,
   } = useContractRead({
-    address: props.token.address as Address,
+    address: props.tokenAddress as Address,
     abi: erc20ABI,
     functionName: "allowance",
     args: [props.account, getSupplyAddress()],
@@ -73,25 +71,27 @@ export default function Balance(props: Props) {
     if (valueAsString == "") {
       setAmountToDeposit(BigNumber.from(0));
     } else {
-      setAmountToDeposit(floatToBigNumber(valueAsString, props.token.decimals));
+      setAmountToDeposit(
+        floatToBigNumber(valueAsString, balanceData!.decimals)
+      );
     }
   };
 
   const {
-    data,
+    data: balanceData,
     isError,
     isLoading,
     isIdle,
     refetch: balanceRefetch,
   } = useBalance({
-    token: props.token.address as Address,
+    token: props.tokenAddress,
     address: props.account,
     onError(error) {
       console.log(error);
       setText("Balance error");
     },
     onSuccess(data) {
-      setBalance(data.value); // should get symbol, decimals, value from here instead of passing Token?
+      setBalance(data.value);
       setText(
         "Balance: " + parseFloat(data.formatted).toFixed(2) + " " + data.symbol
       );
@@ -99,7 +99,6 @@ export default function Balance(props: Props) {
   });
 
   const onMaxClicked = () => {
-    console.log("max clicked " + balance);
     setAmountToDeposit(balance!);
   };
 
@@ -136,7 +135,7 @@ export default function Balance(props: Props) {
         <Flex>
           {isDepositing ? (
             <HStack>
-              <Text>Deposit {data?.symbol}</Text>
+              <Text>Deposit {balanceData?.symbol}</Text>
               <NumberInput
                 value={
                   amountToDeposit.isZero()
@@ -144,7 +143,7 @@ export default function Balance(props: Props) {
                     : Number(
                         ethers.utils.formatUnits(
                           amountToDeposit,
-                          props.token.decimals
+                          balanceData?.decimals
                         )
                       )
                 }
@@ -177,7 +176,7 @@ export default function Balance(props: Props) {
             <Deposit
               hidden={!isDepositing}
               enabled={canConfirm()}
-              token={props.token.address}
+              tokenAddress={props.tokenAddress}
               amount={amountToDeposit}
               expiration={BigNumber.from(0)}
               interestRateBPS={BigNumber.from(0)}
@@ -189,7 +188,7 @@ export default function Balance(props: Props) {
             <Allow
               hidden={!isDepositing}
               enabled={canConfirm()}
-              token={props.token}
+              tokenAddress={props.tokenAddress}
               callback={() => allowanceRefetch()}
             ></Allow>
           )}
@@ -202,7 +201,7 @@ export default function Balance(props: Props) {
 interface DepositProps {
   hidden: boolean;
   enabled: boolean;
-  token: string;
+  tokenAddress: string;
   amount: BigNumber;
   expiration: BigNumber;
   interestRateBPS: BigNumber;
@@ -215,7 +214,12 @@ export function Deposit(props: DepositProps) {
     abi: supplyContractJSON.abi,
     functionName: "makeDeposit",
     enabled: props.enabled,
-    args: [props.token, props.amount, props.expiration, props.interestRateBPS],
+    args: [
+      props.tokenAddress,
+      props.amount,
+      props.expiration,
+      props.interestRateBPS,
+    ],
     onError(error) {
       console.log(error);
     },
@@ -251,13 +255,13 @@ export function Deposit(props: DepositProps) {
 interface AllowProps {
   hidden: boolean;
   enabled: boolean;
-  token: Token;
+  tokenAddress: Address;
   callback: () => any;
 }
 
 export function Allow(props: AllowProps) {
   const { config, error, isError } = usePrepareContractWrite({
-    address: props.token.address as Address,
+    address: props.tokenAddress as Address,
     abi: erc20ABI,
     functionName: "approve",
     enabled: props.enabled,
