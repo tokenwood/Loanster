@@ -3,9 +3,14 @@ import deployments from "../../../chain/cache/deployments.json";
 import { Provider } from "@wagmi/core";
 import { ethers } from "ethers";
 import supplyContractJSON from "../../../chain/artifacts/contracts/Supply.sol/Supply.json";
+import { BigNumber } from "ethers";
 
 export function getSupplyAddress(): Address {
   return deployments.supply as Address;
+}
+
+export function getCollateralAddress(): Address {
+  return deployments.collateralVault as Address;
 }
 
 export async function getSupplyTokens(provider: Provider): Promise<Address[]> {
@@ -18,7 +23,6 @@ export async function getSupplyTokens(provider: Provider): Promise<Address[]> {
 
   let eventFilter = supplyContract.filters.DepositTokenChange();
   let events = await supplyContract.queryFilter(eventFilter);
-
   let allowedTokens = new Set<Address>();
 
   events.forEach((event) => {
@@ -37,4 +41,15 @@ export async function getSupplyTokens(provider: Provider): Promise<Address[]> {
   });
 
   return Array.from(allowedTokens.values());
+}
+
+export function floatToBigNumber(floatString: string, decimals: number) {
+  let i = floatString.indexOf(".");
+  if (i == -1) {
+    i = floatString.length;
+  }
+  let numberString = floatString.replace(".", "");
+  numberString = numberString + "0".repeat(decimals);
+  numberString = numberString.substring(0, i + decimals);
+  return BigNumber.from(numberString);
 }

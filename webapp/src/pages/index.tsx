@@ -7,8 +7,6 @@ import { Address, useAccount } from "wagmi";
 import Balances from "components/Balances";
 import Positions from "components/Positions";
 
-import { NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS as posManager } from "libs/constants";
-
 const Home: NextPage = () => {
   const { address: account, isConnecting, isDisconnected } = useAccount();
 
@@ -36,7 +34,7 @@ const Home: NextPage = () => {
               <Heading as="h6" size="sm" mb="3">
                 {"Positions"}{" "}
               </Heading>
-              <Positions posManager={posManager} account={account} />
+              <Positions account={account} />
             </Box>
           </VStack>
         </Box>

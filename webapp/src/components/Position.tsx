@@ -1,49 +1,56 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useState } from "react";
 import {
   Text,
   Button,
   CardBody,
-  CardHeader,
-  StackDivider,
-  Stack,
   Card,
   Heading,
   Flex,
   Spacer,
-  HStack,
   VStack,
+  useBoolean,
 } from "@chakra-ui/react";
-import { Box } from "@chakra-ui/layout";
-import { useContractRead, useContractReads } from "wagmi";
+import {
+  erc721ABI,
+  useContractRead,
+  usePrepareContractWrite,
+  useContractWrite,
+} from "wagmi";
 import { nonfungiblePositionManagerABI as managerABI } from "abi/NonfungiblePositionManagerABI";
 import { PositionInfo, getTokenName } from "libs/uniswap_utils";
 import { BigNumber } from "ethers";
-
-// import {PositionInfo} from "@uniswap/lib/liquidity"
+import {
+  DEFAULT_SIZE,
+  NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS,
+} from "libs/constants";
+import { getCollateralAddress } from "libs/unilend_utils";
+import collateralContractJSON from "../../../chain/artifacts/contracts/CollateralVault.sol/CollateralVault.json";
+// import { Position } from "@uniswap/v3-sdk";
 
 interface Props {
-  posManager: `0x${string}` | undefined;
   account: `0x${string}` | undefined;
-  positionId: BigNumber | undefined;
+  positionId: BigNumber;
+  callback: () => any;
 }
 
 export default function Position(props: Props) {
-  const [headerText, setHeaderText] = useState<string>("position info");
-  const [bodyText, setBodyText] = useState<string>("position info");
+  const [isDepositing, setIsDepositing] = useBoolean();
 
-  const { data: positionInfo, refetch: refetchPositionInfo } = useContractRead({
-    address: props.posManager,
+  const { data: allowance, refetch: allowanceRefetch } = useContractRead({
+    address: NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS,
+    abi: erc721ABI,
+    functionName: "getApproved",
+    args: [props.positionId!],
+    enabled: false,
+  });
+
+  const { data: positionInfo } = useContractRead({
+    address: NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS,
     abi: managerABI,
     functionName: "positions",
     args: [props.positionId],
-    enabled: true,
     onSuccess(positionInfo: PositionInfo) {
-      setHeaderText(
-        getTokenName(positionInfo.token0) +
-          " / " +
-          getTokenName(positionInfo.token1)
-      );
-      setBodyText(" liquidity: " + positionInfo.liquidity);
+      console.log("loaded position info");
     },
     onError(error) {
       console.log("error fetching positionInfo");
@@ -51,21 +58,163 @@ export default function Position(props: Props) {
     },
   });
 
+  const getHeaderText = (positionInfo: PositionInfo | undefined) => {
+    if (positionInfo) {
+      return (
+        getTokenName(positionInfo.token0) +
+        " / " +
+        getTokenName(positionInfo.token1)
+      );
+    } else {
+      return "position info not loaded";
+    }
+  };
+
+  const getBodyText = (positionInfo: PositionInfo | undefined) => {
+    if (positionInfo) {
+      return " liquidity: " + positionInfo.liquidity;
+    } else {
+      return "";
+    }
+  };
+
   return (
     <Card w="100%">
       <CardBody margin="-2">
         <Flex>
-          <VStack align={"left"}>
-            <Heading size="xs">{headerText}</Heading>
-            <Text>{bodyText}</Text>
-          </VStack>
+          {isDepositing ? (
+            <Text>Deposit position {getHeaderText(positionInfo)}</Text>
+          ) : (
+            <VStack align={"left"}>
+              <Heading size="xs">{getHeaderText(positionInfo)}</Heading>
+              <Text>{getBodyText(positionInfo)}</Text>
+            </VStack>
+          )}
 
           <Spacer />
-          <Button colorScheme="gray" size="xs" alignSelf={"center"}>
-            Deposit
+          <Button
+            colorScheme="gray"
+            size={DEFAULT_SIZE}
+            alignSelf={"center"}
+            onClick={setIsDepositing.toggle}
+          >
+            {isDepositing ? "Cancel" : "Deposit"}
           </Button>
+
+          {allowance && allowance == getCollateralAddress() ? (
+            <DepositPosition
+              hidden={!isDepositing}
+              enabled={isDepositing}
+              positionId={props.positionId}
+              callback={() => {
+                console.log("deposited");
+                props.callback();
+              }}
+            />
+          ) : (
+            <AllowPosition
+              hidden={!isDepositing}
+              enabled={isDepositing} //{allowance !== undefined}
+              positionId={props.positionId}
+              callback={function () {
+                allowanceRefetch();
+              }}
+            />
+          )}
         </Flex>
       </CardBody>
     </Card>
+  );
+}
+
+interface DepositProps {
+  hidden: boolean;
+  enabled: boolean;
+  positionId: BigNumber;
+  callback: () => any;
+}
+
+export function DepositPosition(props: DepositProps) {
+  const { config, isError } = usePrepareContractWrite({
+    address: getCollateralAddress(),
+    abi: collateralContractJSON.abi,
+    functionName: "depositPosition",
+    enabled: props.enabled,
+    args: [props.positionId],
+    onError(error) {
+      console.log("prepare position deposit error");
+      console.log(error);
+    },
+  });
+
+  const { writeAsync } = useContractWrite(config);
+
+  async function asyncDeposit() {
+    try {
+      const response = await writeAsync!();
+      console.log("position deposit response");
+      console.log(response);
+      props.callback();
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  return (
+    <Button
+      colorScheme="green"
+      size={DEFAULT_SIZE}
+      hidden={props.hidden}
+      alignSelf="center"
+      isDisabled={!props.enabled || !writeAsync || isError}
+      onClick={asyncDeposit}
+    >
+      Confirm
+    </Button>
+  );
+}
+
+interface AllowPositionProps {
+  hidden: boolean;
+  enabled: boolean;
+  positionId: BigNumber;
+  callback: () => any;
+}
+
+export function AllowPosition(props: AllowPositionProps) {
+  const { config, error, isError } = usePrepareContractWrite({
+    address: NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS,
+    abi: erc721ABI,
+    functionName: "approve",
+    enabled: props.enabled,
+    args: [getCollateralAddress(), props.positionId],
+    onError(error) {
+      console.log("allow position error");
+      console.log(error);
+    },
+  });
+
+  const { writeAsync } = useContractWrite(config);
+
+  async function asyncAllow() {
+    try {
+      const response = await writeAsync!();
+      props.callback();
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  return (
+    <Button
+      colorScheme="green"
+      size={DEFAULT_SIZE}
+      hidden={props.hidden}
+      alignSelf="center"
+      isDisabled={!props.enabled || !writeAsync || isError}
+      onClick={asyncAllow}
+    >
+      Allow
+    </Button>
   );
 }

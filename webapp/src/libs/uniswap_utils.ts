@@ -1,5 +1,12 @@
 import { BigNumber } from "ethers";
-import { ADDRESS_TO_TOKEN } from "./constants";
+import {
+  ADDRESS_TO_TOKEN,
+  NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS,
+} from "./constants";
+import { Address } from "wagmi";
+import { Provider } from "@wagmi/core";
+import { nonfungiblePositionManagerABI } from "abi/NonfungiblePositionManagerABI";
+import { ethers } from "ethers";
 
 export interface PositionInfo {
   tickLower: number;
@@ -19,4 +26,37 @@ export function getTokenName(address: string) {
   } else {
     return address;
   }
+}
+
+export async function getPositionIds(
+  account: Address | undefined,
+  provider: Provider
+): Promise<number[]> {
+  if (!provider) {
+    throw new Error("No provider available");
+  }
+  if (!account) {
+    throw new Error("No account connected");
+  }
+
+  console.log("fetching position ids");
+
+  const positionContract = new ethers.Contract(
+    NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS,
+    nonfungiblePositionManagerABI,
+    provider
+  );
+
+  // Get number of positions
+  const balance: number = await positionContract.balanceOf(account);
+
+  // Get all positions
+  const tokenIds = [];
+  for (let i = 0; i < balance; i++) {
+    const tokenOfOwnerByIndex: number =
+      await positionContract.tokenOfOwnerByIndex(account, i);
+    tokenIds.push(tokenOfOwnerByIndex);
+  }
+
+  return tokenIds;
 }

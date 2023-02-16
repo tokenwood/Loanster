@@ -22,26 +22,13 @@ import {
 } from "wagmi";
 import supplyContractJSON from "../../../chain/artifacts/contracts/Supply.sol/Supply.json";
 import { BigNumber } from "ethers";
-import { getSupplyAddress } from "libs/unilend_utils";
+import { getSupplyAddress, floatToBigNumber } from "libs/unilend_utils";
 import { ethers } from "ethers";
+import { DEFAULT_SIZE } from "libs/constants";
 
 interface Props {
-  account: `0x${string}`;
+  account: Address;
   tokenAddress: Address;
-}
-
-const SIZE = "sm";
-// const DECIMALS = 6;
-
-function floatToBigNumber(floatString: string, decimals: number) {
-  let i = floatString.indexOf(".");
-  if (i == -1) {
-    i = floatString.length;
-  }
-  let numberString = floatString.replace(".", "");
-  numberString = numberString + "0".repeat(decimals);
-  numberString = numberString.substring(0, i + decimals);
-  return BigNumber.from(numberString);
 }
 
 export default function Balance(props: Props) {
@@ -62,9 +49,6 @@ export default function Balance(props: Props) {
     abi: erc20ABI,
     functionName: "allowance",
     args: [props.account, getSupplyAddress()],
-    onSuccess(data: BigNumber) {
-      console.log("get allowance success");
-    },
   });
 
   const numberChanged = (valueAsString: string, valueAsNumber: number) => {
@@ -147,13 +131,17 @@ export default function Balance(props: Props) {
                         )
                       )
                 }
-                size={SIZE}
+                size={DEFAULT_SIZE}
                 onChange={numberChanged}
                 hidden={!isDepositing}
               >
                 <NumberInputField />
               </NumberInput>
-              <Button size={SIZE} colorScheme={"blue"} onClick={onMaxClicked}>
+              <Button
+                size={DEFAULT_SIZE}
+                colorScheme={"blue"}
+                onClick={onMaxClicked}
+              >
                 Max
               </Button>
             </HStack>
@@ -165,7 +153,7 @@ export default function Balance(props: Props) {
           <Button
             colorScheme="gray"
             // h={"100%"}
-            size={SIZE}
+            size={DEFAULT_SIZE}
             onClick={setIsDepositing.toggle}
             alignSelf="center"
           >
@@ -209,7 +197,7 @@ interface DepositProps {
 }
 
 export function Deposit(props: DepositProps) {
-  const { config, error, isError } = usePrepareContractWrite({
+  const { config, isError } = usePrepareContractWrite({
     address: getSupplyAddress(),
     abi: supplyContractJSON.abi,
     functionName: "makeDeposit",
@@ -221,6 +209,7 @@ export function Deposit(props: DepositProps) {
       props.interestRateBPS,
     ],
     onError(error) {
+      console.log("prepare deposit error");
       console.log(error);
     },
   });
@@ -229,9 +218,7 @@ export function Deposit(props: DepositProps) {
 
   async function asyncDeposit() {
     try {
-      const response = await writeAsync!();
-      console.log("deposited");
-      console.log(response);
+      await writeAsync!();
       props.callback();
     } catch (error) {
       console.log(error);
@@ -241,10 +228,10 @@ export function Deposit(props: DepositProps) {
   return (
     <Button
       colorScheme="green"
-      size={SIZE}
+      size={DEFAULT_SIZE}
       hidden={props.hidden}
       alignSelf="center"
-      isDisabled={!props.enabled || !writeAsync}
+      isDisabled={!props.enabled || !writeAsync || isError}
       onClick={asyncDeposit}
     >
       Confirm
@@ -282,7 +269,7 @@ export function Allow(props: AllowProps) {
   return (
     <Button
       colorScheme="green"
-      size={SIZE}
+      size={DEFAULT_SIZE}
       hidden={props.hidden}
       alignSelf="center"
       isDisabled={!props.enabled || !writeAsync}

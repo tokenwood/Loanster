@@ -16,7 +16,6 @@ export default function Balances(props: Props) {
   useEffect(() => {
     const fetchData = async () => {
       const tokens = await getSupplyTokens(provider);
-      console.log(tokens);
       setSupplyTokens(tokens);
     };
 
@@ -25,17 +24,19 @@ export default function Balances(props: Props) {
     }
   }, [supplyTokens]);
 
-  return supplyTokens.length > 0 && props.account ? (
+  return (
     <VStack>
-      {supplyTokens.map((tokenAddress, i) => (
-        <Balance
-          account={props.account!}
-          tokenAddress={tokenAddress}
-          key={tokenAddress}
-        />
-      ))}
+      {supplyTokens.length > 0 && props.account ? (
+        supplyTokens.map((tokenAddress, i) => (
+          <Balance
+            account={props.account!}
+            tokenAddress={tokenAddress}
+            key={tokenAddress}
+          />
+        ))
+      ) : (
+        <Box> not connected </Box>
+      )}
     </VStack>
-  ) : (
-    <Box>Loading supply tokens</Box>
   );
 }
