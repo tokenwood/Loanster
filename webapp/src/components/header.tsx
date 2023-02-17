@@ -10,6 +10,7 @@ import {
   LinkOverlay,
 } from "@chakra-ui/react";
 import { ConnectKitButton } from "connectkit";
+import Link from "next/link";
 
 const siteTitle = "Unilend";
 export default function Header() {
@@ -21,8 +22,23 @@ export default function Header() {
       alignItems="center"
     >
       <Box>
-        <Heading size="md">{siteTitle}</Heading>
+        <Heading size="md" mr={4}>
+          {siteTitle}
+        </Heading>
       </Box>
+      <Link href="/borrow">
+        <Button>Borrow</Button>
+      </Link>
+      <Link href="/loans">
+        <Button>Loans</Button>
+      </Link>
+      <Link href="/supply">
+        <Button>Supply</Button>
+      </Link>
+      <Link href="/market">
+        <Button>Market</Button>
+      </Link>
+
       <Spacer />
       <ConnectKitButton showBalance={false} showAvatar={false} />
     </Flex>

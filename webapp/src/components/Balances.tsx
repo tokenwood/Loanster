@@ -6,7 +6,7 @@ import Balance from "./Balance";
 import { getSupplyTokens } from "libs/unilend_utils";
 
 interface Props {
-  account: Address | undefined;
+  account: Address;
 }
 
 export default function Balances(props: Props) {
@@ -26,16 +26,18 @@ export default function Balances(props: Props) {
 
   return (
     <VStack>
-      {supplyTokens.length > 0 && props.account ? (
+      {supplyTokens.length > 0 ? (
         supplyTokens.map((tokenAddress, i) => (
           <Balance
-            account={props.account!}
+            account={props.account}
             tokenAddress={tokenAddress}
             key={tokenAddress}
           />
         ))
       ) : (
-        <Box> not connected </Box>
+        <Box>
+          <Box> supply tokens not loaded </Box>
+        </Box>
       )}
     </VStack>
   );

@@ -4,7 +4,7 @@ import type { AppProps } from "next/app";
 import { Layout } from "components/layout";
 
 import { WagmiConfig, createClient } from "wagmi";
-import { mainnet, arbitrum, hardhat, goerli } from "wagmi/chains";
+import { mainnet, arbitrum, hardhat, goerli, localhost } from "wagmi/chains";
 import { ConnectKitProvider, getDefaultClient } from "connectkit";
 
 const client = createClient(
@@ -12,7 +12,7 @@ const client = createClient(
     appName: "Unilend",
     infuraId: process.env.REACT_APP_INFURA_ID,
     //alchemyId:  process.env.REACT_APP_ALCHEMY_ID,
-    chains: [mainnet, hardhat, goerli],
+    chains: [hardhat, mainnet],
   })
 );
 
