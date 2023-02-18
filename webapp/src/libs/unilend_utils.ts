@@ -3,14 +3,31 @@ import deployments from "../../../chain/cache/deployments.json";
 import { Provider } from "@wagmi/core";
 import { ethers } from "ethers";
 import supplyContractJSON from "../../../chain/artifacts/contracts/Supply.sol/Supply.json";
+import collateralContractJSON from "../../../chain/artifacts/contracts/CollateralVault.sol/CollateralVault.json";
 import { BigNumber } from "ethers";
+
+export interface DepositInfo {
+  token: Address;
+  amountDeposited: BigNumber;
+  amountBorrowed: BigNumber;
+  expiration: BigNumber;
+  interestRateBPS: BigNumber;
+}
 
 export function getSupplyAddress(): Address {
   return deployments.supply as Address;
 }
 
+export function getSupplyABI(): any {
+  return supplyContractJSON.abi;
+}
+
 export function getCollateralAddress(): Address {
   return deployments.collateralVault as Address;
+}
+
+export function getCollateralABI(): any {
+  return collateralContractJSON.abi;
 }
 
 export async function getSupplyTokens(provider: Provider): Promise<Address[]> {
@@ -41,6 +58,31 @@ export async function getSupplyTokens(provider: Provider): Promise<Address[]> {
   });
 
   return Array.from(allowedTokens.values());
+}
+
+export async function getSupplyDepositIds(
+  provider: Provider,
+  account: Address
+): Promise<number[]> {
+  const supplyAddress = getSupplyAddress();
+  const supplyContract = new ethers.Contract(
+    supplyAddress,
+    supplyContractJSON.abi,
+    provider
+  );
+
+  console.log("fetching supply deposit ids");
+  const balance: number = await supplyContract.balanceOf(account);
+
+  // Get all positions
+  const tokenIds = [];
+  for (let i = 0; i < balance; i++) {
+    const tokenOfOwnerByIndex: number =
+      await supplyContract.tokenOfOwnerByIndex(account, i);
+    tokenIds.push(tokenOfOwnerByIndex);
+  }
+
+  return tokenIds;
 }
 
 export function floatToBigNumber(floatString: string, decimals: number) {

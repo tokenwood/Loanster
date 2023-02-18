@@ -7,6 +7,7 @@ import { Address } from "wagmi";
 import { Provider } from "@wagmi/core";
 import { nonfungiblePositionManagerABI } from "abi/NonfungiblePositionManagerABI";
 import { ethers } from "ethers";
+import { erc721ABI } from "@wagmi/core";
 
 export interface PositionInfo {
   tickLower: number;
@@ -29,18 +30,14 @@ export function getTokenName(address: string) {
 }
 
 export async function getPositionIds(
-  account: Address | undefined,
+  account: Address,
   provider: Provider
 ): Promise<number[]> {
   if (!provider) {
     throw new Error("No provider available");
   }
-  if (!account) {
-    throw new Error("No account connected");
-  }
 
-  console.log("fetching position ids");
-
+  console.log("fetching uniswap position ids");
   const positionContract = new ethers.Contract(
     NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS,
     nonfungiblePositionManagerABI,

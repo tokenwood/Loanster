@@ -1,10 +1,10 @@
 import { VStack, Heading, Box, Flex } from "@chakra-ui/layout";
 import { Button, Card, CardBody, StackDivider, Spacer } from "@chakra-ui/react";
 import { useAccount } from "wagmi";
-import Balances from "components/Balances";
+import Balances from "components/SupplyTokens";
 import Positions from "components/Positions";
 import ClientOnly from "components/clientOnly";
-import { BasePage } from "components/BasePage";
+import { BasePage } from "components/BaseComponents";
 
 export default function LoansPage() {
   const { address: account, isConnecting, isDisconnected } = useAccount();

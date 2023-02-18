@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { VStack } from "@chakra-ui/react";
 import { Box } from "@chakra-ui/layout";
 import { Address, useProvider } from "wagmi";
-import Balance from "./Balance";
+import Balance from "./SupplyToken";
 import { getSupplyTokens } from "libs/unilend_utils";
 
 interface Props {

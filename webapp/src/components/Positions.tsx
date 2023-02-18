@@ -12,16 +12,15 @@ interface Props {
 export default function Positions(props: Props) {
   const [positionIds, setPositionIds] = useState<number[]>([]);
   const [isError, setIsError] = useState<boolean>(false);
-  const { address: account } = useAccount();
   const provider = useProvider();
 
   const fetchData = async () => {
-    const positionIds = await getPositionIds(account, provider);
+    console.log("refreshing positions fetchdata");
+    const positionIds = await getPositionIds(props.account, provider);
     setPositionIds(positionIds);
   };
 
   useEffect(() => {
-    console.log("useEffect positions");
     if (positionIds.length == 0 && isError == false) {
       fetchData().catch((error) => {
         console.log(error);
@@ -30,18 +29,13 @@ export default function Positions(props: Props) {
     }
   }, [positionIds]);
 
-  const refresh = () => {
-    console.log("refreshing positions");
-    fetchData();
-  };
-
   return (
     <VStack>
       {positionIds.map((positionId) => (
         <Position
-          account={account}
+          account={props.account}
           positionId={BigNumber.from(positionId)}
-          callback={refresh}
+          callback={fetchData}
           key={positionId}
         ></Position>
       ))}
