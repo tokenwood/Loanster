@@ -47,7 +47,7 @@ contract TroveManager is ERC721, ERC721Holder, Ownable {
     event Debug(string message);
     event DebugAddress(address message);
 
-    event CollateralTokenChange(address token, bool approved);
+    event CollateralTokenChange(address token, bool isAllowed);
     event NewTrove(uint256 troveId);
 
     modifier troveOwner(uint256 troveId) {

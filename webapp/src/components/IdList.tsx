@@ -1,25 +1,32 @@
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { VStack } from "@chakra-ui/react";
-import { Box } from "@chakra-ui/layout";
 import { Address, useProvider } from "wagmi";
-import Balance from "./SupplyToken";
+import { Provider } from "@wagmi/core";
 import { getSupplyDepositIds, getSupplyTokens } from "libs/unilend_utils";
 import SupplyDeposit from "./SupplyDeposit";
 import { BigNumber } from "ethers";
 
-interface Props {
+export interface ComponentBuilderProps {
+  id: any;
   account: Address;
+  callback: () => any;
 }
 
-export default function (props: Props) {
-  const [depositIds, setDepositIds] = useState<number[]>([]);
+interface Props {
+  account: Address;
+  fetchIds: (provider: Provider, account: Address) => Promise<any[]>;
+  componentBuilder: (props: ComponentBuilderProps) => JSX.Element;
+}
+
+export default function IdList(props: Props) {
+  const [ids, setIds] = useState<any[]>([]);
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
   const provider = useProvider();
 
   const fetchData = async () => {
-    const tokens = await getSupplyDepositIds(provider, props.account);
+    const tokens = await props.fetchIds(provider, props.account);
     setIsLoaded(true);
-    setDepositIds(tokens);
+    setIds(tokens);
   };
 
   useEffect(() => {
@@ -29,18 +36,17 @@ export default function (props: Props) {
         setIsLoaded(true);
       });
     }
-  }, [depositIds]);
+  }, [ids]);
 
   return (
     <VStack>
-      {depositIds.map((depositId) => (
-        <SupplyDeposit
-          account={props.account}
-          depositId={BigNumber.from(depositId)}
-          callback={fetchData}
-          key={depositId}
-        ></SupplyDeposit>
-      ))}
+      {ids.map((id) =>
+        props.componentBuilder({
+          id: id,
+          account: props.account,
+          callback: fetchData,
+        })
+      )}
     </VStack>
   );
 }

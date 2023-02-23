@@ -30,8 +30,8 @@ export function getTokenName(address: string) {
 }
 
 export async function getPositionIds(
-  account: Address,
-  provider: Provider
+  provider: Provider,
+  account: Address
 ): Promise<number[]> {
   if (!provider) {
     throw new Error("No provider available");

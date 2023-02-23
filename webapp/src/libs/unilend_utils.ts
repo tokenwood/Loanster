@@ -14,6 +14,18 @@ export interface DepositInfo {
   interestRateBPS: BigNumber;
 }
 
+function getTroveManagerContract(provider: Provider) {
+  return new ethers.Contract(
+    getTroveManagerAddress(),
+    getTroveManagerABI(),
+    provider
+  );
+}
+
+function getSupplyContract(provider: Provider) {
+  return new ethers.Contract(getSupplyAddress(), getSupplyABI(), provider);
+}
+
 export function getSupplyAddress(): Address {
   return deployments.supply as Address;
 }
@@ -31,15 +43,22 @@ export function getTroveManagerABI(): any {
 }
 
 export async function getSupplyTokens(provider: Provider): Promise<Address[]> {
-  const supplyAddress = getSupplyAddress();
-  const supplyContract = new ethers.Contract(
-    supplyAddress,
-    supplyContractJSON.abi,
-    provider
-  );
-
+  const supplyContract = getSupplyContract(provider);
   let eventFilter = supplyContract.filters.DepositTokenChange();
   let events = await supplyContract.queryFilter(eventFilter);
+  return getAllowedTokensFromEvents(events);
+}
+
+export async function getCollateralTokens(
+  provider: Provider
+): Promise<Address[]> {
+  const troveManager = getTroveManagerContract(provider);
+  let eventFilter = troveManager.filters.CollateralTokenChange();
+  let events = await troveManager.queryFilter(eventFilter);
+  return getAllowedTokensFromEvents(events);
+}
+
+export function getAllowedTokensFromEvents(events: ethers.Event[]) {
   let allowedTokens = new Set<Address>();
 
   events.forEach((event) => {
@@ -60,28 +79,36 @@ export async function getSupplyTokens(provider: Provider): Promise<Address[]> {
   return Array.from(allowedTokens.values());
 }
 
+export async function getTroveIds(
+  provider: Provider,
+  account: Address
+): Promise<number[]> {
+  const troveManager = getTroveManagerContract(provider);
+  return getERC721Ids(troveManager, account);
+}
+
 export async function getSupplyDepositIds(
   provider: Provider,
   account: Address
 ): Promise<number[]> {
-  const supplyAddress = getSupplyAddress();
-  const supplyContract = new ethers.Contract(
-    supplyAddress,
-    supplyContractJSON.abi,
-    provider
-  );
-
+  const supplyContract = getSupplyContract(provider);
   console.log("fetching supply deposit ids");
-  const balance: number = await supplyContract.balanceOf(account);
+  return getERC721Ids(supplyContract, account);
+}
 
-  // Get all positions
+export async function getERC721Ids(
+  contract: ethers.Contract,
+  account: Address
+) {
+  const balance: number = await contract.balanceOf(account);
   const tokenIds = [];
   for (let i = 0; i < balance; i++) {
-    const tokenOfOwnerByIndex: number =
-      await supplyContract.tokenOfOwnerByIndex(account, i);
+    const tokenOfOwnerByIndex: number = await contract.tokenOfOwnerByIndex(
+      account,
+      i
+    );
     tokenIds.push(tokenOfOwnerByIndex);
   }
-
   return tokenIds;
 }
 
