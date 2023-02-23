@@ -3,23 +3,25 @@ import { Address, useContractWrite, usePrepareContractWrite } from "wagmi";
 import ClientOnly from "components/clientOnly";
 import { Button } from "@chakra-ui/react";
 import { DEFAULT_SIZE } from "libs/constants";
+import { PropsWithChildren, ReactNode } from "react";
 
-export function BasePage(
-  element: JSX.Element,
-  account: Address | undefined,
-  isConnecting: boolean,
-  isDisconnected: boolean
-) {
+interface BasePageProps {
+  account: Address | undefined;
+  isConnecting: boolean;
+  isDisconnected: boolean;
+}
+
+export function BasePage(props: PropsWithChildren<BasePageProps>) {
   return (
     <VStack>
       <Box p={4} w="100%" borderWidth="1px" borderRadius="lg">
         <ClientOnly>
-          {account ? (
-            element
+          {props.account ? (
+            props.children
           ) : (
             <Box>
-              <Box hidden={!isConnecting}>connecting...</Box>
-              <Box hidden={!isDisconnected}>Disconnected</Box>
+              <Box hidden={!props.isConnecting}>connecting...</Box>
+              <Box hidden={!props.isDisconnected}>Disconnected</Box>
             </Box>
           )}
         </ClientOnly>
@@ -67,7 +69,7 @@ export function ContractCallButton(props: ContractCallButtonProps) {
       colorScheme="green"
       size={DEFAULT_SIZE}
       hidden={props.hidden}
-      alignSelf="center"
+      alignSelf="right"
       isDisabled={!props.enabled || !writeAsync || isError}
       onClick={onClick}
     >
