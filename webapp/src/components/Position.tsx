@@ -18,7 +18,7 @@ import {
   DEFAULT_SIZE,
   NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS,
 } from "libs/constants";
-import { getCollateralABI, getCollateralAddress } from "libs/unilend_utils";
+import { getTroveManagerABI, getTroveManagerAddress } from "libs/unilend_utils";
 
 import { ContractCallButton } from "./BaseComponents";
 // import { Position } from "@uniswap/v3-sdk";
@@ -97,10 +97,10 @@ export default function Position(props: Props) {
             {isDepositing ? "Cancel" : "Deposit"}
           </Button>
 
-          {allowance && allowance == getCollateralAddress() ? (
+          {allowance && allowance == getTroveManagerAddress() ? (
             <ContractCallButton
-              contractAddress={getCollateralAddress()}
-              abi={getCollateralABI()}
+              contractAddress={getTroveManagerAddress()}
+              abi={getTroveManagerABI()}
               functionName={"depositPosition"}
               args={[props.positionId]}
               hidden={!isDepositing}
@@ -112,7 +112,7 @@ export default function Position(props: Props) {
               contractAddress={NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS}
               abi={erc721ABI}
               functionName={"approve"}
-              args={[getCollateralAddress(), props.positionId]}
+              args={[getTroveManagerABI(), props.positionId]}
               hidden={!isDepositing}
               enabled={isDepositing}
               callback={() => allowanceRefetch()}

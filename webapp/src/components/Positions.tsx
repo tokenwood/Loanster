@@ -11,20 +11,20 @@ interface Props {
 
 export default function Positions(props: Props) {
   const [positionIds, setPositionIds] = useState<number[]>([]);
-  const [isError, setIsError] = useState<boolean>(false);
+  const [isLoaded, setIsLoaded] = useState<boolean>(false);
   const provider = useProvider();
 
   const fetchData = async () => {
-    console.log("refreshing positions fetchdata");
     const positionIds = await getPositionIds(props.account, provider);
     setPositionIds(positionIds);
+    setIsLoaded(true);
   };
 
   useEffect(() => {
-    if (positionIds.length == 0 && isError == false) {
+    if (positionIds.length == 0 && isLoaded == false) {
       fetchData().catch((error) => {
         console.log(error);
-        setIsError(true);
+        setIsLoaded(true);
       });
     }
   }, [positionIds]);

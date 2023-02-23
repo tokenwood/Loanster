@@ -14,9 +14,13 @@ import {
   encodeSqrtRatioX96,
   nearestUsableTick,
 } from "@uniswap/v3-sdk";
-// import { deploySupplyFixture } from "./utils";
-import "./utils";
-import { deployCollateralVault, deploySupplyFixture } from "./utils";
+
+import "../scripts/utils";
+import {
+  deployTroveManager,
+  deploySupply,
+  deployUniUtils,
+} from "../scripts/utils";
 async function log_balance(token: Token, address: string) {
   const wethERC20 = await ethers.getContractAt("ERC20", token.address);
   const balance = await wethERC20.balanceOf(address);
@@ -35,8 +39,21 @@ function get_tick(amount0: BigNumber, amount1: BigNumber, spacing: number) {
   return nearestUsableTick(TickMath.getTickAtSqrtRatio(ratio), spacing);
 }
 
-describe("Supply", function () {
+describe("TroveManager", function () {
   const TIMESTAMP_2030 = 1893452400;
+
+  async function deployTroveManagerFixture() {
+    const supply = await deploySupply();
+    const uniUtils = await deployUniUtils();
+    const troveManager = await deployTroveManager(
+      supply.address,
+      WETH_TOKEN.address,
+      uniUtils.address
+    );
+
+    console.log(`supply, uniUtils and troveManager deployed`);
+    return { troveManager, supply, uniUtils };
+  }
 
   async function BuyTokensFixture() {
     const [account] = await ethers.getSigners();
@@ -50,7 +67,7 @@ describe("Supply", function () {
     const weth = await ethers.getContractAt("IWETH", WETH_TOKEN.address);
 
     await weth.deposit({
-      value: ethers.utils.parseEther("10.0"),
+      value: ethers.utils.parseEther("20.0"),
     });
 
     await weth.approve(swapRouter.address, ethers.utils.parseUnits("100", 18));
@@ -74,7 +91,7 @@ describe("Supply", function () {
     const [account, account2] = await ethers.getSigners();
 
     await loadFixture(BuyTokensFixture);
-    const { collateralVault } = await loadFixture(deployCollateralVault);
+    const { troveManager } = await loadFixture(deployTroveManagerFixture);
 
     const posManager = await ethers.getContractAt(
       "INonfungiblePositionManager",
@@ -123,19 +140,27 @@ describe("Supply", function () {
     const positionId = await posManager.tokenOfOwnerByIndex(account.address, 0);
     console.log("position Id: " + positionId);
 
-    await posManager.approve(collateralVault.address, positionId);
+    await posManager.approve(troveManager.address, positionId);
     console.log("approved");
 
     await expect(
-      collateralVault.depositPosition(positionId)
-    ).to.changeTokenBalances(posManager, [account, collateralVault], [-1, +1]);
+      troveManager.openTrove(
+        NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS,
+        positionId
+      )
+    ).to.changeTokenBalances(posManager, [account, troveManager], [-1, +1]);
+
+    const troveId = await troveManager.tokenOfOwnerByIndex(account.address, 0); // may fail if already opened trove (in other tests?)
+    console.log("trove id: " + troveId);
 
     await expect(
-      collateralVault.connect(account2).withdrawPosition(positionId)
-    ).to.be.revertedWith("sender not owner of position");
+      troveManager.connect(account2).closeTrove(troveId)
+    ).to.be.revertedWith("sender not owner of trove");
 
-    await expect(
-      collateralVault.withdrawPosition(positionId)
-    ).to.changeTokenBalances(posManager, [account, collateralVault], [+1, -1]);
+    await expect(troveManager.closeTrove(troveId)).to.changeTokenBalances(
+      posManager,
+      [account, troveManager],
+      [+1, -1]
+    );
   });
 });

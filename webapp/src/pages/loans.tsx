@@ -24,7 +24,7 @@ export default function LoansPage() {
       </Box>
       <Box>
         <Heading as="h6" size="sm" mb="3">
-          {"Positions"}
+          {"Your positions"}
         </Heading>
         <Positions account={account!} />
       </Box>

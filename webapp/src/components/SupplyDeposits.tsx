@@ -13,20 +13,20 @@ interface Props {
 
 export default function (props: Props) {
   const [depositIds, setDepositIds] = useState<number[]>([]);
-  const [isError, setIsError] = useState<boolean>(false);
+  const [isLoaded, setIsLoaded] = useState<boolean>(false);
   const provider = useProvider();
 
   const fetchData = async () => {
-    "fetching supply deposits";
     const tokens = await getSupplyDepositIds(provider, props.account);
+    setIsLoaded(true);
     setDepositIds(tokens);
   };
 
   useEffect(() => {
-    if (depositIds.length == 0 && !isError) {
+    if (!isLoaded) {
       fetchData().catch((error) => {
         console.log(error);
-        setIsError(true);
+        setIsLoaded(true);
       });
     }
   }, [depositIds]);

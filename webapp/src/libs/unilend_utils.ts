@@ -3,7 +3,7 @@ import deployments from "../../../chain/cache/deployments.json";
 import { Provider } from "@wagmi/core";
 import { ethers } from "ethers";
 import supplyContractJSON from "../../../chain/artifacts/contracts/Supply.sol/Supply.json";
-import collateralContractJSON from "../../../chain/artifacts/contracts/CollateralVault.sol/CollateralVault.json";
+import collateralContractJSON from "../../../chain/artifacts/contracts/TroveManager.sol/TroveManager.json";
 import { BigNumber } from "ethers";
 
 export interface DepositInfo {
@@ -22,11 +22,11 @@ export function getSupplyABI(): any {
   return supplyContractJSON.abi;
 }
 
-export function getCollateralAddress(): Address {
-  return deployments.collateralVault as Address;
+export function getTroveManagerAddress(): Address {
+  return deployments.troveManager as Address;
 }
 
-export function getCollateralABI(): any {
+export function getTroveManagerABI(): any {
   return collateralContractJSON.abi;
 }
 

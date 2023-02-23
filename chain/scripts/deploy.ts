@@ -1,32 +1,39 @@
 import { ethers } from "hardhat";
 
 import {
-  NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS,
+  AGEUR_TOKEN,
+  CRV_TOKEN,
   USDC_TOKEN,
   WETH_TOKEN,
 } from "../../webapp/src/libs/constants";
 
+import { deploySupply, deployUniUtils, deployTroveManager } from "./utils";
+
 async function main() {
-  const Supply = await ethers.getContractFactory("Supply");
-  const supply = await Supply.deploy();
+  const supply = await deploySupply();
+  console.log(`supply deployed to ${supply.address}`);
 
-  const CollateralVault = await ethers.getContractFactory("CollateralVault");
-  const collateralVault = await CollateralVault.deploy(
-    NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS
+  const uniUtils = await deployUniUtils();
+  console.log(`uni utils deployed to ${uniUtils.address}`);
+
+  const troveManager = await deployTroveManager(
+    supply.address,
+    WETH_TOKEN.address,
+    uniUtils.address
   );
-
-  await supply.deployed();
-  await collateralVault.deployed();
+  console.log(`trove manager deployed to ${troveManager.address}`);
 
   await supply.addDepositToken(USDC_TOKEN.address);
-  await supply.addDepositToken(WETH_TOKEN.address);
+  await supply.addDepositToken(CRV_TOKEN.address);
 
-  console.log(`supply deployed to ${supply.address}`);
-  console.log(`collateral vault deployed to ${collateralVault.address}`);
+  await troveManager.addCollateralToken(USDC_TOKEN.address, 7000, 500);
+  await troveManager.addCollateralToken(WETH_TOKEN.address, 6000, 0);
+  await troveManager.addCollateralToken(AGEUR_TOKEN.address, 6500, 500);
 
   const deployments = {
+    uniUtils: uniUtils.address,
     supply: supply.address,
-    collateralVault: collateralVault.address,
+    troveManager: troveManager.address,
   };
 
   var fs = require("fs");

@@ -34,6 +34,30 @@ export const DAI_TOKEN = new Token(
   "Dai Stablecoin"
 );
 
+export const LUSD_TOKEN = new Token(
+  SupportedChainId.MAINNET,
+  "0x5f98805A4E8be255a32880FDeC7F6728C6568bA0",
+  18,
+  "LUSD",
+  "Liquity USD"
+);
+
+export const AGEUR_TOKEN = new Token(
+  SupportedChainId.MAINNET,
+  "0x1a7e4e63778B4f12a199C062f3eFdD288afCBce8",
+  18,
+  "AGEUR",
+  "Angle EUR"
+);
+
+export const CRV_TOKEN = new Token(
+  SupportedChainId.MAINNET,
+  "0xD533a949740bb3306d119CC777fa900bA034cd52",
+  18,
+  "CRV",
+  "Curve DAO Token"
+);
+
 export const ADDRESS_TO_TOKEN: { [key: string]: Token } = {
   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48": USDC_TOKEN,
   "0x6B175474E89094C44Da98b954EedeAC495271d0F": DAI_TOKEN,

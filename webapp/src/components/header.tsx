@@ -1,5 +1,4 @@
 //src/components/header.tsx
-import NextLink from "next/link";
 import {
   Flex,
   Button,
@@ -7,40 +6,58 @@ import {
   Spacer,
   Heading,
   Box,
-  LinkOverlay,
 } from "@chakra-ui/react";
 import { ConnectKitButton } from "connectkit";
+import { ethers } from "ethers";
 import Link from "next/link";
+import ClientOnly from "./clientOnly";
 
 const siteTitle = "Unilend";
+
+interface Props {
+  buttonText: string;
+  linkPath: string;
+}
+
+function HeaderButton(props: Props) {
+  return (
+    <Link href={props.linkPath}>
+      <Button
+        border={
+          typeof window !== "undefined"
+            ? window.location.pathname == props.linkPath
+              ? "1px"
+              : undefined
+            : undefined
+        }
+      >
+        {props.buttonText}
+      </Button>
+    </Link>
+  );
+}
+
 export default function Header() {
   return (
-    <Flex
-      as="header"
-      bg={useColorModeValue("gray.100", "gray.900")}
-      p={4}
-      alignItems="center"
-    >
-      <Box>
-        <Heading size="md" mr={4}>
-          {siteTitle}
-        </Heading>
-      </Box>
-      <Link href="/borrow">
-        <Button>Borrow</Button>
-      </Link>
-      <Link href="/loans">
-        <Button>Loans</Button>
-      </Link>
-      <Link href="/supply">
-        <Button>Supply</Button>
-      </Link>
-      <Link href="/market">
-        <Button>Market</Button>
-      </Link>
-
-      <Spacer />
-      <ConnectKitButton showBalance={false} showAvatar={false} />
-    </Flex>
+    <ClientOnly>
+      <Flex
+        as="header"
+        bg={useColorModeValue("gray.100", "gray.900")}
+        p={4}
+        alignItems="center"
+      >
+        <Box>
+          <Heading size="md" mr={4}>
+            {siteTitle}
+          </Heading>
+        </Box>
+        <HeaderButton linkPath="/borrow" buttonText="Borrow"></HeaderButton>
+        <HeaderButton linkPath="/loans" buttonText="Loans"></HeaderButton>
+        <HeaderButton linkPath="/supply" buttonText="Supply"></HeaderButton>
+        <HeaderButton linkPath="/market" buttonText="Market"></HeaderButton>
+        <Spacer />
+        <ConnectKitButton showBalance={false} showAvatar={false} />
+      </Flex>
+    </ClientOnly>
   );
 }

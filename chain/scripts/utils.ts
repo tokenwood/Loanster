@@ -1,8 +1,4 @@
-import { expect } from "chai";
 import { ethers } from "hardhat";
-import { Contract, BigNumber, ContractReceipt } from "ethers";
-import { NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS } from "../../webapp/src/libs/constants";
-import { loadFixture, time } from "@nomicfoundation/hardhat-network-helpers";
 
 export async function deployTokensFixture() {
   const [owner, account1, account2] = await ethers.getSigners();
@@ -20,20 +16,32 @@ export async function deployTokensFixture() {
   return { token: tokens[0], token2: tokens[1] };
 }
 
-export async function deploySupplyFixture() {
+export async function deploySupply() {
   const Supply = await ethers.getContractFactory("Supply");
   const supply = await Supply.deploy();
   await supply.deployed();
 
-  return { supply };
+  return supply;
 }
 
-export async function deployCollateralVault() {
-  const CollateralVault = await ethers.getContractFactory("CollateralVault");
-  const collateralVault = await CollateralVault.deploy(
-    NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS
-  );
-  await collateralVault.deployed();
+export async function deployUniUtils() {
+  const UniUtils = await ethers.getContractFactory("UniUtils");
+  const uniUtils = await UniUtils.deploy();
+  return uniUtils;
+}
 
-  return { collateralVault };
+export async function deployTroveManager(
+  supplyAddress: string,
+  wethAddress: string,
+  uniUtilsAddress: string
+) {
+  const TroveManager = await ethers.getContractFactory("TroveManager", {
+    libraries: {
+      UniUtils: uniUtilsAddress,
+    },
+  });
+
+  const troveManager = await TroveManager.deploy(wethAddress, supplyAddress);
+
+  return troveManager;
 }
