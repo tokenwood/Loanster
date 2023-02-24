@@ -1,15 +1,5 @@
 import React, { ReactNode, useState } from "react";
-import {
-  Button,
-  Card,
-  CardBody,
-  Flex,
-  Input,
-  NumberInput,
-  NumberInputField,
-  Spacer,
-  Text,
-} from "@chakra-ui/react";
+import { Button, Card, CardBody, Flex, Spacer } from "@chakra-ui/react";
 import { useBoolean } from "@chakra-ui/react";
 import { Box, VStack } from "@chakra-ui/layout";
 import { Address, erc20ABI, useBalance, useContractRead } from "wagmi";
@@ -37,6 +27,7 @@ export interface ContractCallProps {
 interface TokenBalanceProps {
   account: Address;
   tokenAddress: Address;
+  approvalAddress: Address;
   contractCallComponent: (callProps: ContractCallProps) => ReactNode;
   inputsComponent: (inputsProps: InputsProps) => ReactNode;
 }
@@ -87,6 +78,7 @@ export default function TokenBalance(props: TokenBalanceProps) {
             <DepositInputs
               account={props.account}
               tokenAddress={props.tokenAddress}
+              approvalAddress={props.approvalAddress}
               balanceData={balanceData!} // todo disable deposit when not loaded
               contractCallComponent={props.contractCallComponent}
               inputsComponent={props.inputsComponent}
@@ -105,6 +97,7 @@ export interface DepositInputsProps {
   account: Address;
   tokenAddress: Address;
   balanceData: FetchBalanceResult;
+  approvalAddress: Address;
   contractCallComponent: (callProps: ContractCallProps) => ReactNode;
   inputsComponent: (inputsProps: InputsProps) => ReactNode;
   callback: () => any;
@@ -118,7 +111,7 @@ export function DepositInputs(props: DepositInputsProps) {
     address: props.tokenAddress as Address,
     abi: erc20ABI,
     functionName: "allowance",
-    args: [props.account, getSupplyAddress()],
+    args: [props.account, props.approvalAddress],
   });
 
   const hasEnoughAllowance = (
@@ -162,7 +155,7 @@ export function DepositInputs(props: DepositInputsProps) {
             contractAddress={props.tokenAddress}
             abi={erc20ABI}
             functionName={"approve"}
-            args={[getSupplyAddress(), ethers.constants.MaxUint256]}
+            args={[props.approvalAddress, ethers.constants.MaxUint256]}
             enabled={canConfirm()}
             callback={() => allowanceRefetch()}
             buttonText="Approve"

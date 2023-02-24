@@ -36,7 +36,7 @@ export default function Position(props: Props) {
     address: NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS,
     abi: erc721ABI,
     functionName: "getApproved",
-    args: [props.positionId!],
+    args: [props.positionId],
     enabled: false,
   });
 
@@ -101,8 +101,11 @@ export default function Position(props: Props) {
             <ContractCallButton
               contractAddress={getTroveManagerAddress()}
               abi={getTroveManagerABI()}
-              functionName={"depositPosition"}
-              args={[props.positionId]}
+              functionName={"openTrove"}
+              args={[
+                NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS,
+                props.positionId,
+              ]}
               hidden={!isDepositing}
               enabled={isDepositing}
               callback={() => props.callback()}
@@ -112,7 +115,7 @@ export default function Position(props: Props) {
               contractAddress={NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS}
               abi={erc721ABI}
               functionName={"approve"}
-              args={[getTroveManagerABI(), props.positionId]}
+              args={[getTroveManagerAddress(), props.positionId]}
               hidden={!isDepositing}
               enabled={isDepositing}
               callback={() => allowanceRefetch()}

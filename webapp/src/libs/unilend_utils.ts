@@ -3,7 +3,7 @@ import deployments from "../../../chain/cache/deployments.json";
 import { Provider } from "@wagmi/core";
 import { ethers } from "ethers";
 import supplyContractJSON from "../../../chain/artifacts/contracts/Supply.sol/Supply.json";
-import collateralContractJSON from "../../../chain/artifacts/contracts/TroveManager.sol/TroveManager.json";
+import troveManagerJSON from "../../../chain/artifacts/contracts/TroveManager.sol/TroveManager.json";
 import { BigNumber } from "ethers";
 
 export interface DepositInfo {
@@ -12,6 +12,11 @@ export interface DepositInfo {
   amountBorrowed: BigNumber;
   expiration: BigNumber;
   interestRateBPS: BigNumber;
+}
+
+export interface TroveInfo {
+  token: Address;
+  amountOrId: BigNumber;
 }
 
 function getTroveManagerContract(provider: Provider) {
@@ -39,7 +44,7 @@ export function getTroveManagerAddress(): Address {
 }
 
 export function getTroveManagerABI(): any {
-  return collateralContractJSON.abi;
+  return troveManagerJSON.abi;
 }
 
 export async function getSupplyTokens(provider: Provider): Promise<Address[]> {
@@ -56,6 +61,16 @@ export async function getCollateralTokens(
   let eventFilter = troveManager.filters.CollateralTokenChange();
   let events = await troveManager.queryFilter(eventFilter);
   return getAllowedTokensFromEvents(events);
+}
+
+export async function getTroveInfo(
+  id: number,
+  provider: Provider
+): Promise<TroveInfo> {
+  console.log("fetching trove info");
+  const troveManager = getTroveManagerContract(provider);
+  const troveInfo: TroveInfo = await troveManager.getTrove(id);
+  return troveInfo;
 }
 
 export function getAllowedTokensFromEvents(events: ethers.Event[]) {
@@ -87,6 +102,23 @@ export async function getTroveIds(
   return getERC721Ids(troveManager, account);
 }
 
+export async function getLoanIds(
+  provider: Provider,
+  troveId: number
+): Promise<number[]> {
+  const troveManager = getTroveManagerContract(provider);
+  console.log("fetching loan ids");
+
+  const numLoans: number = await troveManager.getNumLoansForTroveId(troveId);
+  const loanIds = [];
+  for (let i = 0; i < numLoans; i++) {
+    const tokenOfOwnerByIndex: BigNumber =
+      await troveManager.getLoanIdByIndexForTroveId(troveId, i);
+    loanIds.push(tokenOfOwnerByIndex.toNumber());
+  }
+  return loanIds;
+}
+
 export async function getSupplyDepositIds(
   provider: Provider,
   account: Address
@@ -103,11 +135,11 @@ export async function getERC721Ids(
   const balance: number = await contract.balanceOf(account);
   const tokenIds = [];
   for (let i = 0; i < balance; i++) {
-    const tokenOfOwnerByIndex: number = await contract.tokenOfOwnerByIndex(
+    const tokenOfOwnerByIndex: BigNumber = await contract.tokenOfOwnerByIndex(
       account,
       i
     );
-    tokenIds.push(tokenOfOwnerByIndex);
+    tokenIds.push(tokenOfOwnerByIndex.toNumber());
   }
   return tokenIds;
 }

@@ -12,21 +12,6 @@ import "@uniswap/v3-periphery/contracts/libraries/LiquidityAmounts.sol";
 import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 import "@uniswap/v3-core/contracts/libraries/TickMath.sol";
 
-// todo must have:
-// verify is allowed token added as collateral
-// liquidation : withdraw tokens from position
-// liquidation: bad debt / liquidation fee pct
-// limits to how much can be deposited / withdrawn per token
-
-// todo features
-// withdraw / add position liquidity
-// withdraw / add token liquidity
-// openLoans (multiple loans) with fallback
-// repay multiple loans
-// partial liquidations / dutch auction
-
-// later
-
 // deposit collateral in ave
 contract TroveManager is ERC721, ERC721Holder, Ownable {
     using EnumerableSet for EnumerableSet.UintSet;
@@ -65,6 +50,10 @@ contract TroveManager is ERC721, ERC721Holder, Ownable {
         _WETH = WETH;
 
         Supply(_supply).setTroveManager(address(this));
+    }
+
+    function getTrove(uint256 troveId) public view returns (Trove memory) {
+        return _troves[troveId];
     }
 
     function addCollateralToken(

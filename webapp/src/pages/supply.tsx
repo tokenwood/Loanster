@@ -1,8 +1,8 @@
 import { VStack, Heading, Box } from "@chakra-ui/layout";
 import { StackDivider } from "@chakra-ui/react";
-import { Address, useAccount } from "wagmi";
+import { Address, useAccount, useProvider } from "wagmi";
 import { BasePage, ContractCallButton } from "components/BaseComponents";
-import IdList, { ComponentBuilderProps } from "components/IdList";
+import ListLoader, { MakeListItemProps } from "components/DataLoaders";
 import {
   getSupplyABI,
   getSupplyAddress,
@@ -19,6 +19,7 @@ import { DateInput, TokenAmountInput } from "components/InputFields";
 
 export default function SupplyPage() {
   const { address: account, isConnecting, isDisconnected } = useAccount();
+  const provider = useProvider();
   return (
     <BasePage
       account={account}
@@ -30,13 +31,12 @@ export default function SupplyPage() {
           <Heading as="h6" size="sm" mb="3">
             {"Your supplies"}
           </Heading>
-          <IdList
-            account={account!}
-            fetchIds={getSupplyDepositIds}
-            componentBuilder={(props: ComponentBuilderProps) => {
+          <ListLoader
+            fetchIds={() => getSupplyDepositIds(provider, account!)}
+            makeListItem={(props: MakeListItemProps) => {
               return (
                 <SupplyDeposit
-                  account={props.account}
+                  account={account!}
                   depositId={BigNumber.from(props.id)}
                   callback={props.callback}
                   key={props.id}
@@ -50,13 +50,13 @@ export default function SupplyPage() {
           <Heading as="h6" size="sm" mb="3">
             {"Assets to supply"}
           </Heading>
-          <IdList
-            account={account!}
-            fetchIds={getSupplyTokens}
-            componentBuilder={(props: ComponentBuilderProps) => {
+          <ListLoader
+            fetchIds={() => getSupplyTokens(provider)}
+            makeListItem={(props: MakeListItemProps) => {
               return (
                 <TokenBalance
-                  account={props.account}
+                  account={account!}
+                  approvalAddress={getSupplyAddress()}
                   tokenAddress={props.id}
                   key={props.id}
                   contractCallComponent={(callProps: ContractCallProps) => {
@@ -68,8 +68,9 @@ export default function SupplyPage() {
                         args={[
                           callProps.tokenAddress,
                           callProps.amount,
-                          BigNumber.from(0),
-                          BigNumber.from(0),
+                          BigNumber.from(0), //interest rate
+                          BigNumber.from(0), //expiration timestamp
+                          BigNumber.from(0), //max loan duration
                         ]}
                         enabled={callProps.enabled}
                         callback={callProps.callback}

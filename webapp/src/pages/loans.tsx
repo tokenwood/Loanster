@@ -1,9 +1,9 @@
 import { VStack, Heading, Box } from "@chakra-ui/layout";
 import { StackDivider } from "@chakra-ui/react";
-import { Address, useAccount } from "wagmi";
+import { Address, useAccount, useProvider } from "wagmi";
 import { BasePage, ContractCallButton } from "components/BaseComponents";
-import { ComponentBuilderProps } from "components/IdList";
-import IdList from "components/IdList";
+import { MakeListItemProps } from "components/DataLoaders";
+import ListLoader from "components/DataLoaders";
 import { getPositionIds } from "libs/uniswap_utils";
 import Position from "components/Position";
 import { BigNumber } from "ethers";
@@ -19,9 +19,11 @@ import TokenBalance, {
   InputsProps,
 } from "components/TokenBalance";
 import { TokenAmountInput } from "components/InputFields";
+import Trove from "components/Trove";
 
 export default function LoansPage() {
   const { address: account, isConnecting, isDisconnected } = useAccount();
+  const provider = useProvider();
   return (
     <BasePage
       account={account}
@@ -33,11 +35,12 @@ export default function LoansPage() {
           <Heading as="h6" size="sm" mb="3">
             {"Troves"}
           </Heading>
-          <IdList
-            account={account!}
-            fetchIds={getTroveIds}
-            componentBuilder={(props: ComponentBuilderProps) => {
-              return <Box> Trove </Box>;
+          <ListLoader
+            fetchIds={() => getTroveIds(provider, account!)}
+            makeListItem={(props: MakeListItemProps) => {
+              return (
+                <Trove account={account!} troveId={props.id} key={props.id} />
+              );
             }}
           />
         </Box>
@@ -45,13 +48,12 @@ export default function LoansPage() {
           <Heading as="h6" size="sm" mb="3">
             {"Your positions"}
           </Heading>
-          <IdList
-            account={account!}
-            fetchIds={getPositionIds}
-            componentBuilder={(props: ComponentBuilderProps) => {
+          <ListLoader
+            fetchIds={() => getPositionIds(provider, account!)}
+            makeListItem={(props: MakeListItemProps) => {
               return (
                 <Position
-                  account={props.account}
+                  account={account}
                   positionId={BigNumber.from(props.id)}
                   callback={props.callback}
                   key={props.id}
@@ -64,16 +66,14 @@ export default function LoansPage() {
           <Heading as="h6" size="sm" mb="3">
             {"Your assets"}
           </Heading>
-          <IdList
-            account={account!}
-            fetchIds={(provider: Provider, account: Address) =>
-              getCollateralTokens(provider)
-            }
-            componentBuilder={(props: ComponentBuilderProps) => {
+          <ListLoader
+            fetchIds={() => getCollateralTokens(provider)}
+            makeListItem={(props: MakeListItemProps) => {
               return (
                 <TokenBalance
-                  account={props.account}
+                  account={account!}
                   tokenAddress={props.id}
+                  approvalAddress={getTroveManagerAddress()}
                   key={props.id}
                   contractCallComponent={(callProps: ContractCallProps) => {
                     return (
