@@ -1,18 +1,9 @@
 //src/components/header.tsx
-import {
-  Flex,
-  Button,
-  useColorModeValue,
-  Spacer,
-  Heading,
-  Box,
-} from "@chakra-ui/react";
+import { Flex, Button, Spacer, Image, Box } from "@chakra-ui/react";
 import { ConnectKitButton } from "connectkit";
-import { ethers } from "ethers";
 import Link from "next/link";
 import ClientOnly from "./clientOnly";
-
-const siteTitle = "Unilend";
+import { headerButtonBorderRadius, headerButtonHoverStyle } from "./Theme";
 
 interface Props {
   buttonText: string;
@@ -23,11 +14,14 @@ function HeaderButton(props: Props) {
   return (
     <Link href={props.linkPath}>
       <Button
-        border={
+        borderRadius={headerButtonBorderRadius}
+        _hover={headerButtonHoverStyle}
+        // colorScheme="blackAlpha"
+        layerStyle={
           typeof window !== "undefined"
             ? window.location.pathname == props.linkPath
-              ? "1px"
-              : undefined
+              ? "headerButtonSelected"
+              : "headerButton"
             : undefined
         }
       >
@@ -40,16 +34,9 @@ function HeaderButton(props: Props) {
 export default function Header() {
   return (
     <ClientOnly>
-      <Flex
-        as="header"
-        bg={useColorModeValue("gray.100", "gray.900")}
-        p={4}
-        alignItems="center"
-      >
-        <Box>
-          <Heading size="md" mr={4}>
-            {siteTitle}
-          </Heading>
+      <Flex as="header" p={4} alignItems="center" layerStyle={"header"}>
+        <Box alignSelf={"center"} alignContent={"center"}>
+          <Image src={"bankicon.png"} height="30px"></Image>
         </Box>
         <HeaderButton linkPath="/borrow" buttonText="Borrow"></HeaderButton>
         <HeaderButton linkPath="/loans" buttonText="Loans"></HeaderButton>

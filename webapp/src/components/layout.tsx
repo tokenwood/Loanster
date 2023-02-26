@@ -1,22 +1,29 @@
 // src/components/layout.tsx
 import React, { ReactNode } from "react";
-import { Text, Center, Container, useColorModeValue } from "@chakra-ui/react";
+import {
+  Text,
+  Center,
+  Container,
+  useColorModeValue,
+  Box,
+} from "@chakra-ui/react";
 import Header from "./header";
 
 type Props = {
   children: ReactNode;
 };
 
+// bgGradient={"linear(to-b, #Fdfcfa, #F7f3ec)"}
+
 export function Layout(props: Props) {
   return (
     <div>
-      <Header />
-      <Container maxW="container.md" py="8">
-        {props.children}
-      </Container>
-      {/* <Center as="footer" bg={useColorModeValue('gray.100', 'gray.700')} p={6}>
-          <Text fontSize="md">first dapp by W3BCD - 2022</Text>
-      </Center> */}
+      <Box h="100vh" layerStyle={"level0"}>
+        <Header />
+        <Container maxW="container.md" py="20">
+          {props.children}
+        </Container>
+      </Box>
     </div>
   );
 }

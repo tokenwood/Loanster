@@ -26,7 +26,7 @@ export default function SupplyPage() {
       isConnecting={isConnecting}
       isDisconnected={isDisconnected}
     >
-      <VStack align="left" divider={<StackDivider />} spacing="4">
+      <VStack align="left" spacing="4">
         <Box>
           <Heading as="h6" size="sm" mb="3">
             {"Your supplies"}
@@ -79,7 +79,7 @@ export default function SupplyPage() {
                   }}
                   inputsComponent={(inputsProps: InputsProps) => {
                     return (
-                      <VStack w="100%">
+                      <VStack w="100%" layerStyle={"level3"} padding="10px">
                         <TokenAmountInput
                           balanceData={inputsProps.balanceData}
                           callback={(amount: BigNumber) => {

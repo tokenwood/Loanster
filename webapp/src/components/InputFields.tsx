@@ -12,7 +12,7 @@ import { BigNumber } from "ethers";
 import { floatToBigNumber } from "libs/unilend_utils";
 import { FetchBalanceResult } from "@wagmi/core";
 import { ethers } from "ethers";
-import { DEFAULT_SIZE } from "libs/constants";
+import { defaultBorderRadius, DEFAULT_SIZE } from "components/Theme";
 
 interface TokenAmountInputProps {
   balanceData: FetchBalanceResult;
@@ -24,7 +24,7 @@ interface DateInputProps {
 }
 
 export function TokenAmountInput(props: TokenAmountInputProps) {
-  const [value, setValue] = useState<string>();
+  const [value, setValue] = useState<string>("0.0");
   const onMaxClicked = () => {
     props.callback(props.balanceData.value);
     setValue(
@@ -51,19 +51,28 @@ export function TokenAmountInput(props: TokenAmountInputProps) {
   };
 
   return (
-    <Flex w="100%">
-      <Text> {props.balanceData.symbol} amount:</Text>
-      <Spacer />
-      <Button size={DEFAULT_SIZE} colorScheme={"blue"} onClick={onMaxClicked}>
+    <Flex w="100%" layerStyle={"level3"}>
+      <Text alignSelf={"center"}>{props.balanceData.symbol} amount</Text>
+      <Button
+        ml="10px"
+        size={"xs"}
+        colorScheme={"blue"}
+        onClick={onMaxClicked}
+        alignSelf="center"
+      >
         Max
       </Button>
+      <Spacer />
+
       <NumberInput
         value={value}
         size={DEFAULT_SIZE}
         onChange={numberChanged}
         hidden={false}
+        border="0"
+        focusBorderColor="transparent"
       >
-        <NumberInputField textAlign={"right"} />
+        <NumberInputField textAlign={"right"} border={0} />
       </NumberInput>
     </Flex>
   );
@@ -74,7 +83,7 @@ export function DateInput(props: DateInputProps) {
 
   return (
     <Flex w="100%">
-      <Text> Expiration </Text>
+      <Text alignSelf="center">Expiration</Text>
       <Spacer />
 
       <Input
@@ -82,6 +91,7 @@ export function DateInput(props: DateInputProps) {
         size="md"
         type="date"
         w="30%"
+        // margin="10px"
       />
     </Flex>
   );

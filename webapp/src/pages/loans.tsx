@@ -30,9 +30,9 @@ export default function LoansPage() {
       isConnecting={isConnecting}
       isDisconnected={isDisconnected}
     >
-      <VStack align="left" divider={<StackDivider />} spacing="4">
+      <VStack align="left" spacing="4">
         <Box>
-          <Heading as="h6" size="sm" mb="3">
+          <Heading as="h6" layerStyle={"onbg"} size="sm" mb="3">
             {"Troves"}
           </Heading>
           <ListLoader
@@ -45,7 +45,7 @@ export default function LoansPage() {
           />
         </Box>
         <Box>
-          <Heading as="h6" size="sm" mb="3">
+          <Heading as="h6" size="sm" mb="3" layerStyle={"onbg"}>
             {"Your positions"}
           </Heading>
           <ListLoader
@@ -63,7 +63,7 @@ export default function LoansPage() {
           />
         </Box>
         <Box>
-          <Heading as="h6" size="sm" mb="3">
+          <Heading as="h6" size="sm" mb="3" layerStyle={"onbg"}>
             {"Your assets"}
           </Heading>
           <ListLoader
@@ -89,12 +89,14 @@ export default function LoansPage() {
                   }}
                   inputsComponent={(inputsProps: InputsProps) => {
                     return (
-                      <TokenAmountInput
-                        balanceData={inputsProps.balanceData}
-                        callback={(amount: BigNumber) => {
-                          inputsProps.callback("amount", amount);
-                        }}
-                      />
+                      <VStack w="100%" layerStyle={"level3"} padding="5px">
+                        <TokenAmountInput
+                          balanceData={inputsProps.balanceData}
+                          callback={(amount: BigNumber) => {
+                            inputsProps.callback("amount", amount);
+                          }}
+                        />
+                      </VStack>
                     );
                   }}
                 ></TokenBalance>

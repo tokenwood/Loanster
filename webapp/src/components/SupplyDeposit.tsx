@@ -12,7 +12,8 @@ import {
   useBoolean,
 } from "@chakra-ui/react";
 import { BigNumber, ethers } from "ethers";
-import { ADDRESS_TO_TOKEN, DEFAULT_SIZE } from "libs/constants";
+import { ADDRESS_TO_TOKEN } from "libs/constants";
+import { DEFAULT_SIZE } from "components/Theme";
 import {
   DepositInfo,
   getSupplyABI,
@@ -21,6 +22,12 @@ import {
 import { getTokenName } from "libs/uniswap_utils";
 import { Address, useContractRead } from "wagmi";
 import { ContractCallButton } from "./BaseComponents";
+import {
+  actionInitColorScheme,
+  defaultBorderRadius,
+  headerButtonHoverStyle,
+  level2BorderColor,
+} from "./Theme";
 
 interface Props {
   account: `0x${string}`;
@@ -60,18 +67,23 @@ export default function SupplyDeposit(props: Props) {
   };
 
   return (
-    <Card w="100%">
+    <Card w="100%" layerStyle={"level2"} borderColor={level2BorderColor}>
       <CardBody margin="-2">
         <Flex>
           <VStack align={"left"}>
-            <Heading size="xs">{getHeaderText(depositInfo)}</Heading>
-            <Box>
+            <Heading size="xs" layerStyle={"level2"} border={0}>
+              {getHeaderText(depositInfo)}
+            </Heading>
+            <Box layerStyle={"level2"} border={0}>
               <Text>{getBodyText(depositInfo)}</Text>
             </Box>
           </VStack>
           <Spacer />
           <Button
-            colorScheme="gray"
+            colorScheme={actionInitColorScheme}
+            borderRadius={defaultBorderRadius}
+            // backgroundColor={"blue.600"}
+            // _hover={headerButtonHoverStyle}
             size={DEFAULT_SIZE}
             onClick={setIsWithdrawing.toggle}
             alignSelf="center"

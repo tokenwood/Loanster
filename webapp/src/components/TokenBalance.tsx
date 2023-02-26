@@ -7,8 +7,13 @@ import { BigNumber } from "ethers";
 import { getSupplyAddress, floatToBigNumber } from "libs/unilend_utils";
 import { FetchBalanceResult } from "@wagmi/core";
 import { ethers } from "ethers";
-import { DEFAULT_SIZE } from "libs/constants";
+import {
+  cancelColorScheme,
+  defaultBorderRadius,
+  DEFAULT_SIZE,
+} from "components/Theme";
 import { ContractCallButton } from "./BaseComponents";
+import { actionInitColorScheme, level2BorderColor } from "./Theme";
 
 export interface InputsProps {
   balanceData: FetchBalanceResult;
@@ -56,16 +61,24 @@ export default function TokenBalance(props: TokenBalanceProps) {
   };
 
   return (
-    <Card w="100%">
+    <Card w="100%" layerStyle={"level2"} borderColor={level2BorderColor}>
       <CardBody margin={-2}>
         <VStack>
           <Flex w="100%">
-            <Box fontWeight={isDepositing ? "bold" : undefined}>
+            <Box
+              // fontWeight={isDepositing ? "bold" : undefined}
+              layerStyle={"level2"}
+              // border={"5px"}
+            >
               {isDepositing ? "Deposit" : text}
             </Box>
             <Spacer />
             <Button
-              colorScheme="gray"
+              layerStyle={"actionInit"}
+              borderRadius={defaultBorderRadius}
+              colorScheme={
+                isDepositing ? cancelColorScheme : actionInitColorScheme
+              }
               size={DEFAULT_SIZE}
               onClick={setIsDepositing.toggle}
               alignSelf="right"

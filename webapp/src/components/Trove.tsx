@@ -1,19 +1,6 @@
-import {
-  useBoolean,
-  Card,
-  CardBody,
-  VStack,
-  Box,
-  Text,
-  StackDivider,
-  Heading,
-} from "@chakra-ui/react";
-import {
-  DEFAULT_SIZE,
-  NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS,
-} from "libs/constants";
+import { Card, CardBody, VStack, Box, Text, Heading } from "@chakra-ui/react";
+import { NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS } from "libs/constants";
 import { getLoanIds, getTroveInfo, TroveInfo } from "libs/unilend_utils";
-import { ReactNode, useState } from "react";
 import { Address, useBalance, useProvider } from "wagmi";
 import ListLoader, {
   ChildProps,
@@ -21,6 +8,7 @@ import ListLoader, {
   MakeListItemProps,
 } from "./DataLoaders";
 import Loan from "./Loan";
+import { level2BorderColor } from "./Theme";
 import { ContractCallProps, InputsProps, DepositInputs } from "./TokenBalance";
 
 interface TroveProps {
@@ -37,14 +25,14 @@ export default function Trove(props: TroveProps) {
       fetcher={() => getTroveInfo(props.troveId, provider)}
       makeChildren={(childProps: ChildProps) => {
         return (
-          <Card w="100%">
+          <Card w="100%" layerStyle={"level2"} borderColor={level2BorderColor}>
             <CardBody margin={-2}>
-              <VStack align="left" divider={<StackDivider />} spacing="4">
-                <Box>
+              <VStack align="left" spacing="4">
+                <Box layerStyle={"level3"}>
                   <Text>trove id: {props.troveId}</Text>
                 </Box>
                 <Box>
-                  <Heading as="h1" size="sm" mb="2">
+                  <Heading as="h1" size="sm" mb="2" layerStyle={"level2"}>
                     {"Collateral"}
                   </Heading>
                   {(childProps.data as TroveInfo).token ==

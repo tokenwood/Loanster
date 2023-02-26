@@ -2,8 +2,9 @@ import { VStack, Heading, Box, Flex } from "@chakra-ui/layout";
 import { Address, useContractWrite, usePrepareContractWrite } from "wagmi";
 import ClientOnly from "components/clientOnly";
 import { Button } from "@chakra-ui/react";
-import { DEFAULT_SIZE } from "libs/constants";
+import { DEFAULT_SIZE } from "components/Theme";
 import { PropsWithChildren, ReactNode } from "react";
+import { defaultBorderRadius } from "./Theme";
 
 interface BasePageProps {
   account: Address | undefined;
@@ -14,7 +15,13 @@ interface BasePageProps {
 export function BasePage(props: PropsWithChildren<BasePageProps>) {
   return (
     <VStack>
-      <Box p={4} w="100%" borderWidth="1px" borderRadius="lg">
+      <Box
+        p={4}
+        w="100%"
+        // borderWidth="0px"
+        // borderRadius="lg"
+        layerStyle={"level1"}
+      >
         <ClientOnly>
           {props.account ? (
             props.children
@@ -67,9 +74,10 @@ export function ContractCallButton(props: ContractCallButtonProps) {
   return (
     <Button
       colorScheme="green"
+      borderRadius={defaultBorderRadius}
       size={DEFAULT_SIZE}
       hidden={props.hidden}
-      alignSelf="right"
+      alignSelf="center"
       isDisabled={!props.enabled || !writeAsync || isError}
       onClick={onClick}
     >

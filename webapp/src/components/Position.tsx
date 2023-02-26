@@ -75,7 +75,7 @@ export default function Position(props: Props) {
   };
 
   return (
-    <Card w="100%">
+    <Card w="100%" layerStyle={"level2"}>
       <CardBody margin="-2">
         <Flex>
           {isDepositing ? (
