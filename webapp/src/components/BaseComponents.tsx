@@ -1,10 +1,15 @@
-import { VStack, Heading, Box, Flex } from "@chakra-ui/layout";
+import { VStack, Heading, Box, Flex, HStack } from "@chakra-ui/layout";
 import { Address, useContractWrite, usePrepareContractWrite } from "wagmi";
 import ClientOnly from "components/clientOnly";
 import { Button } from "@chakra-ui/react";
-import { DEFAULT_SIZE } from "components/Theme";
-import { PropsWithChildren, ReactNode } from "react";
+import {
+  actionInitColorScheme,
+  cancelColorScheme,
+  DEFAULT_SIZE,
+} from "components/Theme";
+import { PropsWithChildren, ReactNode, useState } from "react";
 import { defaultBorderRadius } from "./Theme";
+import { ChildProps, DataLoader } from "./DataLoaders";
 
 interface BasePageProps {
   account: Address | undefined;
@@ -82,6 +87,85 @@ export function ContractCallButton(props: ContractCallButtonProps) {
       onClick={onClick}
     >
       {props.buttonText ? props.buttonText : "Confirm"}
+    </Button>
+  );
+}
+
+export interface ActionProp {
+  action: string;
+  onClickView: () => ReactNode;
+}
+
+export interface DataViewProps {
+  fetcher: () => Promise<any>;
+  dataView: (data: any) => ReactNode;
+  actions: ActionProp[];
+}
+
+export function BaseView(props: DataViewProps) {
+  const [currentAction, setCurrentAction] = useState<ActionProp>();
+  return (
+    <DataLoader
+      // defaultValue={}
+      fetcher={() => props.fetcher()}
+      makeChildren={(childProps: ChildProps) => {
+        return (
+          <VStack w="100%" layerStyle={"level2"}>
+            {props.actions.length == 1 ? (
+              <HStack w="100%">
+                {props.dataView(childProps.data)}
+                {actionButton(
+                  props.actions[0],
+                  () => {
+                    currentAction == props.actions[0]
+                      ? setCurrentAction(undefined)
+                      : setCurrentAction(props.actions[0]);
+                  },
+                  currentAction == props.actions[0]
+                )}
+              </HStack>
+            ) : (
+              props.dataView(childProps.data)
+            )}
+            {props.actions.length > 1 ? (
+              <HStack w="100%">
+                {props.actions.map((actionProp: ActionProp) =>
+                  actionButton(
+                    actionProp,
+                    () => {
+                      currentAction == actionProp
+                        ? setCurrentAction(undefined)
+                        : setCurrentAction(actionProp);
+                    },
+                    currentAction == actionProp
+                  )
+                )}
+              </HStack>
+            ) : (
+              <></>
+            )}
+            {currentAction !== undefined ? currentAction!.onClickView() : <></>}
+          </VStack>
+        );
+      }}
+    ></DataLoader>
+  );
+}
+
+function actionButton(
+  actionProp: ActionProp,
+  onClick: () => any,
+  isCurrentAction: boolean
+) {
+  return (
+    <Button
+      colorScheme={isCurrentAction ? cancelColorScheme : actionInitColorScheme}
+      borderRadius={defaultBorderRadius}
+      size={DEFAULT_SIZE}
+      onClick={() => onClick()}
+      alignSelf="center"
+    >
+      {isCurrentAction ? "Cancel" : actionProp.action}
     </Button>
   );
 }

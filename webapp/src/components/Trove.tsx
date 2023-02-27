@@ -1,19 +1,48 @@
-import { Card, CardBody, VStack, Box, Text, Heading } from "@chakra-ui/react";
+import {
+  Card,
+  CardBody,
+  VStack,
+  Box,
+  Text,
+  Heading,
+  Spacer,
+  Flex,
+} from "@chakra-ui/react";
 import { NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS } from "libs/constants";
-import { getLoanIds, getTroveInfo, TroveInfo } from "libs/unilend_utils";
+import {
+  getLoanIds,
+  getTokenInfo,
+  getTroveInfo,
+  getTroveManagerABI,
+  getTroveManagerAddress,
+  TokenBalanceInfo,
+  TroveInfo,
+} from "libs/unilend_utils";
+import { ReactNode } from "react";
 import { Address, useBalance, useProvider } from "wagmi";
+import { ContractCallButton, BaseView } from "./BaseComponents";
 import ListLoader, {
   ChildProps,
   DataLoader,
   MakeListItemProps,
 } from "./DataLoaders";
+import { TokenBalanceView } from "./DataViews";
 import Loan from "./Loan";
 import { level2BorderColor } from "./Theme";
-import { ContractCallProps, InputsProps, DepositInputs } from "./TokenBalance";
+import TokenBalance, {
+  ContractCallProps,
+  InputsProps,
+  DepositInputs,
+} from "./TokenBalance";
 
 interface TroveProps {
   account: Address;
   troveId: number;
+}
+
+interface TroveChildProps {
+  data: TroveInfo;
+  refetchData: () => any;
 }
 
 export default function Trove(props: TroveProps) {
@@ -23,14 +52,14 @@ export default function Trove(props: TroveProps) {
     <DataLoader
       defaultValue={[]}
       fetcher={() => getTroveInfo(props.troveId, provider)}
-      makeChildren={(childProps: ChildProps) => {
+      makeChildren={(childProps: TroveChildProps) => {
         return (
           <Card w="100%" layerStyle={"level2"} borderColor={level2BorderColor}>
             <CardBody margin={-2}>
               <VStack align="left" spacing="4">
-                <Box layerStyle={"level3"}>
+                {/* <Box layerStyle={"level3"}>
                   <Text>trove id: {props.troveId}</Text>
-                </Box>
+                </Box> */}
                 <Box>
                   <Heading as="h1" size="sm" mb="2" layerStyle={"level2"}>
                     {"Collateral"}
@@ -38,11 +67,56 @@ export default function Trove(props: TroveProps) {
                   {(childProps.data as TroveInfo).token ==
                   NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS ? (
                     <Text>
-                      {" "}
                       position id {childProps.data.amountOrId.toNumber()}
                     </Text>
                   ) : (
-                    <Text> token balance </Text>
+                    <BaseView
+                      fetcher={() => getTokenInfo(childProps.data, provider)}
+                      dataView={(data: TokenBalanceInfo) => {
+                        return (
+                          <TokenBalanceView
+                            amount={childProps.data.amountOrId}
+                            symbol={data.symbol}
+                            decimals={data.decimals}
+                          ></TokenBalanceView>
+                        );
+                      }}
+                      actions={[
+                        {
+                          action: "Withdraw",
+                          onClickView: () => (
+                            <Flex w="100%">
+                              <Spacer></Spacer>
+                              <ContractCallButton
+                                contractAddress={getTroveManagerAddress()}
+                                abi={getTroveManagerABI()}
+                                functionName={"closeTrove"}
+                                args={[props.troveId]}
+                                enabled={true}
+                                callback={() => childProps.refetchData}
+                              ></ContractCallButton>
+                            </Flex>
+                          ),
+                        },
+                      ]}
+                    ></BaseView>
+                    // <TokenBalance
+                    //   account={props.account}
+                    //   tokenAddress={childProps.data.token}
+                    //   key={childProps.data.token + props.troveId}
+                    //   contractCallComponent={(callProps: ContractCallProps) => {
+                    //     return (
+                    //       <ContractCallButton
+                    //         contractAddress={getTroveManagerAddress()}
+                    //         abi={getTroveManagerABI()}
+                    //         functionName={"closeTrove"}
+                    //         args={[props.troveId]}
+                    //         enabled={callProps.enabled}
+                    //         callback={callProps.callback}
+                    //       ></ContractCallButton>
+                    //     );
+                    //   }}
+                    // ></TokenBalance>
                   )}
                 </Box>
                 <Box>

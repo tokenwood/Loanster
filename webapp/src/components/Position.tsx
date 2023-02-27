@@ -14,10 +14,8 @@ import { erc721ABI, useContractRead } from "wagmi";
 import { nonfungiblePositionManagerABI as managerABI } from "abi/NonfungiblePositionManagerABI";
 import { PositionInfo, getTokenName } from "libs/uniswap_utils";
 import { BigNumber } from "ethers";
-import {
-  DEFAULT_SIZE,
-  NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS,
-} from "libs/constants";
+import { NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS } from "libs/constants";
+import { DEFAULT_SIZE } from "components/Theme";
 import { getTroveManagerABI, getTroveManagerAddress } from "libs/unilend_utils";
 
 import { ContractCallButton } from "./BaseComponents";
