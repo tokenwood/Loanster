@@ -9,13 +9,13 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { BigNumber } from "ethers";
-import { floatToBigNumber } from "libs/unilend_utils";
+import { floatToBigNumber, TokenBalanceInfo } from "libs/unilend_utils";
 import { FetchBalanceResult } from "@wagmi/core";
 import { ethers } from "ethers";
 import { defaultBorderRadius, DEFAULT_SIZE } from "components/Theme";
 
 interface TokenAmountInputProps {
-  balanceData: FetchBalanceResult;
+  balanceData: TokenBalanceInfo;
   callback: (amount: BigNumber) => any;
 }
 
@@ -26,11 +26,11 @@ interface DateInputProps {
 export function TokenAmountInput(props: TokenAmountInputProps) {
   const [value, setValue] = useState<string>("0.0");
   const onMaxClicked = () => {
-    props.callback(props.balanceData.value);
+    props.callback(props.balanceData.amount);
     setValue(
       ethers.utils.formatUnits(
-        props.balanceData.value,
-        props.balanceData.decimals
+        props.balanceData.amount,
+        props.balanceData.token.decimals
       )
     );
   };
@@ -44,7 +44,10 @@ export function TokenAmountInput(props: TokenAmountInputProps) {
       props.callback(BigNumber.from(0));
     } else {
       props.callback(
-        floatToBigNumber(valueAsNumber.toString(), props.balanceData.decimals)
+        floatToBigNumber(
+          valueAsNumber.toString(),
+          props.balanceData.token.decimals
+        )
       );
     }
     setValue(valueAsString);
@@ -52,7 +55,7 @@ export function TokenAmountInput(props: TokenAmountInputProps) {
 
   return (
     <Flex w="100%" layerStyle={"level3"}>
-      <Text alignSelf={"center"}>{props.balanceData.symbol} amount</Text>
+      <Text alignSelf={"center"}>{props.balanceData.token.symbol} amount</Text>
       <Button
         ml="10px"
         size={"xs"}

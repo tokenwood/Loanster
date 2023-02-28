@@ -13,28 +13,25 @@ import {
 } from "components/DataLoaders";
 import ListLoader from "components/DataLoaders";
 import {
+  FullPositionInfo,
+  getFullPositionInfo,
   getPositionIds,
-  getPositionInfo,
-  PositionInfo,
 } from "libs/uniswap_utils";
-import Position from "components/Position";
 import { BigNumber } from "ethers";
 import {
   getCollateralTokens,
   getERC721Allowance,
   getToken,
+  getTokenBalance,
   getTroveIds,
   getTroveManagerABI,
   getTroveManagerAddress,
+  TokenBalanceInfo,
 } from "libs/unilend_utils";
 import { Provider } from "@wagmi/core";
-import TokenBalance, {
-  ContractCallProps,
-  InputsProps,
-} from "components/TokenBalance";
-import { TokenAmountInput } from "components/InputFields";
+import { CollateralDepositInputs } from "components/DepositInputs";
 import Trove from "components/Trove";
-import { PositionView } from "components/DataViews";
+import { PositionView, TokenBalanceView } from "components/DataViews";
 import { NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS } from "libs/constants";
 
 export default function LoansPage() {
@@ -55,7 +52,12 @@ export default function LoansPage() {
             fetchIds={() => getTroveIds(provider, account!)}
             makeListItem={(props: MakeListItemProps) => {
               return (
-                <Trove account={account!} troveId={props.id} key={props.id} />
+                <Trove
+                  account={account!}
+                  troveId={props.id}
+                  key={props.id}
+                  refetchTroves={() => props.callback()}
+                />
               );
             }}
           />
@@ -69,16 +71,11 @@ export default function LoansPage() {
             makeListItem={(props: MakeListItemProps) => {
               return (
                 <BaseView
-                  key={props.id}
-                  fetcher={() => getPositionInfo(props.id, provider)}
-                  dataView={(data: PositionInfo) => {
-                    return (
-                      <PositionView
-                        token0={getToken(data.token0)}
-                        token1={getToken(data.token1)}
-                        liquidity={data.liquidity.toNumber()}
-                      ></PositionView>
-                    );
+                  key={"wallet_position" + props.id}
+                  level={2}
+                  fetcher={() => getFullPositionInfo(provider, props.id)}
+                  dataView={(data: FullPositionInfo) => {
+                    return <PositionView fullPositionInfo={data} />;
                   }}
                   actions={[
                     {
@@ -87,7 +84,6 @@ export default function LoansPage() {
                         <Flex w="100%">
                           <Spacer></Spacer>
                           <DataLoader
-                            // defaultValue={}
                             fetcher={() =>
                               getERC721Allowance(
                                 provider,
@@ -129,12 +125,6 @@ export default function LoansPage() {
                     },
                   ]}
                 ></BaseView>
-                // <Position
-                //   account={account}
-                //   positionId={BigNumber.from(props.id)}
-                //   callback={props.callback}
-                //   key={props.id}
-                // ></Position>
               );
             }}
           />
@@ -147,36 +137,36 @@ export default function LoansPage() {
             fetchIds={() => getCollateralTokens(provider)}
             makeListItem={(props: MakeListItemProps) => {
               return (
-                <TokenBalance
-                  account={account!}
-                  tokenAddress={props.id}
-                  approvalAddress={getTroveManagerAddress()}
-                  key={props.id}
-                  contractCallComponent={(callProps: ContractCallProps) => {
+                <BaseView
+                  key={"wallet_collateral_token_ballance_" + props.id}
+                  level={2}
+                  fetcher={() => getTokenBalance(provider, props.id, account!)}
+                  dataView={(data: TokenBalanceInfo) => {
                     return (
-                      <ContractCallButton
-                        contractAddress={getTroveManagerAddress()}
-                        abi={getTroveManagerABI()}
-                        functionName={"openTrove"}
-                        args={[callProps.tokenAddress, callProps.amount]}
-                        enabled={callProps.enabled}
-                        callback={callProps.callback}
-                      ></ContractCallButton>
+                      <TokenBalanceView
+                        amount={data.amount}
+                        token={data.token}
+                      />
                     );
                   }}
-                  inputsComponent={(inputsProps: InputsProps) => {
-                    return (
-                      <VStack w="100%" layerStyle={"level3"} padding="5px">
-                        <TokenAmountInput
-                          balanceData={inputsProps.balanceData}
-                          callback={(amount: BigNumber) => {
-                            inputsProps.callback("amount", amount);
-                          }}
-                        />
-                      </VStack>
-                    );
-                  }}
-                ></TokenBalance>
+                  actions={[
+                    {
+                      action: "Deposit",
+                      onClickView: (data: TokenBalanceInfo) => {
+                        return (
+                          <CollateralDepositInputs
+                            account={account!}
+                            balanceData={data}
+                            approvalAddress={getTroveManagerAddress()}
+                            callback={() => {
+                              props.callback();
+                            }}
+                          ></CollateralDepositInputs>
+                        );
+                      },
+                    },
+                  ]}
+                ></BaseView>
               );
             }}
           />

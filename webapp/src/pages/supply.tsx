@@ -1,21 +1,19 @@
 import { VStack, Heading, Box } from "@chakra-ui/layout";
 import { StackDivider } from "@chakra-ui/react";
 import { Address, useAccount, useProvider } from "wagmi";
-import { BasePage, ContractCallButton } from "components/BaseComponents";
+import { BasePage, BaseView } from "components/BaseComponents";
 import ListLoader, { MakeListItemProps } from "components/DataLoaders";
 import {
-  getSupplyABI,
   getSupplyAddress,
   getSupplyDepositIds,
   getSupplyTokens,
+  getTokenBalance,
+  TokenBalanceInfo,
 } from "libs/unilend_utils";
 import SupplyDeposit from "components/SupplyDeposit";
 import { BigNumber } from "ethers";
-import TokenBalance, {
-  ContractCallProps,
-  InputsProps,
-} from "components/TokenBalance";
-import { DateInput, TokenAmountInput } from "components/InputFields";
+import { SupplyDepositInputs } from "components/DepositInputs";
+import { TokenBalanceView } from "components/DataViews";
 
 export default function SupplyPage() {
   const { address: account, isConnecting, isDisconnected } = useAccount();
@@ -54,47 +52,36 @@ export default function SupplyPage() {
             fetchIds={() => getSupplyTokens(provider)}
             makeListItem={(props: MakeListItemProps) => {
               return (
-                <TokenBalance
-                  account={account!}
-                  approvalAddress={getSupplyAddress()}
-                  tokenAddress={props.id}
-                  key={props.id}
-                  contractCallComponent={(callProps: ContractCallProps) => {
+                <BaseView
+                  key={"wallet_supply_token_ballance_" + props.id}
+                  level={2}
+                  fetcher={() => getTokenBalance(provider, props.id, account!)}
+                  dataView={(data: TokenBalanceInfo) => {
                     return (
-                      <ContractCallButton
-                        contractAddress={getSupplyAddress()}
-                        abi={getSupplyABI()}
-                        functionName={"makeDeposit"}
-                        args={[
-                          callProps.tokenAddress,
-                          callProps.amount,
-                          BigNumber.from(0), //interest rate
-                          BigNumber.from(0), //expiration timestamp
-                          BigNumber.from(0), //max loan duration
-                        ]}
-                        disabled={callProps.enabled}
-                        callback={callProps.callback}
-                      ></ContractCallButton>
+                      <TokenBalanceView
+                        amount={data.amount}
+                        token={data.token}
+                      />
                     );
                   }}
-                  inputsComponent={(inputsProps: InputsProps) => {
-                    return (
-                      <VStack w="100%" layerStyle={"level3"} padding="10px">
-                        <TokenAmountInput
-                          balanceData={inputsProps.balanceData}
-                          callback={(amount: BigNumber) => {
-                            inputsProps.callback("amount", amount);
-                          }}
-                        />
-                        <DateInput
-                          callback={(timestamp: number) => {
-                            inputsProps.callback("timestamp", timestamp);
-                          }}
-                        />
-                      </VStack>
-                    );
-                  }}
-                ></TokenBalance>
+                  actions={[
+                    {
+                      action: "Deposit",
+                      onClickView: (data: TokenBalanceInfo) => {
+                        return (
+                          <SupplyDepositInputs
+                            account={account!}
+                            balanceData={data}
+                            approvalAddress={getSupplyAddress()}
+                            callback={() => {
+                              props.callback();
+                            }}
+                          />
+                        );
+                      },
+                    },
+                  ]}
+                />
               );
             }}
           />

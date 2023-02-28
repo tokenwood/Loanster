@@ -7,6 +7,7 @@ import troveManagerJSON from "../../../chain/artifacts/contracts/TroveManager.so
 import { BigNumber } from "ethers";
 import { FetchBalanceResult } from "@wagmi/core";
 import { ADDRESS_TO_TOKEN } from "./constants";
+import { SupportedChainId, Token } from "@uniswap/sdk-core";
 
 export interface DepositInfo {
   token: Address;
@@ -21,37 +22,38 @@ export interface TroveInfo {
   amountOrId: BigNumber;
 }
 
-export function getToken(address: string) {
-  if (ADDRESS_TO_TOKEN[address] !== undefined) {
-    return ADDRESS_TO_TOKEN[address];
+export async function getToken(provider: Provider, tokenAddress: string) {
+  if (ADDRESS_TO_TOKEN[tokenAddress] !== undefined) {
+    return ADDRESS_TO_TOKEN[tokenAddress];
   } else {
-    throw new Error("unknown token " + address);
+    // throw new Error("unknown token " + address);
+    const tokenContract = new ethers.Contract(tokenAddress, erc20ABI, provider);
+    const decimals: number = await tokenContract.decimals();
+    const symbol: string = await tokenContract.symbol();
+
+    return new Token(
+      SupportedChainId.MAINNET,
+      tokenAddress,
+      decimals,
+      symbol,
+      symbol
+    );
   }
 }
 
-export async function getTokenInfo(
-  troveInfo: TroveInfo,
-  provider: Provider
+export async function getTokenBalance(
+  provider: Provider,
+  tokenAddress: Address,
+  account: Address
 ): Promise<TokenBalanceInfo> {
-  console.log("calling getTokenInfo with troveInfo: ");
-  console.log(troveInfo);
+  const token = await getToken(provider, tokenAddress);
 
-  const tokenContract = new ethers.Contract(
-    troveInfo.token,
-    erc20ABI,
-    provider
-  );
-
-  const decimals: number = await tokenContract.decimals();
-  const symbol: string = await tokenContract.symbol();
-
-  console.log("token info: " + symbol + " decimals " + decimals);
+  const tokenContract = new ethers.Contract(tokenAddress, erc20ABI, provider);
+  const balance: BigNumber = await tokenContract.balanceOf(account);
 
   return {
-    decimals: decimals,
-    symbol: symbol,
-    amount: troveInfo.amountOrId,
-    // tokenAddress: troveInfo.token,
+    token: token,
+    amount: balance,
   };
 }
 
@@ -95,9 +97,10 @@ export function getTroveManagerABI(): any {
 }
 
 export interface TokenBalanceInfo {
-  symbol: string;
+  // symbol: string;
   amount: BigNumber;
-  decimals: number;
+  token: Token;
+  // decimals: number;
 }
 
 export async function getSupplyTokens(provider: Provider): Promise<Address[]> {

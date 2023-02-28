@@ -93,13 +93,14 @@ export function ContractCallButton(props: ContractCallButtonProps) {
 
 export interface ActionProp {
   action: string;
-  onClickView: () => ReactNode;
+  onClickView: (data: any) => ReactNode;
 }
 
 export interface DataViewProps {
   fetcher: () => Promise<any>;
   dataView: (data: any) => ReactNode;
   actions: ActionProp[];
+  level?: number;
 }
 
 export function BaseView(props: DataViewProps) {
@@ -110,7 +111,11 @@ export function BaseView(props: DataViewProps) {
       fetcher={() => props.fetcher()}
       makeChildren={(childProps: ChildProps) => {
         return (
-          <VStack w="100%" layerStyle={"level2"}>
+          <VStack
+            w="100%"
+            layerStyle={props.level ? "level" + props.level : "level3"}
+            padding="3"
+          >
             {props.actions.length == 1 ? (
               <HStack w="100%">
                 {props.dataView(childProps.data)}
@@ -144,7 +149,11 @@ export function BaseView(props: DataViewProps) {
             ) : (
               <></>
             )}
-            {currentAction !== undefined ? currentAction!.onClickView() : <></>}
+            {currentAction !== undefined ? (
+              currentAction!.onClickView(childProps.data)
+            ) : (
+              <></>
+            )}
           </VStack>
         );
       }}
