@@ -169,7 +169,7 @@ export function DepositInputs(props: DepositInputsProps) {
             abi={erc20ABI}
             functionName={"approve"}
             args={[props.approvalAddress, ethers.constants.MaxUint256]}
-            enabled={canConfirm()}
+            disabled={canConfirm()}
             callback={() => allowanceRefetch()}
             buttonText="Approve"
           ></ContractCallButton>

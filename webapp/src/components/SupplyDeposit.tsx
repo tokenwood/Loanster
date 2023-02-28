@@ -96,7 +96,7 @@ export default function SupplyDeposit(props: Props) {
             functionName={"changeAmountDeposited"}
             args={[props.depositId, 0]}
             hidden={!isWithdrawing}
-            enabled={isWithdrawing}
+            disabled={isWithdrawing}
             callback={() => {
               refetchDepositInfo();
               props.callback();

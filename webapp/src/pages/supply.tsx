@@ -72,7 +72,7 @@ export default function SupplyPage() {
                           BigNumber.from(0), //expiration timestamp
                           BigNumber.from(0), //max loan duration
                         ]}
-                        enabled={callProps.enabled}
+                        disabled={callProps.enabled}
                         callback={callProps.callback}
                       ></ContractCallButton>
                     );

@@ -105,7 +105,7 @@ export default function Position(props: Props) {
                 props.positionId,
               ]}
               hidden={!isDepositing}
-              enabled={isDepositing}
+              disabled={isDepositing}
               callback={() => props.callback()}
             ></ContractCallButton>
           ) : (
@@ -115,7 +115,7 @@ export default function Position(props: Props) {
               functionName={"approve"}
               args={[getTroveManagerAddress(), props.positionId]}
               hidden={!isDepositing}
-              enabled={isDepositing}
+              disabled={isDepositing}
               callback={() => allowanceRefetch()}
               buttonText="Approve"
             ></ContractCallButton>

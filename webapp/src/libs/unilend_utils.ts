@@ -1,11 +1,12 @@
 import { Address, useBalance } from "wagmi";
 import deployments from "../../../chain/cache/deployments.json";
-import { erc20ABI, Provider } from "@wagmi/core";
+import { erc20ABI, erc721ABI, Provider } from "@wagmi/core";
 import { ethers } from "ethers";
 import supplyContractJSON from "../../../chain/artifacts/contracts/Supply.sol/Supply.json";
 import troveManagerJSON from "../../../chain/artifacts/contracts/TroveManager.sol/TroveManager.json";
 import { BigNumber } from "ethers";
 import { FetchBalanceResult } from "@wagmi/core";
+import { ADDRESS_TO_TOKEN } from "./constants";
 
 export interface DepositInfo {
   token: Address;
@@ -18,6 +19,51 @@ export interface DepositInfo {
 export interface TroveInfo {
   token: Address;
   amountOrId: BigNumber;
+}
+
+export function getToken(address: string) {
+  if (ADDRESS_TO_TOKEN[address] !== undefined) {
+    return ADDRESS_TO_TOKEN[address];
+  } else {
+    throw new Error("unknown token " + address);
+  }
+}
+
+export async function getTokenInfo(
+  troveInfo: TroveInfo,
+  provider: Provider
+): Promise<TokenBalanceInfo> {
+  console.log("calling getTokenInfo with troveInfo: ");
+  console.log(troveInfo);
+
+  const tokenContract = new ethers.Contract(
+    troveInfo.token,
+    erc20ABI,
+    provider
+  );
+
+  const decimals: number = await tokenContract.decimals();
+  const symbol: string = await tokenContract.symbol();
+
+  console.log("token info: " + symbol + " decimals " + decimals);
+
+  return {
+    decimals: decimals,
+    symbol: symbol,
+    amount: troveInfo.amountOrId,
+    // tokenAddress: troveInfo.token,
+  };
+}
+
+export async function getERC721Allowance(
+  provider: Provider,
+  tokenAddress: Address,
+  tokenId: number
+) {
+  const tokenContract = new ethers.Contract(tokenAddress, erc721ABI, provider);
+  const approved: Address = await tokenContract.getApproved(tokenId);
+
+  return approved;
 }
 
 function getTroveManagerContract(provider: Provider) {
@@ -52,32 +98,6 @@ export interface TokenBalanceInfo {
   symbol: string;
   amount: BigNumber;
   decimals: number;
-}
-
-export async function getTokenInfo(
-  troveInfo: TroveInfo,
-  provider: Provider
-): Promise<TokenBalanceInfo> {
-  console.log("calling getTokenInfo with troveInfo: ");
-  console.log(troveInfo);
-
-  const tokenContract = new ethers.Contract(
-    troveInfo.token,
-    erc20ABI,
-    provider
-  );
-
-  const decimals: number = await tokenContract.decimals();
-  const symbol: string = await tokenContract.symbol();
-
-  console.log("token info: " + symbol + " decimals " + decimals);
-
-  return {
-    decimals: decimals,
-    symbol: symbol,
-    amount: troveInfo.amountOrId,
-    // tokenAddress: troveInfo.token,
-  };
 }
 
 export async function getSupplyTokens(provider: Provider): Promise<Address[]> {

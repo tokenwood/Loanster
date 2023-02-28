@@ -1,14 +1,28 @@
 import { VStack, Heading, Box } from "@chakra-ui/layout";
-import { StackDivider } from "@chakra-ui/react";
-import { Address, useAccount, useProvider } from "wagmi";
-import { BasePage, ContractCallButton } from "components/BaseComponents";
-import { MakeListItemProps } from "components/DataLoaders";
+import { Flex, Spacer, StackDivider } from "@chakra-ui/react";
+import { Address, erc721ABI, useAccount, useProvider } from "wagmi";
+import {
+  BasePage,
+  BaseView,
+  ContractCallButton,
+} from "components/BaseComponents";
+import {
+  ChildProps,
+  DataLoader,
+  MakeListItemProps,
+} from "components/DataLoaders";
 import ListLoader from "components/DataLoaders";
-import { getPositionIds } from "libs/uniswap_utils";
+import {
+  getPositionIds,
+  getPositionInfo,
+  PositionInfo,
+} from "libs/uniswap_utils";
 import Position from "components/Position";
 import { BigNumber } from "ethers";
 import {
   getCollateralTokens,
+  getERC721Allowance,
+  getToken,
   getTroveIds,
   getTroveManagerABI,
   getTroveManagerAddress,
@@ -20,6 +34,8 @@ import TokenBalance, {
 } from "components/TokenBalance";
 import { TokenAmountInput } from "components/InputFields";
 import Trove from "components/Trove";
+import { PositionView } from "components/DataViews";
+import { NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS } from "libs/constants";
 
 export default function LoansPage() {
   const { address: account, isConnecting, isDisconnected } = useAccount();
@@ -52,12 +68,73 @@ export default function LoansPage() {
             fetchIds={() => getPositionIds(provider, account!)}
             makeListItem={(props: MakeListItemProps) => {
               return (
-                <Position
-                  account={account}
-                  positionId={BigNumber.from(props.id)}
-                  callback={props.callback}
+                <BaseView
                   key={props.id}
-                ></Position>
+                  fetcher={() => getPositionInfo(props.id, provider)}
+                  dataView={(data: PositionInfo) => {
+                    return (
+                      <PositionView
+                        token0={getToken(data.token0)}
+                        token1={getToken(data.token1)}
+                        liquidity={data.liquidity.toNumber()}
+                      ></PositionView>
+                    );
+                  }}
+                  actions={[
+                    {
+                      action: "Deposit",
+                      onClickView: () => (
+                        <Flex w="100%">
+                          <Spacer></Spacer>
+                          <DataLoader
+                            // defaultValue={}
+                            fetcher={() =>
+                              getERC721Allowance(
+                                provider,
+                                NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS,
+                                props.id
+                              )
+                            }
+                            makeChildren={(childProps: ChildProps) => {
+                              return childProps.data !=
+                                getTroveManagerAddress() ? (
+                                <ContractCallButton
+                                  contractAddress={
+                                    NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS
+                                  }
+                                  abi={erc721ABI}
+                                  functionName={"approve"}
+                                  args={[getTroveManagerAddress(), props.id]}
+                                  callback={() => childProps.refetchData()}
+                                  enabled={true}
+                                  buttonText="Approve"
+                                ></ContractCallButton>
+                              ) : (
+                                <ContractCallButton
+                                  contractAddress={getTroveManagerAddress()}
+                                  abi={getTroveManagerABI()}
+                                  functionName={"openTrove"}
+                                  enabled={true}
+                                  args={[
+                                    NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS,
+                                    props.id,
+                                  ]}
+                                  callback={() => props.callback()}
+                                ></ContractCallButton>
+                              );
+                            }}
+                          ></DataLoader>
+                        </Flex>
+                      ),
+                    },
+                  ]}
+                ></BaseView>
+                // <Position
+                //   account={account}
+                //   positionId={BigNumber.from(props.id)}
+                //   callback={props.callback}
+                //   key={props.id}
+                // ></Position>
               );
             }}
           />
