@@ -9,8 +9,8 @@ import {
 } from "components/Theme";
 import { PropsWithChildren, ReactNode, useState } from "react";
 import { defaultBorderRadius } from "./Theme";
-import { ChildProps, DataLoader } from "./DataLoaders";
-import { EventId, EventType } from "libs/eventEmitter";
+import { DataLoader } from "./DataLoaders";
+import { EventId } from "libs/eventEmitter";
 
 interface BasePageProps {
   account: Address | undefined;
@@ -97,22 +97,22 @@ export interface ActionProp {
   onClickView: (data: any, actionFinished: () => any) => ReactNode;
 }
 
-export interface DataViewProps {
-  fetcher: () => Promise<any>;
-  dataView: (data: any) => ReactNode;
+export interface DataViewProps<T> {
+  fetcher: () => Promise<T>;
+  dataView: (data: T) => ReactNode;
   actions: ActionProp[];
   level?: number;
   reloadEvents?: EventId[];
 }
 
-export function BaseView(props: DataViewProps) {
+export function BaseView<T>(props: DataViewProps<T>) {
   const [currentAction, setCurrentAction] = useState<ActionProp>();
   return (
     <DataLoader
       // defaultValue={}
       fetcher={() => props.fetcher()}
       reloadEvents={props.reloadEvents}
-      makeChildren={(childProps: ChildProps) => {
+      makeChildren={(childProps) => {
         return (
           <VStack
             w="100%"

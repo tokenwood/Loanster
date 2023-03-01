@@ -1,8 +1,7 @@
 import { VStack, Heading, Box } from "@chakra-ui/layout";
-import { StackDivider } from "@chakra-ui/react";
-import { Address, useAccount, useProvider } from "wagmi";
+import { useAccount, useProvider } from "wagmi";
 import { BasePage, BaseView } from "components/BaseComponents";
-import ListLoader, { MakeListItemProps } from "components/DataLoaders";
+import ListLoader from "components/DataLoaders";
 import {
   getSupplyAddress,
   getSupplyDepositIds,
@@ -14,7 +13,7 @@ import SupplyDeposit from "components/SupplyDeposit";
 import { BigNumber } from "ethers";
 import { SupplyDepositInputs } from "components/DepositInputs";
 import { TokenBalanceView } from "components/DataViews";
-import { eventEmitter, EventType } from "libs/eventEmitter";
+import { EventType } from "libs/eventEmitter";
 
 export default function SupplyPage() {
   const { address: account, isConnecting, isDisconnected } = useAccount();
@@ -33,7 +32,7 @@ export default function SupplyPage() {
           <ListLoader
             fetchIds={() => getSupplyDepositIds(provider, account!)}
             reloadEvents={[{ eventType: EventType.SUPPLY_TOKEN_DEPOSITED }]}
-            makeListItem={(props: MakeListItemProps) => {
+            makeListItem={(props) => {
               return (
                 <SupplyDeposit
                   account={account!}
@@ -52,7 +51,7 @@ export default function SupplyPage() {
           </Heading>
           <ListLoader
             fetchIds={() => getSupplyTokens(provider)}
-            makeListItem={(props: MakeListItemProps) => {
+            makeListItem={(props) => {
               return (
                 <BaseView
                   key={"wallet_supply_token_ballance_" + props.id}

@@ -2,27 +2,27 @@ import React, { useEffect, useState } from "react";
 import { Box, VStack } from "@chakra-ui/react";
 import { eventEmitter, EventId, EventType } from "libs/eventEmitter";
 
-export interface MakeListItemProps {
-  id: any;
+export interface MakeListItemProps<T> {
+  id: T;
   callback: () => any;
 }
 
-interface ListLoaderProps {
-  fetchIds: () => Promise<any[]>;
-  makeListItem: (props: MakeListItemProps) => JSX.Element;
+interface ListLoaderProps<T> {
+  fetchIds: () => Promise<T[]>;
+  makeListItem: (props: MakeListItemProps<T>) => JSX.Element;
   reloadEvents?: EventId[];
 }
 
-export default function ListLoader(props: ListLoaderProps) {
+export default function ListLoader<T>(props: ListLoaderProps<T>) {
   return (
     <DataLoader
       defaultValue={[]}
       fetcher={() => props.fetchIds()}
       reloadEvents={props.reloadEvents}
-      makeChildren={(childProps: ChildProps) => {
+      makeChildren={(childProps: ChildProps<T[]>) => {
         return (
           <VStack>
-            {childProps.data.map((id: any) =>
+            {childProps.data.map((id: T) =>
               props.makeListItem({
                 id: id,
                 callback: childProps.refetchData,
@@ -35,20 +35,20 @@ export default function ListLoader(props: ListLoaderProps) {
   );
 }
 
-export interface ChildProps {
-  data: any;
+export interface ChildProps<T> {
+  data: T;
   refetchData: () => any;
 }
 
-interface DataLoaderProps {
+interface DataLoaderProps<T> {
   defaultValue?: any;
   reloadEvents?: EventId[];
-  fetcher: () => Promise<any>;
-  makeChildren: (props: ChildProps) => JSX.Element;
+  fetcher: () => Promise<T>;
+  makeChildren: (props: ChildProps<T>) => JSX.Element;
 }
 
-export function DataLoader(props: DataLoaderProps) {
-  const [data, setData] = useState<any>(props.defaultValue);
+export function DataLoader<T>(props: DataLoaderProps<T>) {
+  const [data, setData] = useState<T>(props.defaultValue);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
 
