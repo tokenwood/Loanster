@@ -47,6 +47,7 @@ export async function getTokenBalance(
   account: Address
 ): Promise<TokenBalanceInfo> {
   const token = await getToken(provider, tokenAddress);
+  console.log("fetching token balance " + token.symbol);
 
   const tokenContract = new ethers.Contract(tokenAddress, erc20ABI, provider);
   const balance: BigNumber = await tokenContract.balanceOf(account);
@@ -104,6 +105,7 @@ export interface TokenBalanceInfo {
 }
 
 export async function getSupplyTokens(provider: Provider): Promise<Address[]> {
+  console.log("fetching supply tokens");
   const supplyContract = getSupplyContract(provider);
   let eventFilter = supplyContract.filters.DepositTokenChange();
   let events = await supplyContract.queryFilter(eventFilter);

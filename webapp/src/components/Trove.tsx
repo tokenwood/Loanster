@@ -10,24 +10,19 @@ import {
 } from "@chakra-ui/react";
 import { Token } from "@uniswap/sdk-core";
 import { NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS } from "libs/constants";
+import { eventEmitter, EventType } from "libs/eventEmitter";
 import {
   getLoanIds,
   getToken,
   getTroveInfo,
   getTroveManagerABI,
   getTroveManagerAddress,
-  TokenBalanceInfo,
   TroveInfo,
 } from "libs/unilend_utils";
 import { FullPositionInfo, getFullPositionInfo } from "libs/uniswap_utils";
-import { ReactNode } from "react";
-import { Address, useBalance, useProvider } from "wagmi";
+import { Address, useProvider } from "wagmi";
 import { ContractCallButton, BaseView } from "./BaseComponents";
-import ListLoader, {
-  ChildProps,
-  DataLoader,
-  MakeListItemProps,
-} from "./DataLoaders";
+import ListLoader, { DataLoader, MakeListItemProps } from "./DataLoaders";
 import { PositionView, TokenBalanceView } from "./DataViews";
 import Loan from "./Loan";
 import { defaultBorderRadius, level2BorderColor } from "./Theme";
@@ -90,7 +85,13 @@ export default function Trove(props: TroveProps) {
                                 functionName={"closeTrove"}
                                 args={[props.troveId]}
                                 enabled={true}
-                                callback={props.refetchTroves}
+                                callback={() => {
+                                  props.refetchTroves();
+                                  eventEmitter.dispatch({
+                                    eventType:
+                                      EventType.COLLATERAL_POSITION_WITHDRAWN,
+                                  });
+                                }}
                               ></ContractCallButton>
                             </Flex>
                           ),
@@ -111,7 +112,7 @@ export default function Trove(props: TroveProps) {
                       actions={[
                         {
                           action: "Withdraw",
-                          onClickView: () => (
+                          onClickView: (data: Token) => (
                             <Flex w="100%">
                               <Spacer></Spacer>
                               <ContractCallButton
@@ -123,6 +124,11 @@ export default function Trove(props: TroveProps) {
                                 callback={() => {
                                   //   childProps.refetchData(); // reload trove info
                                   props.refetchTroves();
+                                  eventEmitter.dispatch({
+                                    eventType:
+                                      EventType.COLLATERAL_TOKEN_WITHDRAWN,
+                                    suffix: data.address,
+                                  });
                                 }}
                               ></ContractCallButton>
                             </Flex>

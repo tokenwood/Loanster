@@ -1,5 +1,6 @@
-import React, { useEffect, useState, useMemo, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import { Box, VStack } from "@chakra-ui/react";
+import { eventEmitter, EventId, EventType } from "libs/eventEmitter";
 
 export interface MakeListItemProps {
   id: any;
@@ -9,6 +10,7 @@ export interface MakeListItemProps {
 interface ListLoaderProps {
   fetchIds: () => Promise<any[]>;
   makeListItem: (props: MakeListItemProps) => JSX.Element;
+  reloadEvents?: EventId[];
 }
 
 export default function ListLoader(props: ListLoaderProps) {
@@ -16,6 +18,7 @@ export default function ListLoader(props: ListLoaderProps) {
     <DataLoader
       defaultValue={[]}
       fetcher={() => props.fetchIds()}
+      reloadEvents={props.reloadEvents}
       makeChildren={(childProps: ChildProps) => {
         return (
           <VStack>
@@ -39,6 +42,7 @@ export interface ChildProps {
 
 interface DataLoaderProps {
   defaultValue?: any;
+  reloadEvents?: EventId[];
   fetcher: () => Promise<any>;
   makeChildren: (props: ChildProps) => JSX.Element;
 }
@@ -65,6 +69,23 @@ export function DataLoader(props: DataLoaderProps) {
       });
     }
   }, [data]);
+
+  useEffect(() => {
+    if (props.reloadEvents !== undefined) {
+      props.reloadEvents.forEach((eventType: EventId) => {
+        eventEmitter.subscribe(eventType, () => {
+          fetchData();
+        });
+      });
+    }
+    return () => {
+      if (props.reloadEvents !== undefined) {
+        props.reloadEvents.forEach((eventType: EventId) => {
+          eventEmitter.unsubscribe(eventType);
+        });
+      }
+    };
+  }, []);
 
   return isLoaded ? (
     props.makeChildren({

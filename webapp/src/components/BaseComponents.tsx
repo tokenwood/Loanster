@@ -10,6 +10,7 @@ import {
 import { PropsWithChildren, ReactNode, useState } from "react";
 import { defaultBorderRadius } from "./Theme";
 import { ChildProps, DataLoader } from "./DataLoaders";
+import { EventId, EventType } from "libs/eventEmitter";
 
 interface BasePageProps {
   account: Address | undefined;
@@ -93,7 +94,7 @@ export function ContractCallButton(props: ContractCallButtonProps) {
 
 export interface ActionProp {
   action: string;
-  onClickView: (data: any) => ReactNode;
+  onClickView: (data: any, actionFinished: () => any) => ReactNode;
 }
 
 export interface DataViewProps {
@@ -101,6 +102,7 @@ export interface DataViewProps {
   dataView: (data: any) => ReactNode;
   actions: ActionProp[];
   level?: number;
+  reloadEvents?: EventId[];
 }
 
 export function BaseView(props: DataViewProps) {
@@ -109,6 +111,7 @@ export function BaseView(props: DataViewProps) {
     <DataLoader
       // defaultValue={}
       fetcher={() => props.fetcher()}
+      reloadEvents={props.reloadEvents}
       makeChildren={(childProps: ChildProps) => {
         return (
           <VStack
@@ -150,7 +153,10 @@ export function BaseView(props: DataViewProps) {
               <></>
             )}
             {currentAction !== undefined ? (
-              currentAction!.onClickView(childProps.data)
+              currentAction!.onClickView(childProps.data, () => {
+                setCurrentAction(undefined);
+                childProps.refetchData();
+              })
             ) : (
               <></>
             )}

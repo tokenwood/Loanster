@@ -33,6 +33,7 @@ import { CollateralDepositInputs } from "components/DepositInputs";
 import Trove from "components/Trove";
 import { PositionView, TokenBalanceView } from "components/DataViews";
 import { NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS } from "libs/constants";
+import { eventEmitter, EventType } from "libs/eventEmitter";
 
 export default function LoansPage() {
   const { address: account, isConnecting, isDisconnected } = useAccount();
@@ -50,6 +51,10 @@ export default function LoansPage() {
           </Heading>
           <ListLoader
             fetchIds={() => getTroveIds(provider, account!)}
+            reloadEvents={[
+              { eventType: EventType.COLLATERAL_TOKEN_DEPOSITED },
+              { eventType: EventType.COLLATERAL_POSITION_DEPOSITED },
+            ]}
             makeListItem={(props: MakeListItemProps) => {
               return (
                 <Trove
@@ -68,6 +73,11 @@ export default function LoansPage() {
           </Heading>
           <ListLoader
             fetchIds={() => getPositionIds(provider, account!)}
+            reloadEvents={[
+              {
+                eventType: EventType.COLLATERAL_POSITION_WITHDRAWN,
+              },
+            ]}
             makeListItem={(props: MakeListItemProps) => {
               return (
                 <BaseView
@@ -115,7 +125,13 @@ export default function LoansPage() {
                                     NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS,
                                     props.id,
                                   ]}
-                                  callback={() => props.callback()}
+                                  callback={() => {
+                                    props.callback();
+                                    eventEmitter.dispatch({
+                                      eventType:
+                                        EventType.COLLATERAL_POSITION_DEPOSITED,
+                                    });
+                                  }}
                                 ></ContractCallButton>
                               );
                             }}
@@ -138,9 +154,15 @@ export default function LoansPage() {
             makeListItem={(props: MakeListItemProps) => {
               return (
                 <BaseView
-                  key={"wallet_collateral_token_ballance_" + props.id}
+                  key={"wallet_collateral_token_balance_" + props.id}
                   level={2}
                   fetcher={() => getTokenBalance(provider, props.id, account!)}
+                  reloadEvents={[
+                    {
+                      eventType: EventType.COLLATERAL_TOKEN_WITHDRAWN,
+                      suffix: props.id,
+                    },
+                  ]}
                   dataView={(data: TokenBalanceInfo) => {
                     return (
                       <TokenBalanceView
@@ -152,14 +174,21 @@ export default function LoansPage() {
                   actions={[
                     {
                       action: "Deposit",
-                      onClickView: (data: TokenBalanceInfo) => {
+                      onClickView: (
+                        data: TokenBalanceInfo,
+                        actionFinished: () => any
+                      ) => {
                         return (
                           <CollateralDepositInputs
                             account={account!}
                             balanceData={data}
                             approvalAddress={getTroveManagerAddress()}
                             callback={() => {
-                              props.callback();
+                              actionFinished();
+                              // props.callback();
+                              eventEmitter.dispatch({
+                                eventType: EventType.COLLATERAL_TOKEN_DEPOSITED,
+                              });
                             }}
                           ></CollateralDepositInputs>
                         );

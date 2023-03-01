@@ -14,6 +14,7 @@ import SupplyDeposit from "components/SupplyDeposit";
 import { BigNumber } from "ethers";
 import { SupplyDepositInputs } from "components/DepositInputs";
 import { TokenBalanceView } from "components/DataViews";
+import { eventEmitter, EventType } from "libs/eventEmitter";
 
 export default function SupplyPage() {
   const { address: account, isConnecting, isDisconnected } = useAccount();
@@ -31,6 +32,7 @@ export default function SupplyPage() {
           </Heading>
           <ListLoader
             fetchIds={() => getSupplyDepositIds(provider, account!)}
+            reloadEvents={[{ eventType: EventType.SUPPLY_TOKEN_DEPOSITED }]}
             makeListItem={(props: MakeListItemProps) => {
               return (
                 <SupplyDeposit
@@ -56,6 +58,12 @@ export default function SupplyPage() {
                   key={"wallet_supply_token_ballance_" + props.id}
                   level={2}
                   fetcher={() => getTokenBalance(provider, props.id, account!)}
+                  reloadEvents={[
+                    {
+                      eventType: EventType.SUPPLY_TOKEN_WITHDRAWN,
+                      suffix: props.id,
+                    },
+                  ]}
                   dataView={(data: TokenBalanceInfo) => {
                     return (
                       <TokenBalanceView
@@ -67,14 +75,17 @@ export default function SupplyPage() {
                   actions={[
                     {
                       action: "Deposit",
-                      onClickView: (data: TokenBalanceInfo) => {
+                      onClickView: (
+                        data: TokenBalanceInfo,
+                        actionFinished: () => any
+                      ) => {
                         return (
                           <SupplyDepositInputs
                             account={account!}
                             balanceData={data}
                             approvalAddress={getSupplyAddress()}
                             callback={() => {
-                              props.callback();
+                              actionFinished();
                             }}
                           />
                         );

@@ -10,12 +10,10 @@ import {
   getTroveManagerAddress,
   getSupplyABI,
 } from "libs/unilend_utils";
-
 import { ethers } from "ethers";
-
 import { ContractCallButton } from "./BaseComponents";
-
 import { DateInput, TokenAmountInput } from "./InputFields";
+import { eventEmitter, EventType } from "libs/eventEmitter";
 
 export interface InputsProps {
   balanceData: TokenBalanceInfo;
@@ -83,7 +81,6 @@ export function CollateralDepositInputs(props: DepositInputsProps) {
             args={[props.balanceData.token.address, amountToDeposit]}
             enabled={canConfirm()}
             callback={() => {
-              setAmountToDeposit(BigNumber.from(0));
               props.callback();
             }}
           ></ContractCallButton>
@@ -162,7 +159,12 @@ export function SupplyDepositInputs(props: DepositInputsProps) {
               BigNumber.from(0), //max loan duration
             ]}
             enabled={canConfirm()}
-            callback={props.callback}
+            callback={() => {
+              eventEmitter.dispatch({
+                eventType: EventType.SUPPLY_TOKEN_DEPOSITED,
+              });
+              props.callback();
+            }}
           ></ContractCallButton>
         ) : (
           <ContractCallButton

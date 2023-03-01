@@ -28,6 +28,7 @@ import {
   headerButtonHoverStyle,
   level2BorderColor,
 } from "./Theme";
+import { eventEmitter, EventType } from "libs/eventEmitter";
 
 interface Props {
   account: `0x${string}`;
@@ -98,7 +99,12 @@ export default function SupplyDeposit(props: Props) {
             hidden={!isWithdrawing}
             enabled={isWithdrawing}
             callback={() => {
-              refetchDepositInfo();
+              console.log("emit supply token withdrawn");
+              eventEmitter.dispatch({
+                eventType: EventType.SUPPLY_TOKEN_WITHDRAWN,
+                suffix: depositInfo!.token,
+              });
+              // refetchDepositInfo();
               props.callback();
             }}
           ></ContractCallButton>
