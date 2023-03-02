@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import {
+  Box,
   Button,
   Flex,
   Input,
@@ -13,6 +14,10 @@ import { floatToBigNumber, TokenBalanceInfo } from "libs/unilend_utils";
 import { FetchBalanceResult } from "@wagmi/core";
 import { ethers } from "ethers";
 import { defaultBorderRadius, DEFAULT_SIZE } from "components/Theme";
+import { SingleDatepicker } from "chakra-dayzed-datepicker";
+
+// https://github.com/vercel/next.js/discussions/19166
+// import DatePicker from "react-date-picker";
 
 interface TokenAmountInputProps {
   balanceData: TokenBalanceInfo;
@@ -54,8 +59,8 @@ export function TokenAmountInput(props: TokenAmountInputProps) {
   };
 
   return (
-    <Flex w="100%" layerStyle={"level3"}>
-      <Text alignSelf={"center"} ml="3">
+    <Flex w="100%">
+      <Text alignSelf={"center"} ml="0">
         {props.balanceData.token.symbol} amount
       </Text>
       <Button
@@ -75,13 +80,64 @@ export function TokenAmountInput(props: TokenAmountInputProps) {
         onChange={numberChanged}
         hidden={false}
         border="0"
-        mt="2"
-        mb="2"
         focusBorderColor="transparent"
       >
         <NumberInputField
           textAlign={"right"}
           border={0}
+          padding={1}
+          textStyle={"numberInput"}
+          fontSize={"xl"}
+          placeholder={"0.0"}
+        />
+      </NumberInput>
+    </Flex>
+  );
+}
+
+interface MyNumberInputProps {
+  name: string;
+  defaultValue: string;
+  callback: (amount: number) => any;
+}
+
+export function MyNumberInput(props: MyNumberInputProps) {
+  const [value, setValue] = useState<string>("");
+
+  const numberChanged = (valueAsString: string, valueAsNumber: number) => {
+    valueAsString = valueAsString.replace("e", "");
+    valueAsString = valueAsString.replace("E", "");
+    valueAsString = valueAsString.replace("+", "");
+    valueAsString = valueAsString.replace("-", "");
+
+    if (valueAsString.split(".").length > 2) {
+      valueAsString = valueAsString.split(".").slice(0, 2).join(".");
+    }
+    if (valueAsString == "") {
+      props.callback(0);
+    } else {
+      props.callback(valueAsNumber);
+    }
+    setValue(valueAsString);
+  };
+
+  return (
+    <Flex w="100%">
+      <Text alignSelf={"center"} ml="0">
+        {props.name}
+      </Text>
+      <Spacer />
+
+      <NumberInput
+        value={value}
+        size={DEFAULT_SIZE}
+        onChange={numberChanged}
+        focusBorderColor="transparent"
+      >
+        <NumberInputField
+          textAlign={"right"}
+          border={0}
+          padding={1}
           textStyle={"numberInput"}
           fontSize={"xl"}
           placeholder={"0.0"}
@@ -92,20 +148,28 @@ export function TokenAmountInput(props: TokenAmountInputProps) {
 }
 
 export function DateInput(props: DateInputProps) {
-  const [value, setValue] = useState<string>();
+  // const [value, setValue] = useState<string>();
+  const [date, setDate] = useState(new Date());
 
   return (
     <Flex w="100%">
       <Text alignSelf="center">Expiration</Text>
       <Spacer />
 
-      <Input
-        placeholder="Select Expiration Date"
-        size="md"
-        type="date"
-        w="30%"
-        // margin="10px"
-      />
+      <Box
+        color={"black"}
+        bgColor="white"
+        borderRadius={defaultBorderRadius}
+        alignItems="right"
+        alignContent={"right"}
+        textAlign="right"
+      >
+        <SingleDatepicker
+          name="date-input"
+          date={date}
+          onDateChange={setDate}
+        />
+      </Box>
     </Flex>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Flex, Spacer } from "@chakra-ui/react";
+import { Box, Flex, Spacer } from "@chakra-ui/react";
 import { VStack } from "@chakra-ui/layout";
 import { Address, erc20ABI, useContractRead } from "wagmi";
 import { BigNumber } from "ethers";
@@ -12,7 +12,7 @@ import {
 } from "libs/unilend_utils";
 import { ethers } from "ethers";
 import { ContractCallButton } from "./BaseComponents";
-import { DateInput, TokenAmountInput } from "./InputFields";
+import { DateInput, MyNumberInput, TokenAmountInput } from "./InputFields";
 import { eventEmitter, EventType } from "libs/eventEmitter";
 
 export interface InputsProps {
@@ -62,7 +62,7 @@ export function CollateralDepositInputs(props: DepositInputsProps) {
   };
 
   return (
-    <VStack w="100%">
+    <VStack w="100%" layerStyle={"level3"} spacing={0} padding="2">
       {/* <VStack w="100%" layerStyle={"level3"} padding="5px"> */}
       <TokenAmountInput
         balanceData={props.balanceData}
@@ -105,6 +105,8 @@ export function SupplyDepositInputs(props: DepositInputsProps) {
     BigNumber.from(0)
   );
   const [expirationDate, setExpirationDate] = useState<number>();
+  const [interestRate, setInterestRate] = useState<number>();
+  const [maxDuration, setMaxDuration] = useState<number>();
 
   const { data: allowance, refetch: allowanceRefetch } = useContractRead({
     address: props.balanceData.token.address as Address,
@@ -128,23 +130,31 @@ export function SupplyDepositInputs(props: DepositInputsProps) {
   };
 
   return (
-    <VStack w="100%">
-      {/* <VStack w="100%" layerStyle={"level3"} padding="5px"> */}
-      <VStack w="100%" layerStyle={"level3"} padding="10px">
-        <TokenAmountInput
-          balanceData={props.balanceData}
-          callback={(amount: BigNumber) => {
-            setAmountToDeposit(amount);
-          }}
-        />
-        <DateInput
-          callback={(timestamp: number) => {
-            setExpirationDate(timestamp);
-          }}
-        />
-      </VStack>
-      {/* </VStack> */}
-      <Flex w="100%">
+    <VStack w="100%" spacing={0} layerStyle={"level3"} padding={3}>
+      <TokenAmountInput
+        balanceData={props.balanceData}
+        callback={(amount: BigNumber) => {
+          setAmountToDeposit(amount);
+        }}
+      />
+      <MyNumberInput
+        name="Interest rate (%)"
+        callback={(rate: number) => {
+          setInterestRate(rate);
+        }}
+      ></MyNumberInput>
+      <MyNumberInput
+        name="Max duration (days)"
+        callback={(value: number) => {
+          setMaxDuration(value);
+        }}
+      ></MyNumberInput>
+      <DateInput
+        callback={(timestamp: number) => {
+          setExpirationDate(timestamp);
+        }}
+      />
+      <Flex w="100%" paddingTop={2}>
         <Spacer></Spacer>
         {hasEnoughAllowance(allowance, amountToDeposit) ? (
           <ContractCallButton
