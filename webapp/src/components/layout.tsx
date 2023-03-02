@@ -18,7 +18,7 @@ type Props = {
 export function Layout(props: Props) {
   return (
     <div>
-      <Box h="100vh" layerStyle={"level0"}>
+      <Box layerStyle={"level0"} h={"100%"}>
         <Header />
         <Container maxW="container.md" py="20">
           {props.children}

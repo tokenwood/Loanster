@@ -113,9 +113,6 @@ export async function getFullPositionInfo(
     tickUpper: positionInfo.tickUpper,
   });
 
-  //todo
-  // eth value
-  // claimable fees
   const priceLower = tickToPrice(token1, token0, positionInfo.tickLower);
   const priceUpper = tickToPrice(token1, token0, positionInfo.tickUpper);
   const currentPrice = tickToPrice(token1, token0, pool.tickCurrent);

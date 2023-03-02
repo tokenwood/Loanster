@@ -24,7 +24,7 @@ interface DateInputProps {
 }
 
 export function TokenAmountInput(props: TokenAmountInputProps) {
-  const [value, setValue] = useState<string>("0.0");
+  const [value, setValue] = useState<string>("");
   const onMaxClicked = () => {
     props.callback(props.balanceData.amount);
     setValue(
@@ -55,7 +55,9 @@ export function TokenAmountInput(props: TokenAmountInputProps) {
 
   return (
     <Flex w="100%" layerStyle={"level3"}>
-      <Text alignSelf={"center"}>{props.balanceData.token.symbol} amount</Text>
+      <Text alignSelf={"center"} ml="3">
+        {props.balanceData.token.symbol} amount
+      </Text>
       <Button
         ml="10px"
         size={"xs"}
@@ -73,9 +75,17 @@ export function TokenAmountInput(props: TokenAmountInputProps) {
         onChange={numberChanged}
         hidden={false}
         border="0"
+        mt="2"
+        mb="2"
         focusBorderColor="transparent"
       >
-        <NumberInputField textAlign={"right"} border={0} />
+        <NumberInputField
+          textAlign={"right"}
+          border={0}
+          textStyle={"numberInput"}
+          fontSize={"xl"}
+          placeholder={"0.0"}
+        />
       </NumberInput>
     </Flex>
   );

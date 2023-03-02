@@ -14,10 +14,10 @@ export const cancelColorScheme = "blackAlpha";
 const theme = extendTheme({
   layerStyles: {
     level0: {
-      border: "1px solid",
+      // border: "1px solid",
       color: "red",
       bgColor: "gray.100",
-      borderColor: "yellow",
+      // borderColor: "yellow",
     },
     level1: {
       border: "0px solid",
@@ -77,6 +77,12 @@ const theme = extendTheme({
       fontWeight: "semibold",
       lineHeight: "110%",
       letterSpacing: "-1%",
+    },
+    numberInput: {
+      // fontSize: ["36px", "48px"],
+      fontWeight: "bold",
+      // lineHeight: "10%",
+      // letterSpacing: "-1%",
     },
   },
   fonts: {

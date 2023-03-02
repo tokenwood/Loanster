@@ -30,9 +30,9 @@ interface PositionViewProps {
 
 export function PositionView(props: PositionViewProps) {
   return (
-    <VStack w="100%">
-      <Flex w="100%">
-        <Text width="100%" fontWeight={"semibold"}>
+    <Flex w="100%">
+      <VStack alignItems={"left"}>
+        <Text fontWeight={"semibold"}>
           {props.fullPositionInfo.token0.symbol +
             " / " +
             props.fullPositionInfo.token1.symbol +
@@ -40,10 +40,6 @@ export function PositionView(props: PositionViewProps) {
             props.fullPositionInfo.fee / 10000 +
             "%"}
         </Text>
-        <Spacer />
-      </Flex>
-
-      <Flex w="100%">
         <Text>
           {props.fullPositionInfo.priceUpper +
             " - " +
@@ -53,9 +49,29 @@ export function PositionView(props: PositionViewProps) {
             " per " +
             props.fullPositionInfo.token1.symbol}
         </Text>
-        <Spacer />
-        {/* <Text>{"current price : " + props.fullPositionInfo.currentPrice}</Text> */}
-      </Flex>
-    </VStack>
+      </VStack>
+      <Spacer></Spacer>
+
+      {/* <Spacer /> */}
+      {/* <Text>{"current price : " + props.fullPositionInfo.currentPrice}</Text> */}
+      <VStack alignItems={"right"}>
+        <Text textAlign={"right"}>
+          {(+ethers.utils.formatUnits(
+            props.fullPositionInfo.balance0,
+            props.fullPositionInfo.token0.decimals
+          )).toPrecision(4) +
+            " " +
+            props.fullPositionInfo.token0.symbol}
+        </Text>
+        <Text textAlign={"right"}>
+          {(+ethers.utils.formatUnits(
+            props.fullPositionInfo.balance1,
+            props.fullPositionInfo.token1.decimals
+          )).toPrecision(4) +
+            " " +
+            props.fullPositionInfo.token1.symbol}
+        </Text>
+      </VStack>
+    </Flex>
   );
 }
