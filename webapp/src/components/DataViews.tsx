@@ -30,16 +30,32 @@ interface PositionViewProps {
 
 export function PositionView(props: PositionViewProps) {
   return (
-    <Flex w="100%">
-      <VStack>
+    <VStack w="100%">
+      <Flex w="100%">
         <Text width="100%" fontWeight={"semibold"}>
           {props.fullPositionInfo.token0.symbol +
             " / " +
+            props.fullPositionInfo.token1.symbol +
+            " " +
+            props.fullPositionInfo.fee / 10000 +
+            "%"}
+        </Text>
+        <Spacer />
+      </Flex>
+
+      <Flex w="100%">
+        <Text>
+          {props.fullPositionInfo.priceUpper +
+            " - " +
+            props.fullPositionInfo.priceLower +
+            " " +
+            props.fullPositionInfo.token0.symbol +
+            " per " +
             props.fullPositionInfo.token1.symbol}
         </Text>
-        <Text>{"todo"}</Text>
-      </VStack>
-      <Spacer />
-    </Flex>
+        <Spacer />
+        {/* <Text>{"current price : " + props.fullPositionInfo.currentPrice}</Text> */}
+      </Flex>
+    </VStack>
   );
 }
