@@ -12,9 +12,11 @@ import { SupportedChainId, Token } from "@uniswap/sdk-core";
 export interface DepositInfo {
   token: Address;
   amountDeposited: BigNumber;
-  amountBorrowed: BigNumber;
-  expiration: BigNumber;
   interestRateBPS: BigNumber;
+  expiration: BigNumber;
+  maxLoanDuration: BigNumber;
+  minLoanDuration: BigNumber;
+  claimableInterest: BigNumber;
 }
 
 export interface TroveInfo {
@@ -129,6 +131,12 @@ export async function getTroveInfo(
   const troveManager = getTroveManagerContract(provider);
   const troveInfo: TroveInfo = await troveManager.getTrove(id);
   return troveInfo;
+}
+
+export async function getDepositInfo(provider: Provider, id: number) {
+  const supplyContract = getSupplyContract(provider);
+  const depositInfo: DepositInfo = await supplyContract.getDeposit(id);
+  return depositInfo;
 }
 
 export function getAllowedTokensFromEvents(events: ethers.Event[]) {

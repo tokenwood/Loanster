@@ -21,6 +21,11 @@ import {
   deploySupply,
   deployUniUtils,
 } from "../scripts/utils";
+
+import hre from "hardhat";
+const networkName = hre.network.name;
+const chainId = hre.network.config.chainId;
+
 async function log_balance(token: Token, address: string) {
   const wethERC20 = await ethers.getContractAt("ERC20", token.address);
   const balance = await wethERC20.balanceOf(address);
@@ -89,6 +94,8 @@ describe("TroveManager", function () {
 
   it("deposit and withdraw uniswap v3 position should work", async function () {
     const [account, account2] = await ethers.getSigners();
+
+    expect(networkName).to.equal("localhost");
 
     await loadFixture(BuyTokensFixture);
     const { troveManager } = await loadFixture(deployTroveManagerFixture);

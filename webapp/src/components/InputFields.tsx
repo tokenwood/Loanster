@@ -24,10 +24,6 @@ interface TokenAmountInputProps {
   callback: (amount: BigNumber) => any;
 }
 
-interface DateInputProps {
-  callback: (timestamp: number) => any;
-}
-
 export function TokenAmountInput(props: TokenAmountInputProps) {
   const [value, setValue] = useState<string>("");
   const onMaxClicked = () => {
@@ -97,8 +93,9 @@ export function TokenAmountInput(props: TokenAmountInputProps) {
 
 interface MyNumberInputProps {
   name: string;
-  defaultValue: string;
   callback: (amount: number) => any;
+  precision?: number;
+  placeHolder?: string;
 }
 
 export function MyNumberInput(props: MyNumberInputProps) {
@@ -133,6 +130,7 @@ export function MyNumberInput(props: MyNumberInputProps) {
         size={DEFAULT_SIZE}
         onChange={numberChanged}
         focusBorderColor="transparent"
+        precision={props.precision !== undefined ? props.precision : undefined}
       >
         <NumberInputField
           textAlign={"right"}
@@ -140,36 +138,49 @@ export function MyNumberInput(props: MyNumberInputProps) {
           padding={1}
           textStyle={"numberInput"}
           fontSize={"xl"}
-          placeholder={"0.0"}
+          placeholder={
+            props.placeHolder !== undefined ? props.placeHolder : "0.0"
+          }
         />
       </NumberInput>
     </Flex>
   );
 }
 
+interface DateInputProps {
+  callback: (timestamp: number) => any;
+}
+
+//todo make text input of format yyyy-mm-dd
 export function DateInput(props: DateInputProps) {
-  // const [value, setValue] = useState<string>();
-  const [date, setDate] = useState(new Date());
+  const [date, setDate] = useState(initDate());
+  // const [value, setValue] = useState<string>(date.toISOString());
 
   return (
     <Flex w="100%">
       <Text alignSelf="center">Expiration</Text>
       <Spacer />
 
-      <Box
-        color={"black"}
-        bgColor="white"
-        borderRadius={defaultBorderRadius}
-        alignItems="right"
-        alignContent={"right"}
-        textAlign="right"
-      >
+      {/* <Input value={value}></Input> */}
+
+      <Box color={"black"} bgColor="white" borderRadius={defaultBorderRadius}>
         <SingleDatepicker
           name="date-input"
           date={date}
-          onDateChange={setDate}
+          onDateChange={(newDate: Date) => {
+            setDate(newDate);
+            console.log("new date: " + newDate.toISOString());
+            console.log("new date timestamp: " + newDate.getTime());
+            props.callback(newDate.getTime());
+          }}
         />
       </Box>
     </Flex>
   );
+}
+
+function initDate() {
+  const dateCopy = new Date();
+  dateCopy.setFullYear(dateCopy.getFullYear() + 1);
+  return dateCopy;
 }

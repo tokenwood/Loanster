@@ -46,18 +46,18 @@ describe("Supply", function () {
     await expect(
       supply
         .connect(account1)
-        .makeDeposit(token.address, 800, unlockTime, 0, ONE_MONTH_IN_SECS)
+        .makeDeposit(token.address, 800, unlockTime, 0, ONE_MONTH_IN_SECS, 0)
     ).to.changeTokenBalance(token, account1, -800);
 
     await expect(
       supply
         .connect(account1)
-        .makeDeposit(token.address, 1200, unlockTime, 0, ONE_MONTH_IN_SECS)
+        .makeDeposit(token.address, 1200, unlockTime, 0, ONE_MONTH_IN_SECS, 0)
     ).to.be.revertedWith("ERC20: transfer amount exceeds balance");
     await expect(
       supply
         .connect(account1)
-        .makeDeposit(token2.address, 800, unlockTime, 0, ONE_MONTH_IN_SECS)
+        .makeDeposit(token2.address, 800, unlockTime, 0, ONE_MONTH_IN_SECS, 0)
     ).to.be.revertedWith("unauthorized deposit token");
   });
 
@@ -75,7 +75,7 @@ describe("Supply", function () {
 
     const deposit = await supply
       .connect(account1)
-      .makeDeposit(token.address, 500, unlockTime, 0, ONE_MONTH_IN_SECS);
+      .makeDeposit(token.address, 500, unlockTime, 0, ONE_MONTH_IN_SECS, 0);
 
     const receipt = await deposit.wait();
     const depositId: BigNumber = receipt.events?.filter((x) => {

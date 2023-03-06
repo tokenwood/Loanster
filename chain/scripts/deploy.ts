@@ -9,7 +9,16 @@ import {
 
 import { deploySupply, deployUniUtils, deployTroveManager } from "./utils";
 
+import hre from "hardhat";
+import { error } from "console";
+const networkName = hre.network.name;
+const chainId = hre.network.config.chainId;
+
 async function main() {
+  if (networkName !== "localhost") {
+    throw error("should deploy to localhost");
+  }
+
   const supply = await deploySupply();
   console.log(`supply deployed to ${supply.address}`);
 

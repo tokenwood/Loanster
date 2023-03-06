@@ -10,6 +10,7 @@ export const defaultBorderRadius = "20px";
 export const level2BorderColor = "blue";
 export const actionInitColorScheme = "blue";
 export const cancelColorScheme = "blackAlpha";
+export const statFontSize = "md";
 
 const theme = extendTheme({
   layerStyles: {

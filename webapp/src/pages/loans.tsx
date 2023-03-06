@@ -17,11 +17,9 @@ import {
   getFullPositionInfo,
   getPositionIds,
 } from "libs/uniswap_utils";
-import { BigNumber } from "ethers";
 import {
   getCollateralTokens,
   getERC721Allowance,
-  getToken,
   getTokenBalance,
   getTroveIds,
   getTroveManagerABI,
@@ -55,7 +53,7 @@ export default function LoansPage() {
               { eventType: EventType.COLLATERAL_TOKEN_DEPOSITED },
               { eventType: EventType.COLLATERAL_POSITION_DEPOSITED },
             ]}
-            makeListItem={(props: MakeListItemProps) => {
+            makeListItem={(props) => {
               return (
                 <Trove
                   account={account!}
@@ -78,7 +76,7 @@ export default function LoansPage() {
                 eventType: EventType.COLLATERAL_POSITION_WITHDRAWN,
               },
             ]}
-            makeListItem={(props: MakeListItemProps) => {
+            makeListItem={(props) => {
               return (
                 <BaseView
                   key={"wallet_position" + props.id}
@@ -101,7 +99,7 @@ export default function LoansPage() {
                                 props.id
                               )
                             }
-                            makeChildren={(childProps: ChildProps) => {
+                            makeChildren={(childProps) => {
                               return childProps.data !=
                                 getTroveManagerAddress() ? (
                                 <ContractCallButton
@@ -151,7 +149,7 @@ export default function LoansPage() {
           </Heading>
           <ListLoader
             fetchIds={() => getCollateralTokens(provider)}
-            makeListItem={(props: MakeListItemProps) => {
+            makeListItem={(props) => {
               return (
                 <BaseView
                   key={"wallet_collateral_token_balance_" + props.id}

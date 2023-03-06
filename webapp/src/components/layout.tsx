@@ -20,7 +20,7 @@ export function Layout(props: Props) {
     <div>
       <Box layerStyle={"level0"} h={"100%"}>
         <Header />
-        <Container maxW="container.md" py="20">
+        <Container maxW="container.lg" py="20">
           {props.children}
         </Container>
       </Box>

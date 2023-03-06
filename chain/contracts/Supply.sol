@@ -12,9 +12,10 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 struct Deposit {
     address token;
     uint256 amountDeposited;
-    uint256 interestRateBPS;
-    uint256 expiration;
-    uint256 maxLoanDuration;
+    uint256 interestRateBPS; // 100 = 1%
+    uint256 expiration; // timestamp
+    uint256 maxLoanDuration; // seconds
+    uint256 minLoanDuration; // seconds
     uint256 claimableInterest;
 }
 
@@ -214,7 +215,8 @@ contract Supply is ERC721, Ownable {
         uint256 amount,
         uint256 interestRateBPS,
         uint256 expiration,
-        uint256 maxLoanDuration
+        uint256 maxLoanDuration,
+        uint256 minLoanDuration
     ) public {
         require(_allowedDepositTokens[token], "unauthorized deposit token");
         require(
@@ -231,6 +233,7 @@ contract Supply is ERC721, Ownable {
             amountDeposited: amount,
             expiration: expiration,
             maxLoanDuration: maxLoanDuration,
+            minLoanDuration: minLoanDuration,
             interestRateBPS: interestRateBPS,
             claimableInterest: 0
         });

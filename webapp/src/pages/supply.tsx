@@ -1,19 +1,27 @@
 import { VStack, Heading, Box } from "@chakra-ui/layout";
 import { useAccount, useProvider } from "wagmi";
-import { BasePage, BaseView } from "components/BaseComponents";
+import {
+  BasePage,
+  BaseView,
+  ContractCallButton,
+} from "components/BaseComponents";
 import ListLoader from "components/DataLoaders";
 import {
+  DepositInfo,
+  getDepositInfo,
+  getSupplyABI,
   getSupplyAddress,
   getSupplyDepositIds,
   getSupplyTokens,
   getTokenBalance,
   TokenBalanceInfo,
 } from "libs/unilend_utils";
-import SupplyDeposit from "components/SupplyDeposit";
 import { BigNumber } from "ethers";
 import { SupplyDepositInputs } from "components/DepositInputs";
-import { TokenBalanceView } from "components/DataViews";
-import { EventType } from "libs/eventEmitter";
+import { DepositView, TokenBalanceView } from "components/DataViews";
+import { eventEmitter, EventType } from "libs/eventEmitter";
+import { ReactNode } from "react";
+import { Flex, Spacer } from "@chakra-ui/react";
 
 export default function SupplyPage() {
   const { address: account, isConnecting, isDisconnected } = useAccount();
@@ -34,12 +42,41 @@ export default function SupplyPage() {
             reloadEvents={[{ eventType: EventType.SUPPLY_TOKEN_DEPOSITED }]}
             makeListItem={(props) => {
               return (
-                <SupplyDeposit
-                  account={account!}
-                  depositId={BigNumber.from(props.id)}
-                  callback={props.callback}
-                  key={props.id}
-                ></SupplyDeposit>
+                <BaseView
+                  key={"supply_deposit_" + props.id}
+                  fetcher={() => getDepositInfo(provider, props.id)}
+                  level={2}
+                  dataView={(data) => (
+                    <DepositView depositInfo={data}></DepositView>
+                  )}
+                  actions={[
+                    {
+                      action: "Withdraw",
+                      onClickView: (
+                        data: DepositInfo,
+                        actionFinished: () => any
+                      ) => (
+                        <Flex w="100%">
+                          <Spacer></Spacer>
+                          <ContractCallButton
+                            contractAddress={getSupplyAddress()}
+                            abi={getSupplyABI()}
+                            functionName={"changeAmountDeposited"}
+                            args={[props.id, 0]}
+                            enabled={true}
+                            callback={() => {
+                              eventEmitter.dispatch({
+                                eventType: EventType.SUPPLY_TOKEN_WITHDRAWN,
+                                suffix: data.token,
+                              });
+                              props.callback();
+                            }}
+                          ></ContractCallButton>
+                        </Flex>
+                      ),
+                    },
+                  ]}
+                ></BaseView>
               );
             }}
           />

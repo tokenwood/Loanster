@@ -104,9 +104,10 @@ export function SupplyDepositInputs(props: DepositInputsProps) {
   const [amountToDeposit, setAmountToDeposit] = useState<BigNumber>(
     BigNumber.from(0)
   );
-  const [expirationDate, setExpirationDate] = useState<number>();
-  const [interestRate, setInterestRate] = useState<number>();
-  const [maxDuration, setMaxDuration] = useState<number>();
+  const [expirationDate, setExpirationDate] = useState<number>(0);
+  const [interestRate, setInterestRate] = useState<number>(0);
+  const [maxDuration, setMaxDuration] = useState<number>(0);
+  const [minDuration, setMinDuration] = useState<number>(0);
 
   const { data: allowance, refetch: allowanceRefetch } = useContractRead({
     address: props.balanceData.token.address as Address,
@@ -130,7 +131,7 @@ export function SupplyDepositInputs(props: DepositInputsProps) {
   };
 
   return (
-    <VStack w="100%" spacing={0} layerStyle={"level3"} padding={3}>
+    <VStack w="65%" spacing={0} layerStyle={"level3"} padding={3}>
       <TokenAmountInput
         balanceData={props.balanceData}
         callback={(amount: BigNumber) => {
@@ -139,14 +140,25 @@ export function SupplyDepositInputs(props: DepositInputsProps) {
       />
       <MyNumberInput
         name="Interest rate (%)"
+        precision={2}
         callback={(rate: number) => {
           setInterestRate(rate);
         }}
       ></MyNumberInput>
       <MyNumberInput
         name="Max duration (days)"
+        precision={0}
+        placeHolder="0"
         callback={(value: number) => {
           setMaxDuration(value);
+        }}
+      ></MyNumberInput>
+      <MyNumberInput
+        name="Min duration (days)"
+        precision={0}
+        placeHolder="0"
+        callback={(value: number) => {
+          setMinDuration(value);
         }}
       ></MyNumberInput>
       <DateInput
@@ -164,9 +176,10 @@ export function SupplyDepositInputs(props: DepositInputsProps) {
             args={[
               props.balanceData.token.address,
               amountToDeposit,
-              BigNumber.from(0), //interest rate
-              BigNumber.from(0), //expiration timestamp
-              BigNumber.from(0), //max loan duration
+              BigNumber.from(Math.round(interestRate * 100)), // interest rate
+              BigNumber.from(expirationDate), // expiration timestamp
+              BigNumber.from(maxDuration), // max loan duration
+              BigNumber.from(minDuration), // min loan duration
             ]}
             enabled={canConfirm()}
             callback={() => {

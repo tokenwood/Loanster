@@ -144,7 +144,7 @@ export default function Trove(props: TroveProps) {
                   </Heading>
                   <ListLoader
                     fetchIds={() => getLoanIds(provider, props.troveId)}
-                    makeListItem={(builderProps: MakeListItemProps) => {
+                    makeListItem={(builderProps) => {
                       return (
                         <Loan
                           account={props.account}
