@@ -12,7 +12,7 @@ import {
 import { Token } from "@uniswap/sdk-core";
 import { BigNumber, ethers } from "ethers";
 import { ADDRESS_TO_TOKEN } from "libs/constants";
-import { DepositInfo } from "libs/unilend_utils";
+import { DepositInfo, formatDate } from "libs/unilend_utils";
 import { FullPositionInfo, getTokenName } from "libs/uniswap_utils";
 import { Address } from "wagmi";
 import { statFontSize } from "./Theme";
@@ -101,11 +101,6 @@ interface DepositViewProps {
 }
 
 export function DepositView(props: DepositViewProps) {
-  const formatDate = (timestamp: BigNumber) => {
-    const date = new Date(timestamp.toNumber());
-    return date.getFullYear() + "-" + date.getMonth() + "-" + date.getDay();
-  };
-
   return (
     <Flex w="100%">
       <Stat>

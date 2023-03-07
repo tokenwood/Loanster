@@ -71,7 +71,7 @@ export async function getERC721Allowance(
   return approved;
 }
 
-function getTroveManagerContract(provider: Provider) {
+export function getTroveManagerContract(provider: Provider) {
   return new ethers.Contract(
     getTroveManagerAddress(),
     getTroveManagerABI(),
@@ -79,7 +79,7 @@ function getTroveManagerContract(provider: Provider) {
   );
 }
 
-function getSupplyContract(provider: Provider) {
+export function getSupplyContract(provider: Provider) {
   return new ethers.Contract(getSupplyAddress(), getSupplyABI(), provider);
 }
 
@@ -194,6 +194,7 @@ export async function getSupplyDepositIds(
   return getERC721Ids(supplyContract, account);
 }
 
+//todo use Promise.All() to parallelize
 export async function getERC721Ids(
   contract: ethers.Contract,
   account: Address
@@ -219,4 +220,9 @@ export function floatToBigNumber(floatString: string, decimals: number) {
   numberString = numberString + "0".repeat(decimals);
   numberString = numberString.substring(0, i + decimals);
   return BigNumber.from(numberString);
+}
+
+export function formatDate(timestamp: BigNumber) {
+  const date = new Date(timestamp.toNumber());
+  return date.getFullYear() + "-" + date.getMonth() + "-" + date.getDay();
 }

@@ -1,5 +1,17 @@
 import React, { useEffect, useState } from "react";
-import { Box, VStack } from "@chakra-ui/react";
+import {
+  Box,
+  Table,
+  TableCaption,
+  TableContainer,
+  Tbody,
+  Td,
+  Tfoot,
+  Th,
+  Thead,
+  Tr,
+  VStack,
+} from "@chakra-ui/react";
 import { eventEmitter, EventId, EventType } from "libs/eventEmitter";
 
 export interface MakeListItemProps<T> {
@@ -29,6 +41,42 @@ export default function ListLoader<T>(props: ListLoaderProps<T>) {
               })
             )}
           </VStack>
+        );
+      }}
+    ></DataLoader>
+  );
+}
+
+interface TableLoaderProps<T> {
+  fetchData: () => Promise<T[]>;
+  makeTableRow: (props: MakeListItemProps<T>) => JSX.Element;
+  makeTableHead: () => JSX.Element;
+  tableCaption: string;
+  reloadEvents?: EventId[];
+}
+
+export function TableLoader<T>(props: TableLoaderProps<T>) {
+  return (
+    <DataLoader
+      defaultValue={[]}
+      fetcher={() => props.fetchData()}
+      reloadEvents={props.reloadEvents}
+      makeChildren={(childProps: ChildProps<T[]>) => {
+        return (
+          <TableContainer>
+            <Table variant="simple">
+              <TableCaption>{props.tableCaption}</TableCaption>
+              <Thead>{props.makeTableHead()}</Thead>
+              <Tbody>
+                {childProps.data.map((id: T) =>
+                  props.makeTableRow({
+                    id: id,
+                    callback: childProps.refetchData,
+                  })
+                )}
+              </Tbody>
+            </Table>
+          </TableContainer>
         );
       }}
     ></DataLoader>
