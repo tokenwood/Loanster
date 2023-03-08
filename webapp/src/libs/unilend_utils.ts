@@ -1,11 +1,10 @@
-import { Address, useBalance } from "wagmi";
+import { Address } from "wagmi";
 import deployments from "../../../chain/cache/deployments.json";
 import { erc20ABI, erc721ABI, Provider } from "@wagmi/core";
 import { ethers } from "ethers";
 import supplyContractJSON from "../../../chain/artifacts/contracts/Supply.sol/Supply.json";
 import troveManagerJSON from "../../../chain/artifacts/contracts/TroveManager.sol/TroveManager.json";
 import { BigNumber } from "ethers";
-import { FetchBalanceResult } from "@wagmi/core";
 import { ADDRESS_TO_TOKEN } from "./constants";
 import { SupportedChainId, Token } from "@uniswap/sdk-core";
 
@@ -17,6 +16,22 @@ export interface DepositInfo {
   maxLoanDuration: BigNumber;
   minLoanDuration: BigNumber;
   claimableInterest: BigNumber;
+}
+
+export interface Loan {
+  token: Address;
+  depositId: BigNumber;
+  troveId: BigNumber;
+  amount: BigNumber;
+  start: BigNumber;
+  interestRateBPS: BigNumber;
+}
+
+export interface FullDepositInfo {
+  depositId: number;
+  depositInfo: DepositInfo;
+  loans: Loan[];
+  token: Token;
 }
 
 export interface TroveInfo {
@@ -106,12 +121,20 @@ export interface TokenBalanceInfo {
   // decimals: number;
 }
 
-export async function getSupplyTokens(provider: Provider): Promise<Address[]> {
+export async function getSupplyTokenAddresses(
+  provider: Provider
+): Promise<Address[]> {
   console.log("fetching supply tokens");
   const supplyContract = getSupplyContract(provider);
   let eventFilter = supplyContract.filters.DepositTokenChange();
   let events = await supplyContract.queryFilter(eventFilter);
   return getAllowedTokensFromEvents(events);
+}
+
+export async function getSupplyTokens(provider: Provider) {
+  const addresses = await getSupplyTokenAddresses(provider);
+  const queries = addresses.map((value) => getToken(provider, value));
+  return await Promise.all(queries);
 }
 
 export async function getCollateralTokens(
@@ -133,10 +156,37 @@ export async function getTroveInfo(
   return troveInfo;
 }
 
-export async function getDepositInfo(provider: Provider, id: number) {
+export async function getDepositInfo(
+  provider: Provider,
+  id: number
+): Promise<DepositInfo> {
   const supplyContract = getSupplyContract(provider);
-  const depositInfo: DepositInfo = await supplyContract.getDeposit(id);
-  return depositInfo;
+  return await supplyContract.getDeposit(id);
+}
+
+export async function getFullDepositInfo(
+  provider: Provider,
+  id: number
+): Promise<FullDepositInfo> {
+  const contract = getSupplyContract(provider);
+  const depositInfo: DepositInfo = await contract.getDeposit(id);
+
+  const balance: number = await contract.getNumLoansForDepositId(id);
+  const loanIdRequests = [];
+  for (let i = 0; i < balance; i++) {
+    loanIdRequests.push(contract.getLoanByIndexForDepositId(id, i));
+  }
+  const loanIds: BigNumber[] = await Promise.all(loanIdRequests);
+  const loans: Loan[] = await Promise.all(
+    loanIds.map((loanId) => contract.getLoan(loanId))
+  );
+
+  return {
+    depositInfo: depositInfo,
+    token: await getToken(provider, depositInfo.token),
+    depositId: id,
+    loans: loans,
+  };
 }
 
 export function getAllowedTokensFromEvents(events: ethers.Event[]) {
@@ -198,17 +248,14 @@ export async function getSupplyDepositIds(
 export async function getERC721Ids(
   contract: ethers.Contract,
   account: Address
-) {
+): Promise<number[]> {
   const balance: number = await contract.balanceOf(account);
-  const tokenIds = [];
+  const requests = [];
   for (let i = 0; i < balance; i++) {
-    const tokenOfOwnerByIndex: BigNumber = await contract.tokenOfOwnerByIndex(
-      account,
-      i
-    );
-    tokenIds.push(tokenOfOwnerByIndex.toNumber());
+    requests.push(contract.tokenOfOwnerByIndex(account, i));
   }
-  return tokenIds;
+  const tokenIdsBN: BigNumber[] = await Promise.all(requests);
+  return tokenIdsBN.map((value) => value.toNumber());
 }
 
 export function floatToBigNumber(floatString: string, decimals: number) {
@@ -225,4 +272,18 @@ export function floatToBigNumber(floatString: string, decimals: number) {
 export function formatDate(timestamp: BigNumber) {
   const date = new Date(timestamp.toNumber());
   return date.getFullYear() + "-" + date.getMonth() + "-" + date.getDay();
+}
+
+export function getAmountLoanedForDepositInfo(info: FullDepositInfo) {
+  let amount = BigNumber.from(0);
+  for (let i = 0; i < info.loans.length; i++) {
+    amount = amount.add(info.loans[i].amount);
+  }
+  return amount;
+}
+
+export function getAmountAvailableForDepositInfo(info: FullDepositInfo) {
+  return info.depositInfo.amountDeposited.sub(
+    getAmountLoanedForDepositInfo(info)
+  );
 }

@@ -1,38 +1,20 @@
-import { VStack, Heading, Box } from "@chakra-ui/layout";
+import { VStack, Box } from "@chakra-ui/layout";
 import { useAccount, useProvider } from "wagmi";
+import { BasePage } from "components/BaseComponents";
+import { TableLoader } from "components/DataLoaders";
 import {
-  BasePage,
-  BaseView,
-  ContractCallButton,
-} from "components/BaseComponents";
-import ListLoader, { TableLoader } from "components/DataLoaders";
-import {
-  DepositInfo,
   formatDate,
-  getDepositInfo,
-  getSupplyABI,
-  getSupplyAddress,
-  getSupplyDepositIds,
-  getSupplyTokens,
-  getTokenBalance,
-  TokenBalanceInfo,
+  getAmountAvailableForDepositInfo,
 } from "libs/unilend_utils";
-import { BigNumber } from "ethers";
-import { SupplyDepositInputs } from "components/DepositInputs";
-import { DepositView, TokenBalanceView } from "components/DataViews";
-import { eventEmitter, EventType } from "libs/eventEmitter";
-import { ReactNode } from "react";
-import { Flex, Spacer, Th, Tr } from "@chakra-ui/react";
+import { EventType } from "libs/eventEmitter";
+import { Th, Tr } from "@chakra-ui/react";
 import { getSortedSupply } from "libs/market_utils";
-import { ADDRESS_TO_TOKEN } from "libs/constants";
+import { ethers } from "ethers";
 
 export default function MarketPage() {
   const { address: account, isConnecting, isDisconnected } = useAccount();
   const provider = useProvider();
 
-  async function returnSelf<T>(value: T) {
-    return value;
-  }
   return (
     <BasePage
       account={account}
@@ -61,39 +43,28 @@ export default function MarketPage() {
             }}
             makeTableRow={(props) => {
               return (
-                <Tr>
-                  <Th>{ADDRESS_TO_TOKEN[props.id.token].symbol}</Th>
-                  <Th isNumeric>0</Th>
+                // TODO set id as key
+                <Tr key={Math.random()}>
+                  <Th>{props.id.token.symbol}</Th>
                   <Th isNumeric>
-                    {props.id.interestRateBPS.toNumber() / 100 + " %"}
+                    {ethers.utils.formatUnits(
+                      getAmountAvailableForDepositInfo(props.id),
+                      props.id.token.decimals
+                    )}
                   </Th>
                   <Th isNumeric>
-                    {props.id.minLoanDuration + "d"} /
-                    {props.id.maxLoanDuration + "d"}
+                    {props.id.depositInfo.interestRateBPS.toNumber() / 100 +
+                      " %"}
                   </Th>
-                  <Th>{formatDate(props.id.expiration)}</Th>
+                  <Th isNumeric>
+                    {props.id.depositInfo.minLoanDuration + "d"} /
+                    {props.id.depositInfo.maxLoanDuration + "d"}
+                  </Th>
+                  <Th>{formatDate(props.id.depositInfo.expiration)}</Th>
                 </Tr>
               );
             }}
           ></TableLoader>
-
-          {/* <ListLoader
-            fetchIds={() => getSortedSupply(provider)}
-            reloadEvents={[{ eventType: EventType.SUPPLY_TOKEN_DEPOSITED }]}
-            makeListItem={(props) => {
-              return (
-                <BaseView
-                  key={"supply_" + props.id}
-                  fetcher={() => returnSelf(props.id)}
-                  level={2}
-                  dataView={(data) => (
-                    <DepositView depositInfo={data}></DepositView>
-                  )}
-                  actions={[]}
-                ></BaseView>
-              );
-            }} */}
-          {/* /> */}
         </Box>
       </VStack>
     </BasePage>

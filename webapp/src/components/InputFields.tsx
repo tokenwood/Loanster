@@ -148,6 +148,7 @@ export function MyNumberInput(props: MyNumberInputProps) {
 }
 
 interface DateInputProps {
+  name: string;
   callback: (timestamp: number) => any;
 }
 
@@ -158,7 +159,7 @@ export function DateInput(props: DateInputProps) {
 
   return (
     <Flex w="100%">
-      <Text alignSelf="center">Expiration</Text>
+      <Text alignSelf="center">{props.name}</Text>
       <Spacer />
 
       {/* <Input value={value}></Input> */}

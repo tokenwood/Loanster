@@ -11,10 +11,12 @@ import {
 } from "@chakra-ui/react";
 import { Token } from "@uniswap/sdk-core";
 import { BigNumber, ethers } from "ethers";
-import { ADDRESS_TO_TOKEN } from "libs/constants";
-import { DepositInfo, formatDate } from "libs/unilend_utils";
+import {
+  formatDate,
+  FullDepositInfo,
+  getAmountLoanedForDepositInfo,
+} from "libs/unilend_utils";
 import { FullPositionInfo, getTokenName } from "libs/uniswap_utils";
-import { Address } from "wagmi";
 import { statFontSize } from "./Theme";
 
 interface TokenBalanceViewProps {
@@ -97,18 +99,18 @@ export function PositionView(props: PositionViewProps) {
 }
 
 interface DepositViewProps {
-  depositInfo: DepositInfo;
+  data: FullDepositInfo;
 }
 
 export function DepositView(props: DepositViewProps) {
   return (
     <Flex w="100%">
       <Stat>
-        <StatLabel>{getTokenName(props.depositInfo.token)}</StatLabel>
+        <StatLabel>{getTokenName(props.data.depositInfo.token)}</StatLabel>
         <StatNumber fontSize={statFontSize}>
           {ethers.utils.formatUnits(
-            props.depositInfo.amountDeposited,
-            ADDRESS_TO_TOKEN[props.depositInfo.token].decimals
+            props.data.depositInfo.amountDeposited,
+            props.data.token.decimals
           )}
         </StatNumber>
       </Stat>
@@ -116,27 +118,32 @@ export function DepositView(props: DepositViewProps) {
         <StatLabel>Claimable</StatLabel>
         <StatNumber fontSize={statFontSize}>
           {ethers.utils.formatUnits(
-            props.depositInfo.claimableInterest,
-            ADDRESS_TO_TOKEN[props.depositInfo.token].decimals
+            props.data.depositInfo.claimableInterest,
+            props.data.token.decimals
           )}
         </StatNumber>
       </Stat>
       <Stat>
         <StatLabel>Loaned</StatLabel>
-        <StatNumber fontSize={statFontSize}>todo</StatNumber>
+        <StatNumber fontSize={statFontSize}>
+          {ethers.utils.formatUnits(
+            getAmountLoanedForDepositInfo(props.data),
+            props.data.token.decimals
+          )}
+        </StatNumber>
       </Stat>
       <Stat>
         <StatLabel>Interest rate</StatLabel>
         <StatNumber fontSize={statFontSize}>
-          {props.depositInfo.interestRateBPS.toNumber() / 100 + " %"}
+          {props.data.depositInfo.interestRateBPS.toNumber() / 100 + " %"}
         </StatNumber>
       </Stat>
       <Stat>
         <StatLabel>min/max duration</StatLabel>
         <StatNumber fontSize={statFontSize}>
-          {props.depositInfo.minLoanDuration +
+          {props.data.depositInfo.minLoanDuration +
             "d / " +
-            props.depositInfo.maxLoanDuration +
+            props.data.depositInfo.maxLoanDuration +
             "d"}
         </StatNumber>
       </Stat>
@@ -144,7 +151,7 @@ export function DepositView(props: DepositViewProps) {
       <Stat>
         <StatLabel>expiration date</StatLabel>
         <StatNumber fontSize={statFontSize}>
-          {formatDate(props.depositInfo.expiration)}
+          {formatDate(props.data.depositInfo.expiration)}
         </StatNumber>
       </Stat>
     </Flex>

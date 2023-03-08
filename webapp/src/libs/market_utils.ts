@@ -1,18 +1,55 @@
-import { Address, useBalance } from "wagmi";
-import { DepositInfo, getSupplyContract } from "./unilend_utils";
-import { erc20ABI, erc721ABI, Provider } from "@wagmi/core";
-import { ethers } from "ethers";
-import supplyContractJSON from "../../../chain/artifacts/contracts/Supply.sol/Supply.json";
-import troveManagerJSON from "../../../chain/artifacts/contracts/TroveManager.sol/TroveManager.json";
-import { BigNumber } from "ethers";
-import { FetchBalanceResult } from "@wagmi/core";
-import { ADDRESS_TO_TOKEN } from "./constants";
-import { SupportedChainId, Token } from "@uniswap/sdk-core";
+import { Address } from "wagmi";
+import {
+  DepositInfo,
+  floatToBigNumber,
+  FullDepositInfo,
+  getAmountAvailableForDepositInfo,
+  getFullDepositInfo,
+  getSupplyContract,
+  getToken,
+} from "./unilend_utils";
+import { Provider } from "@wagmi/core";
 
-let cachedDeposits: Map<number, DepositInfo> | undefined = undefined;
+import { BigNumber } from "ethers";
+
+let cachedDeposits: Map<number, FullDepositInfo> | undefined = undefined;
 let sortedIds: number[] | undefined = undefined;
 
-//todo: update all deposits if stale. in future: save to disk?
+//todo: update all deposits if stale.
+export interface LoanParameters {
+  tokenAddress: Address;
+  amount: number;
+  term: number; // timestamp
+  troveId?: number;
+}
+
+function bigNumberMin(a: BigNumber, b: BigNumber) {
+  return a.lt(b) ? a : b;
+}
+
+export async function getLoans(provider: Provider, params: LoanParameters) {
+  const { cachedDeposits, sortedIds } = await getAllDeposits(provider);
+  const loans: [FullDepositInfo, BigNumber][] = [];
+  const token = await getToken(provider, params.tokenAddress);
+
+  let toLoan = floatToBigNumber(params.amount.toString(), token.decimals);
+
+  for (let i = 0; i < (sortedIds.length && toLoan.gt(BigNumber.from(0))); i++) {
+    const depositId = sortedIds[i];
+    const deposit = cachedDeposits.get(depositId)!;
+    //todo implement duration filters
+    if (deposit.token.address == params.tokenAddress) {
+      const toLoanDeposit = bigNumberMin(
+        getAmountAvailableForDepositInfo(deposit),
+        toLoan
+      );
+      loans.push([deposit, toLoanDeposit]);
+      toLoan = toLoan.sub(toLoanDeposit);
+    }
+  }
+
+  return loans;
+}
 
 async function getAllDeposits(provider: Provider) {
   if (cachedDeposits && sortedIds) {
@@ -31,19 +68,19 @@ async function getAllDeposits(provider: Provider) {
   const supplyIdsBN: BigNumber[] = await Promise.all(idQueries);
   const supplyIds = supplyIdsBN.map((value) => value.toNumber());
 
-  let deposits = new Map<number, DepositInfo>();
+  let deposits = new Map<number, FullDepositInfo>();
 
   await Promise.all(
     supplyIds.map(async (id) => {
-      const depositInfo = await supplyContract.getDeposit(id);
+      const depositInfo = await getFullDepositInfo(provider, id);
       deposits.set(id, depositInfo);
     })
   );
 
   sortedIds = supplyIds.sort(
     (a, b) =>
-      deposits.get(a)!.interestRateBPS.toNumber() -
-      deposits.get(b)!.interestRateBPS.toNumber()
+      deposits.get(a)!.depositInfo.interestRateBPS.toNumber() -
+      deposits.get(b)!.depositInfo.interestRateBPS.toNumber()
   );
   cachedDeposits = deposits;
 
@@ -57,7 +94,9 @@ export async function getSortedSupply(
   const { cachedDeposits, sortedIds } = await getAllDeposits(provider);
   let filtered = sortedIds;
   if (filter) {
-    filtered = sortedIds.filter((value) => filter(cachedDeposits.get(value)!));
+    filtered = sortedIds.filter((value) =>
+      filter(cachedDeposits.get(value)!.depositInfo)
+    );
   }
 
   return filtered.map((value) => cachedDeposits.get(value)!);

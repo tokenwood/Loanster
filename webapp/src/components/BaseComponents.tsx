@@ -16,6 +16,7 @@ interface BasePageProps {
   account: Address | undefined;
   isConnecting: boolean;
   isDisconnected: boolean;
+  width?: string;
 }
 
 export function BasePage(props: PropsWithChildren<BasePageProps>) {
@@ -23,7 +24,7 @@ export function BasePage(props: PropsWithChildren<BasePageProps>) {
     <VStack>
       <Box
         p={4}
-        w="100%"
+        w={props.width ? props.width : "100%"}
         // borderWidth="0px"
         // borderRadius="lg"
         layerStyle={"level1"}

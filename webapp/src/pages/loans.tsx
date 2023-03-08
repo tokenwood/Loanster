@@ -48,7 +48,7 @@ export default function LoansPage() {
             {"Troves"}
           </Heading>
           <ListLoader
-            fetchIds={() => getTroveIds(provider, account!)}
+            fetchData={() => getTroveIds(provider, account!)}
             reloadEvents={[
               { eventType: EventType.COLLATERAL_TOKEN_DEPOSITED },
               { eventType: EventType.COLLATERAL_POSITION_DEPOSITED },
@@ -70,7 +70,7 @@ export default function LoansPage() {
             {"Your positions"}
           </Heading>
           <ListLoader
-            fetchIds={() => getPositionIds(provider, account!)}
+            fetchData={() => getPositionIds(provider, account!)}
             reloadEvents={[
               {
                 eventType: EventType.COLLATERAL_POSITION_WITHDRAWN,
@@ -148,7 +148,7 @@ export default function LoansPage() {
             {"Your assets"}
           </Heading>
           <ListLoader
-            fetchIds={() => getCollateralTokens(provider)}
+            fetchData={() => getCollateralTokens(provider)}
             makeListItem={(props) => {
               return (
                 <BaseView

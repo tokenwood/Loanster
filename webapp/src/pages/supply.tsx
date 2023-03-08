@@ -9,10 +9,11 @@ import ListLoader from "components/DataLoaders";
 import {
   DepositInfo,
   getDepositInfo,
+  getFullDepositInfo,
   getSupplyABI,
   getSupplyAddress,
   getSupplyDepositIds,
-  getSupplyTokens,
+  getSupplyTokenAddresses,
   getTokenBalance,
   TokenBalanceInfo,
 } from "libs/unilend_utils";
@@ -38,17 +39,15 @@ export default function SupplyPage() {
             {"Your supplies"}
           </Heading>
           <ListLoader
-            fetchIds={() => getSupplyDepositIds(provider, account!)}
+            fetchData={() => getSupplyDepositIds(provider, account!)}
             reloadEvents={[{ eventType: EventType.SUPPLY_TOKEN_DEPOSITED }]}
             makeListItem={(props) => {
               return (
                 <BaseView
                   key={"supply_deposit_" + props.id}
-                  fetcher={() => getDepositInfo(provider, props.id)}
+                  fetcher={() => getFullDepositInfo(provider, props.id)}
                   level={2}
-                  dataView={(data) => (
-                    <DepositView depositInfo={data}></DepositView>
-                  )}
+                  dataView={(data) => <DepositView data={data}></DepositView>}
                   actions={[
                     {
                       action: "Withdraw",
@@ -87,7 +86,7 @@ export default function SupplyPage() {
             {"Assets to supply"}
           </Heading>
           <ListLoader
-            fetchIds={() => getSupplyTokens(provider)}
+            fetchData={() => getSupplyTokenAddresses(provider)}
             makeListItem={(props) => {
               return (
                 <BaseView

@@ -44,6 +44,7 @@ export default function Trove(props: TroveProps) {
   return (
     <DataLoader
       defaultValue={[]}
+      // key={props.troveId.toString()}
       fetcher={() => getTroveInfo(props.troveId, provider)}
       makeChildren={(childProps: TroveChildProps) => {
         return (
@@ -143,7 +144,7 @@ export default function Trove(props: TroveProps) {
                     {"Loans"}
                   </Heading>
                   <ListLoader
-                    fetchIds={() => getLoanIds(provider, props.troveId)}
+                    fetchData={() => getLoanIds(provider, props.troveId)}
                     makeListItem={(builderProps) => {
                       return (
                         <Loan

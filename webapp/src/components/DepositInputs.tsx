@@ -1,7 +1,7 @@
-import React, { useState } from "react";
-import { Box, Flex, Spacer } from "@chakra-ui/react";
+import React, { useEffect, useState } from "react";
+import { Box, Flex, Select, Spacer, Text } from "@chakra-ui/react";
 import { VStack } from "@chakra-ui/layout";
-import { Address, erc20ABI, useContractRead } from "wagmi";
+import { Address, erc20ABI, useContractRead, useProvider } from "wagmi";
 import { BigNumber } from "ethers";
 import {
   getSupplyAddress,
@@ -9,11 +9,17 @@ import {
   getTroveManagerABI,
   getTroveManagerAddress,
   getSupplyABI,
+  getSupplyTokenAddresses,
+  getSupplyTokens,
+  floatToBigNumber,
+  getTroveIds,
 } from "libs/unilend_utils";
 import { ethers } from "ethers";
 import { ContractCallButton } from "./BaseComponents";
 import { DateInput, MyNumberInput, TokenAmountInput } from "./InputFields";
 import { eventEmitter, EventType } from "libs/eventEmitter";
+import { DataLoader } from "./DataLoaders";
+import { LoanParameters } from "libs/market_utils";
 
 export interface InputsProps {
   balanceData: TokenBalanceInfo;
@@ -162,6 +168,7 @@ export function SupplyDepositInputs(props: DepositInputsProps) {
         }}
       ></MyNumberInput>
       <DateInput
+        name="Expiration"
         callback={(timestamp: number) => {
           setExpirationDate(timestamp);
         }}
@@ -201,6 +208,128 @@ export function SupplyDepositInputs(props: DepositInputsProps) {
           />
         )}
       </Flex>
+    </VStack>
+  );
+}
+
+export interface LoanInputProps {
+  account: Address;
+  callback: (params: LoanParameters) => any;
+}
+
+export function LoanInputs(props: LoanInputProps) {
+  const [tokenToBorrow, setTokenToBorrow] = useState<Address>();
+  const [amountToBorrow, setAmountToBorrow] = useState<number>(0);
+  const [term, setTerm] = useState<number>();
+  const [minDuration, setMinDuration] = useState<number>();
+  const [troveId, setTroveId] = useState<number>();
+
+  const provider = useProvider();
+
+  const handleTroveChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setTroveId(parseInt(event.target.value));
+  };
+
+  const handleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setTokenToBorrow(event.target.value as Address);
+  };
+
+  useEffect(() => {
+    if (
+      tokenToBorrow != undefined &&
+      amountToBorrow != 0 &&
+      term != undefined
+    ) {
+      props.callback({
+        tokenAddress: tokenToBorrow!,
+        amount: amountToBorrow,
+        term: term,
+        troveId: troveId,
+      });
+    }
+  }, [tokenToBorrow, amountToBorrow, troveId]);
+
+  return (
+    <VStack w="100%" spacing={0} layerStyle={"level3"} padding={3}>
+      <DataLoader
+        fetcher={() => getSupplyTokens(provider)}
+        defaultValue={[]}
+        makeChildren={(childProps) => {
+          return (
+            <Flex w="100%">
+              <Text alignSelf={"center"} ml="0">
+                {"Token"}
+              </Text>
+              <Spacer />
+              <Select
+                width={"30%"}
+                textAlign={"right"}
+                placeholder="Select"
+                value={tokenToBorrow}
+                onChange={handleChange}
+              >
+                {childProps.data.map((token) => (
+                  <option value={token.address} key={token.address}>
+                    {token.symbol}
+                  </option>
+                ))}
+              </Select>
+            </Flex>
+          );
+        }}
+      ></DataLoader>
+
+      <MyNumberInput
+        name="Amount"
+        // precision={0}
+        placeHolder="0"
+        callback={(value: number) => {
+          setAmountToBorrow(value);
+        }}
+      ></MyNumberInput>
+      <DateInput
+        name="Loan Term"
+        callback={(value: number) => {
+          setTerm(value);
+        }}
+      ></DateInput>
+      <DataLoader
+        fetcher={() => getTroveIds(provider, props.account)}
+        makeChildren={(props) => {
+          return (
+            <Flex w="100%">
+              <Text alignSelf={"center"} ml="0">
+                {"Collateral"}
+              </Text>
+              <Spacer />
+              <Select
+                width={"30%"}
+                textAlign={"right"}
+                placeholder="Select"
+                value={troveId}
+                onChange={handleTroveChange}
+              >
+                {props.data.map((selectedTroveId) => (
+                  <option
+                    value={selectedTroveId.toString()}
+                    key={selectedTroveId}
+                  >
+                    trove id: {selectedTroveId}
+                  </option>
+                ))}
+              </Select>
+            </Flex>
+          );
+        }}
+      ></DataLoader>
+      {/* <MyNumberInput
+        name="Min duration (days)"
+        precision={0}
+        placeHolder="0"
+        callback={(value: number) => {
+          setMinDuration(value);
+        }}
+      ></MyNumberInput> */}
     </VStack>
   );
 }

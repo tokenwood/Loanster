@@ -20,7 +20,7 @@ export interface MakeListItemProps<T> {
 }
 
 interface ListLoaderProps<T> {
-  fetchIds: () => Promise<T[]>;
+  fetchData: () => Promise<T[]>;
   makeListItem: (props: MakeListItemProps<T>) => JSX.Element;
   reloadEvents?: EventId[];
 }
@@ -29,7 +29,7 @@ export default function ListLoader<T>(props: ListLoaderProps<T>) {
   return (
     <DataLoader
       defaultValue={[]}
-      fetcher={() => props.fetchIds()}
+      fetcher={() => props.fetchData()}
       reloadEvents={props.reloadEvents}
       makeChildren={(childProps: ChildProps<T[]>) => {
         return (
