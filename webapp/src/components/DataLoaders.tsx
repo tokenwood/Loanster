@@ -49,9 +49,11 @@ export default function ListLoader<T>(props: ListLoaderProps<T>) {
 
 interface TableLoaderProps<T> {
   fetchData: () => Promise<T[]>;
-  makeTableRow: (props: MakeListItemProps<T>) => JSX.Element;
-  makeTableHead: () => JSX.Element;
-  tableCaption: string;
+  makeTableRow: (tableData: MakeListItemProps<T>) => JSX.Element;
+  makeTableHead?: (tableData: T[]) => JSX.Element;
+  makeTableFooter?: (props: T[]) => JSX.Element;
+  dataLoaded?: (value: T[]) => any;
+  tableCaption?: string;
   reloadEvents?: EventId[];
 }
 
@@ -61,12 +63,21 @@ export function TableLoader<T>(props: TableLoaderProps<T>) {
       defaultValue={[]}
       fetcher={() => props.fetchData()}
       reloadEvents={props.reloadEvents}
+      dataLoaded={props.dataLoaded}
       makeChildren={(childProps: ChildProps<T[]>) => {
         return (
           <TableContainer>
             <Table variant="simple">
-              <TableCaption>{props.tableCaption}</TableCaption>
-              <Thead>{props.makeTableHead()}</Thead>
+              {props.tableCaption ? (
+                <TableCaption>{props.tableCaption}</TableCaption>
+              ) : (
+                <></>
+              )}
+              {props.makeTableHead ? (
+                <Thead>{props.makeTableHead(childProps.data)}</Thead>
+              ) : (
+                <></>
+              )}
               <Tbody>
                 {childProps.data.map((id: T) =>
                   props.makeTableRow({
@@ -75,6 +86,11 @@ export function TableLoader<T>(props: TableLoaderProps<T>) {
                   })
                 )}
               </Tbody>
+              {props.makeTableFooter ? (
+                <Tfoot>{props.makeTableFooter(childProps.data)}</Tfoot>
+              ) : (
+                <></>
+              )}
             </Table>
           </TableContainer>
         );
@@ -93,6 +109,7 @@ interface DataLoaderProps<T> {
   reloadEvents?: EventId[];
   fetcher: () => Promise<T>;
   makeChildren: (props: ChildProps<T>) => JSX.Element;
+  dataLoaded?: (value: T) => any;
 }
 
 export function DataLoader<T>(props: DataLoaderProps<T>) {
@@ -105,6 +122,9 @@ export function DataLoader<T>(props: DataLoaderProps<T>) {
     setIsLoaded(true);
     setIsLoading(false);
     setData(tokens);
+    if (props.dataLoaded != undefined) {
+      props.dataLoaded(tokens);
+    }
   };
 
   useEffect(() => {

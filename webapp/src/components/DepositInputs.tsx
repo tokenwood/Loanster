@@ -212,48 +212,40 @@ export function SupplyDepositInputs(props: DepositInputsProps) {
   );
 }
 
-export interface LoanInputProps {
+interface BorrowInputProps {
   account: Address;
   callback: (params: LoanParameters) => any;
 }
 
-export function LoanInputs(props: LoanInputProps) {
+export function BorrowInputs(props: BorrowInputProps) {
   const [tokenToBorrow, setTokenToBorrow] = useState<Address>();
   const [amountToBorrow, setAmountToBorrow] = useState<number>(0);
   const [term, setTerm] = useState<number>();
   const [minDuration, setMinDuration] = useState<number>();
-  const [troveId, setTroveId] = useState<number>();
-
   const provider = useProvider();
-
-  const handleTroveChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setTroveId(parseInt(event.target.value));
-  };
 
   const handleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     setTokenToBorrow(event.target.value as Address);
   };
 
   useEffect(() => {
-    if (
-      tokenToBorrow != undefined &&
-      amountToBorrow != 0 &&
-      term != undefined
-    ) {
-      props.callback({
-        tokenAddress: tokenToBorrow!,
-        amount: amountToBorrow,
-        term: term,
-        troveId: troveId,
-      });
-    }
-  }, [tokenToBorrow, amountToBorrow, troveId]);
+    props.callback({
+      tokenAddress: tokenToBorrow!,
+      amount: amountToBorrow,
+      term: 0,
+    });
+  }, [tokenToBorrow, amountToBorrow]);
 
   return (
     <VStack w="100%" spacing={0} layerStyle={"level3"} padding={3}>
       <DataLoader
         fetcher={() => getSupplyTokens(provider)}
         defaultValue={[]}
+        dataLoaded={(tokens) => {
+          if (tokenToBorrow == undefined) {
+            setTokenToBorrow(tokens[0].address as Address);
+          }
+        }}
         makeChildren={(childProps) => {
           return (
             <Flex w="100%">
@@ -262,9 +254,9 @@ export function LoanInputs(props: LoanInputProps) {
               </Text>
               <Spacer />
               <Select
-                width={"30%"}
+                width={"100px"}
                 textAlign={"right"}
-                placeholder="Select"
+                // placeholder="Select"
                 value={tokenToBorrow}
                 onChange={handleChange}
               >
@@ -287,19 +279,54 @@ export function LoanInputs(props: LoanInputProps) {
           setAmountToBorrow(value);
         }}
       ></MyNumberInput>
-      <DateInput
+      {/* <DateInput
         name="Loan Term"
         callback={(value: number) => {
           setTerm(value);
         }}
-      ></DateInput>
+      ></DateInput> */}
+      {/* <MyNumberInput
+        name="Min duration (days)"
+        precision={0}
+        placeHolder="0"
+        callback={(value: number) => {
+          setMinDuration(value);
+        }}
+      ></MyNumberInput> */}
+    </VStack>
+  );
+}
+
+interface LoanTroveInputProps {
+  account: Address;
+  callback: (troveId: number) => any;
+}
+
+export function LoanTroveInput(props: LoanTroveInputProps) {
+  const [troveId, setTroveId] = useState<number>();
+  const provider = useProvider();
+
+  const handleTroveChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const troveId = parseInt(event.target.value);
+    setTroveId(troveId);
+    props.callback(troveId);
+  };
+
+  return (
+    <VStack
+      w="100%"
+      spacing={0}
+      layerStyle={"level3"}
+      padding={3}
+      alignSelf="center"
+    >
       <DataLoader
         fetcher={() => getTroveIds(provider, props.account)}
         makeChildren={(props) => {
           return (
             <Flex w="100%">
               <Text alignSelf={"center"} ml="0">
-                {"Collateral"}
+                {"Trove"}
               </Text>
               <Spacer />
               <Select
@@ -322,14 +349,6 @@ export function LoanInputs(props: LoanInputProps) {
           );
         }}
       ></DataLoader>
-      {/* <MyNumberInput
-        name="Min duration (days)"
-        precision={0}
-        placeHolder="0"
-        callback={(value: number) => {
-          setMinDuration(value);
-        }}
-      ></MyNumberInput> */}
     </VStack>
   );
 }

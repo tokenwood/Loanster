@@ -11,6 +11,7 @@ import {
 import { Provider } from "@wagmi/core";
 
 import { BigNumber } from "ethers";
+import { Token } from "@uniswap/sdk-core";
 
 let cachedDeposits: Map<number, FullDepositInfo> | undefined = undefined;
 let sortedIds: number[] | undefined = undefined;
@@ -20,11 +21,48 @@ export interface LoanParameters {
   tokenAddress: Address;
   amount: number;
   term: number; // timestamp
-  troveId?: number;
+}
+
+export interface TroveStats {
+  collateralValueEth: BigNumber;
+  loanValueEth: BigNumber; // timestamp
+  healthFactor: number;
+}
+
+export async function getNewTroveStats(
+  provider: Provider,
+  loanStats: LoanStats,
+  troveId: number
+): Promise<TroveStats> {
+  return {
+    collateralValueEth: BigNumber.from(0),
+    loanValueEth: BigNumber.from(0),
+    healthFactor: 0,
+  };
 }
 
 function bigNumberMin(a: BigNumber, b: BigNumber) {
   return a.lt(b) ? a : b;
+}
+
+export interface LoanStats {
+  amount: BigNumber;
+  rate: BigNumber; // timestamp
+}
+
+export function getLoanStats(loans: [FullDepositInfo, BigNumber][]) {
+  //   let minInterest = BigNumber.from(0);
+  let totalAmount = BigNumber.from(0);
+  let totalInterest = BigNumber.from(0);
+  for (let i = 0; i < loans.length; i++) {
+    totalAmount = totalAmount.add(loans[i][1]);
+    totalInterest = totalInterest.add(
+      loans[i][0].depositInfo.interestRateBPS.mul(loans[i][1])
+    );
+    // minInterest = minInterest.add(loans[i][0].depositInfo.minLoanDuration.mul(loans[i][0].depositInfo.interestRateBPS).mod())
+  }
+  let averageRate = totalInterest.div(totalAmount);
+  return { amount: totalAmount, rate: averageRate };
 }
 
 export async function getLoans(provider: Provider, params: LoanParameters) {
@@ -34,7 +72,7 @@ export async function getLoans(provider: Provider, params: LoanParameters) {
 
   let toLoan = floatToBigNumber(params.amount.toString(), token.decimals);
 
-  for (let i = 0; i < (sortedIds.length && toLoan.gt(BigNumber.from(0))); i++) {
+  for (let i = 0; i < sortedIds.length && toLoan.gt(BigNumber.from(0)); i++) {
     const depositId = sortedIds[i];
     const deposit = cachedDeposits.get(depositId)!;
     //todo implement duration filters
@@ -53,7 +91,6 @@ export async function getLoans(provider: Provider, params: LoanParameters) {
 
 async function getAllDeposits(provider: Provider) {
   if (cachedDeposits && sortedIds) {
-    console.log("returning cached deposits");
     return { cachedDeposits, sortedIds };
   }
   console.log("loading all supply deposits");
