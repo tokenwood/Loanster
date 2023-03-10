@@ -37,7 +37,7 @@ library UniUtils {
             fee
         );
         address pool = PoolAddress.computeAddress(FACTORY, key);
-        (uint160 sqrtRatioX96, , , , , , ) = IUniswapV3Pool(pool).slot0();
+        (uint160 sqrtRatioX96, , , , , , ) = IUniswapV3Pool(pool).slot0(); // !!! this can be manipulated. use TWAP instead
 
         (uint256 amount0, uint256 amount1) = LiquidityAmounts
             .getAmountsForLiquidity(

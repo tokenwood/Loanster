@@ -7,11 +7,13 @@ import {
   getFullDepositInfo,
   getSupplyContract,
   getToken,
+  getTroveManagerContract,
 } from "./unilend_utils";
 import { Provider } from "@wagmi/core";
-
+import { CurrencyAmount } from "@uniswap/sdk-core";
 import { BigNumber } from "ethers";
 import { Token } from "@uniswap/sdk-core";
+import { WETH_TOKEN } from "./constants";
 
 let cachedDeposits: Map<number, FullDepositInfo> | undefined = undefined;
 let sortedIds: number[] | undefined = undefined;
@@ -24,8 +26,8 @@ export interface LoanParameters {
 }
 
 export interface TroveStats {
-  collateralValueEth: BigNumber;
-  loanValueEth: BigNumber; // timestamp
+  collateralValueEth: CurrencyAmount<Token>;
+  loanValueEth: CurrencyAmount<Token>; // timestamp
   healthFactor: number;
 }
 
@@ -34,10 +36,37 @@ export async function getNewTroveStats(
   loanStats: LoanStats,
   troveId: number
 ): Promise<TroveStats> {
+  console.log("fetching trove stats");
+  const contract = getTroveManagerContract(provider);
+
+  // collateral value
+  const [collateralValue, collateralFactorBPS]: [BigNumber, BigNumber] =
+    await contract.getTroveCollateralValue(troveId);
+
+  // total loans value
+  const loansValue: BigNumber = await contract.getTroveLoansValue(
+    troveId,
+    loanStats.amount,
+    loanStats.token.address
+  );
+
+  // new health factor
+  const healthFactor: BigNumber = await contract.getHealthFactorBPS(
+    troveId,
+    loanStats.amount,
+    loanStats.token.address
+  );
+
   return {
-    collateralValueEth: BigNumber.from(0),
-    loanValueEth: BigNumber.from(0),
-    healthFactor: 0,
+    collateralValueEth: CurrencyAmount.fromRawAmount(
+      WETH_TOKEN,
+      collateralValue.toString()
+    ),
+    loanValueEth: CurrencyAmount.fromRawAmount(
+      WETH_TOKEN,
+      loansValue.toString()
+    ),
+    healthFactor: healthFactor.toNumber() / 10000,
   };
 }
 
@@ -46,14 +75,17 @@ function bigNumberMin(a: BigNumber, b: BigNumber) {
 }
 
 export interface LoanStats {
+  loans: [FullDepositInfo, BigNumber][];
   amount: BigNumber;
   rate: BigNumber; // timestamp
+  token: Token;
 }
 
 export function getLoanStats(loans: [FullDepositInfo, BigNumber][]) {
   //   let minInterest = BigNumber.from(0);
   let totalAmount = BigNumber.from(0);
   let totalInterest = BigNumber.from(0);
+
   for (let i = 0; i < loans.length; i++) {
     totalAmount = totalAmount.add(loans[i][1]);
     totalInterest = totalInterest.add(
@@ -62,7 +94,12 @@ export function getLoanStats(loans: [FullDepositInfo, BigNumber][]) {
     // minInterest = minInterest.add(loans[i][0].depositInfo.minLoanDuration.mul(loans[i][0].depositInfo.interestRateBPS).mod())
   }
   let averageRate = totalInterest.div(totalAmount);
-  return { amount: totalAmount, rate: averageRate };
+  return {
+    loans: loans,
+    amount: totalAmount,
+    rate: averageRate,
+    token: loans[0][0].token,
+  };
 }
 
 export async function getLoans(provider: Provider, params: LoanParameters) {

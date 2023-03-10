@@ -133,16 +133,9 @@ contract TroveManager is ERC721, ERC721Holder, Ownable {
         uint256 amount,
         uint256 duration
     ) public troveOwner(troveId) {
-        (address _token, uint256 healthFactor) = getHealthFactorBPS(
-            troveId,
-            amount
-        );
+        uint256 healthFactor = getHealthFactorBPS(troveId, amount, token);
 
         require(healthFactor > HUNDRED_PERCENT_BPS, "health factor too low");
-
-        if (_token != address(0)) {
-            require(_token == token, "trove has loan with other token");
-        }
 
         // change local state and transfer tokens
         uint256 loanId = Supply(_supply).openLoan(
@@ -177,7 +170,7 @@ contract TroveManager is ERC721, ERC721Holder, Ownable {
     }
 
     function liquidateTrove(uint256 troveId) public {
-        (, uint256 healthFactor) = getHealthFactorBPS(troveId, 0);
+        uint256 healthFactor = getHealthFactorBPS(troveId, 0, address(0));
 
         require(healthFactor < HUNDRED_PERCENT_BPS, "trove is healthy");
 
@@ -204,30 +197,43 @@ contract TroveManager is ERC721, ERC721Holder, Ownable {
         return (_troveLoans[troveId].at(index));
     }
 
-    function getAmountBorrowedForTroveId(
-        uint256 troveId
-    ) public view returns (address, uint256, uint256) {
+    function getTroveLoansValue(
+        uint256 troveId,
+        uint256 extraAmount,
+        address token
+    ) public view returns (uint256) {
         uint256 numLoans = getNumLoansForTroveId(troveId);
-        uint256 totalBorrowed;
-        uint256 totalInterest;
-        address token;
+        uint256 totalOwed;
 
         for (uint i = 0; i < numLoans; i++) {
             uint256 loanId = getLoanIdByIndexForTroveId(troveId, i);
             (uint256 borrowed, uint256 interest) = Supply(_supply)
                 .getLoanAmountAndInterest(loanId);
-            totalBorrowed += borrowed;
-            totalInterest += interest;
+            totalOwed += borrowed + interest;
             if (i == 0) {
-                token = Supply(_supply).getLoanToken(loanId);
+                address borrowedToken = Supply(_supply).getLoanToken(loanId);
+                require(
+                    token == borrowedToken,
+                    "trying to borrow 2 different tokens"
+                );
             }
         }
-        return (token, totalBorrowed, totalInterest);
+
+        uint256 total = totalOwed + extraAmount;
+
+        uint256 loanValue = UniUtils.getTWAPValue(
+            total,
+            token,
+            _WETH,
+            _oraclePoolFees[token],
+            _twapInterval
+        );
+        return loanValue;
     }
 
     function getTroveCollateralValue(
         uint256 troveId
-    ) private view returns (uint256, uint256) {
+    ) public view returns (uint256, uint256) {
         Trove storage trove = _troves[troveId];
         address token = trove.token;
 
@@ -253,7 +259,7 @@ contract TroveManager is ERC721, ERC721Holder, Ownable {
 
     function positionValueAndCollateralRatio(
         uint256 positionId
-    ) private view returns (uint256, uint256) {
+    ) public view returns (uint256, uint256) {
         (
             address token0,
             uint256 amount0,
@@ -282,36 +288,22 @@ contract TroveManager is ERC721, ERC721Holder, Ownable {
 
     function getHealthFactorBPS(
         uint256 troveId,
-        uint256 extraAmount
-    ) private view returns (address, uint256) {
+        uint256 extraAmount,
+        address token
+    ) public view returns (uint256) {
         (
             uint256 collateralValue,
             uint256 collateralFactorBPS
         ) = getTroveCollateralValue(troveId);
 
-        (
-            address token,
-            uint256 borrowed,
-            uint256 interest
-        ) = getAmountBorrowedForTroveId(troveId);
+        uint256 loanValue = getTroveLoansValue(troveId, extraAmount, token);
 
-        uint256 total = borrowed + interest + extraAmount;
-
-        uint256 loanValue = UniUtils.getTWAPValue(
-            total,
-            token,
-            _WETH,
-            _oraclePoolFees[token],
-            _twapInterval
-        );
-
-        if (total > 0) {
+        if (loanValue > 0) {
             return (
-                token,
                 FullMath.mulDiv(collateralValue, collateralFactorBPS, loanValue)
             );
         } else {
-            return (token, MAX_INT);
+            return (MAX_INT);
         }
     }
 }

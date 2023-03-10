@@ -215,6 +215,7 @@ export async function getTroveIds(
   account: Address
 ): Promise<number[]> {
   const troveManager = getTroveManagerContract(provider);
+  console.log(troveManager.address);
   return getERC721Ids(troveManager, account);
 }
 
@@ -240,7 +241,7 @@ export async function getSupplyDepositIds(
   account: Address
 ): Promise<number[]> {
   const supplyContract = getSupplyContract(provider);
-  console.log("fetching supply deposit ids");
+  console.log("fetching supply deposit ids" + supplyContract.address);
   return getERC721Ids(supplyContract, account);
 }
 
@@ -249,6 +250,7 @@ export async function getERC721Ids(
   contract: ethers.Contract,
   account: Address
 ): Promise<number[]> {
+  console.log("hello");
   const balance: number = await contract.balanceOf(account);
   const requests = [];
   for (let i = 0; i < balance; i++) {
