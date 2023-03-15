@@ -1,16 +1,14 @@
 import { ethers } from "hardhat";
-
+import { deploySupply, deployTroveManager, getUniUtilsAddress } from "./utils";
 import {
   AGEUR_TOKEN,
   CRV_TOKEN,
   USDC_TOKEN,
   WETH_TOKEN,
 } from "../../webapp/src/libs/constants";
-
-import { deploySupply, deployUniUtils, deployTroveManager } from "./utils";
-
 import hre from "hardhat";
 import { error } from "console";
+
 const networkName = hre.network.name;
 const chainId = hre.network.config.chainId;
 
@@ -22,13 +20,9 @@ async function main() {
   const supply = await deploySupply();
   console.log(`supply deployed to ${supply.address}`);
 
-  const uniUtils = await deployUniUtils();
-  console.log(`uni utils deployed to ${uniUtils.address}`);
-
   const troveManager = await deployTroveManager(
     supply.address,
-    WETH_TOKEN.address,
-    uniUtils.address
+    WETH_TOKEN.address
   );
   console.log(`trove manager deployed to ${troveManager.address}`);
 
@@ -40,7 +34,7 @@ async function main() {
   await troveManager.addCollateralToken(AGEUR_TOKEN.address, 6500, 500);
 
   const deployments = {
-    uniUtils: uniUtils.address,
+    uniUtils: getUniUtilsAddress(),
     supply: supply.address,
     troveManager: troveManager.address,
   };

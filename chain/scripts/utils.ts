@@ -1,4 +1,17 @@
 import { ethers } from "hardhat";
+import deployments from "../../unilib/cache/deployments.json";
+
+export function getUniUtilsAddress() {
+  if (deployments == undefined) {
+    throw Error("uni utils not deployed");
+  }
+  return deployments.uniUtils;
+}
+
+export function getUniUtilsContract() {
+  const contract = ethers.getContractAt("IUniUtils", getUniUtilsAddress());
+  return contract;
+}
 
 export async function deployTokensFixture() {
   const [owner, account1, account2] = await ethers.getSigners();
@@ -24,24 +37,17 @@ export async function deploySupply() {
   return supply;
 }
 
-export async function deployUniUtils() {
-  const UniUtils = await ethers.getContractFactory("UniUtils");
-  const uniUtils = await UniUtils.deploy();
-  return uniUtils;
-}
-
 export async function deployTroveManager(
   supplyAddress: string,
-  wethAddress: string,
-  uniUtilsAddress: string
+  wethAddress: string
 ) {
-  const TroveManager = await ethers.getContractFactory("TroveManager", {
-    libraries: {
-      UniUtils: uniUtilsAddress,
-    },
-  });
+  const TroveManager = await ethers.getContractFactory("TroveManager");
 
-  const troveManager = await TroveManager.deploy(wethAddress, supplyAddress);
+  const troveManager = await TroveManager.deploy(
+    wethAddress,
+    supplyAddress,
+    getUniUtilsAddress()
+  );
 
   return troveManager;
 }

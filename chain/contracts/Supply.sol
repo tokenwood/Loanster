@@ -1,10 +1,11 @@
-// SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.7.6;
-pragma abicoder v2;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.9;
+// pragma abicoder v2;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 // todo implement fee
 // todo optimize with tight variable packing?
@@ -28,7 +29,8 @@ struct Loan {
     uint256 interestRateBPS;
 }
 
-contract Supply is ERC721, Ownable {
+contract Supply is ERC721Enumerable, Ownable {
+    //todo remove EnumerableSet and use mapping as in latest ERC721.sol
     using EnumerableSet for EnumerableSet.UintSet;
 
     mapping(address => bool) private _allowedDepositTokens;

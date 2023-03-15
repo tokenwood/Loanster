@@ -42,7 +42,7 @@ describe("Supply", function () {
     const unlockTime = (await time.latest()) + ONE_YEAR_IN_SECS;
 
     await supply.addDepositToken(token.address);
-    await token.connect(account1).approve(supply.address, 1000);
+    await token.connect(account1).approve(supply.address, 10000);
     await expect(
       supply
         .connect(account1)

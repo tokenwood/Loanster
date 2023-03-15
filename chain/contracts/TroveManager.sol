@@ -1,23 +1,22 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.7.6;
-pragma abicoder v2;
+pragma solidity ^0.8.9;
+// pragma abicoder v2;
 
 import "./Supply.sol";
-import "./libraries/UniUtils.sol";
-import "@openzeppelin/contracts/token/ERC721/ERC721Holder.sol";
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/math/Math.sol";
-import "@uniswap/v3-periphery/contracts/interfaces/INonfungiblePositionManager.sol";
-import "@uniswap/v3-periphery/contracts/libraries/LiquidityAmounts.sol";
-import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
-import "@uniswap/v3-core/contracts/libraries/TickMath.sol";
+import "./interfaces/IUniUtils.sol";
+import "./libraries/SignatureUtils.sol";
+import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+
+// import "@openzeppelin/contracts/math/Math.sol";
 
 // deposit collateral in ave
-contract TroveManager is ERC721, ERC721Holder, Ownable {
+contract TroveManager is ERC721Enumerable, ERC721Holder, Ownable, SignUtils {
     using EnumerableSet for EnumerableSet.UintSet;
 
     address private _supply;
     address private _WETH;
+    address private _uniUtils;
 
     mapping(uint256 => Trove) private _troves;
     mapping(uint256 => EnumerableSet.UintSet) private _troveLoans;
@@ -41,11 +40,16 @@ contract TroveManager is ERC721, ERC721Holder, Ownable {
     }
 
     struct Trove {
-        address token; // ERC721 or ERC20 token
+        address token;
         uint256 amountOrId;
     }
 
-    constructor(address WETH, address supply) ERC721("TroveNFT", "ULT") {
+    constructor(
+        address WETH,
+        address supply,
+        address uniUtils
+    ) ERC721("TroveNFT", "ULT") {
+        _uniUtils = uniUtils;
         _supply = supply;
         _WETH = WETH;
 
@@ -79,19 +83,10 @@ contract TroveManager is ERC721, ERC721Holder, Ownable {
 
         _troves[troveId] = Trove({token: token, amountOrId: amountOrId});
 
-        if (token == UniUtils.NONFUNGIBLE_POSITION_MANAGER) {
-            INonfungiblePositionManager(UniUtils.NONFUNGIBLE_POSITION_MANAGER)
-                .safeTransferFrom(msg.sender, address(this), amountOrId);
-        } else {
-            require(
-                ERC20(token).transferFrom(
-                    msg.sender,
-                    address(this),
-                    amountOrId
-                ),
-                "transfer failed"
-            );
-        }
+        require(
+            ERC20(token).transferFrom(msg.sender, address(this), amountOrId),
+            "transfer failed"
+        );
 
         emit NewTrove(troveId);
     }
@@ -106,24 +101,43 @@ contract TroveManager is ERC721, ERC721Holder, Ownable {
             "must close loans before withdrawing"
         );
 
-        if (_troves[troveId].token == UniUtils.NONFUNGIBLE_POSITION_MANAGER) {
-            INonfungiblePositionManager(UniUtils.NONFUNGIBLE_POSITION_MANAGER)
-                .safeTransferFrom(
-                    address(this),
-                    msg.sender,
-                    _troves[troveId].amountOrId
-                );
-        } else {
-            require(
-                ERC20(_troves[troveId].token).transferFrom(
-                    address(this),
-                    msg.sender,
-                    _troves[troveId].amountOrId
-                ),
-                "transfer failed"
-            );
-        }
+        require(
+            ERC20(_troves[troveId].token).transferFrom(
+                address(this),
+                msg.sender,
+                _troves[troveId].amountOrId
+            ),
+            "transfer failed"
+        );
+
         _burn(troveId);
+    }
+
+    function buildMessage(
+        Loan calldata loan,
+        address signer
+    ) public pure returns (bytes32) {
+        return
+            prefixed(
+                keccak256(
+                    abi.encodePacked(
+                        signer,
+                        loan.token,
+                        loan.depositId,
+                        loan.troveId,
+                        loan.start,
+                        loan.interestRateBPS
+                    )
+                )
+            );
+    }
+
+    function verifySignature(
+        Loan calldata loan,
+        bytes calldata sig
+    ) private view {
+        bytes32 message = buildMessage(loan, msg.sender); //  nonce, this ?
+        require(recoverSigner(message, sig) == msg.sender);
     }
 
     function openLoan(
@@ -221,7 +235,7 @@ contract TroveManager is ERC721, ERC721Holder, Ownable {
 
         uint256 total = totalOwed + extraAmount;
 
-        uint256 loanValue = UniUtils.getTWAPValue(
+        uint256 loanValue = IUniUtils(_uniUtils).getTWAPValue(
             total,
             token,
             _WETH,
@@ -237,53 +251,16 @@ contract TroveManager is ERC721, ERC721Holder, Ownable {
         Trove storage trove = _troves[troveId];
         address token = trove.token;
 
-        uint256 collateralValue;
-        uint256 collateralFactorBPS;
-        if (token == UniUtils.NONFUNGIBLE_POSITION_MANAGER) {
-            (
-                collateralValue,
-                collateralFactorBPS
-            ) = positionValueAndCollateralRatio(trove.amountOrId);
-        } else {
-            collateralValue = UniUtils.getTWAPValue(
-                trove.amountOrId,
-                token,
-                _WETH,
-                _oraclePoolFees[token],
-                _twapInterval
-            );
-            collateralFactorBPS = _collateralFactors[token];
-        }
-        return (collateralValue, collateralFactorBPS);
-    }
+        uint256 collateralValue = IUniUtils(_uniUtils).getTWAPValue(
+            trove.amountOrId,
+            token,
+            _WETH,
+            _oraclePoolFees[token],
+            _twapInterval
+        );
+        uint256 collateralFactorBPS = _collateralFactors[token];
 
-    function positionValueAndCollateralRatio(
-        uint256 positionId
-    ) public view returns (uint256, uint256) {
-        (
-            address token0,
-            uint256 amount0,
-            address token1,
-            uint256 amount1
-        ) = UniUtils.getTokenAmounts(positionId);
-        uint256 priceX960 = UniUtils.getTWAPValue(
-            amount0,
-            token0,
-            _WETH,
-            _oraclePoolFees[token0],
-            _twapInterval
-        );
-        uint256 priceX961 = UniUtils.getTWAPValue(
-            amount1,
-            token1,
-            _WETH,
-            _oraclePoolFees[token0],
-            _twapInterval
-        );
-        return (
-            priceX960 + priceX961,
-            Math.min(_collateralFactors[token0], _collateralFactors[token1])
-        );
+        return (collateralValue, collateralFactorBPS);
     }
 
     function getHealthFactorBPS(
@@ -299,9 +276,7 @@ contract TroveManager is ERC721, ERC721Holder, Ownable {
         uint256 loanValue = getTroveLoansValue(troveId, extraAmount, token);
 
         if (loanValue > 0) {
-            return (
-                FullMath.mulDiv(collateralValue, collateralFactorBPS, loanValue)
-            );
+            return ((collateralValue * collateralFactorBPS) / loanValue); // overflow risk?
         } else {
             return (MAX_INT);
         }
