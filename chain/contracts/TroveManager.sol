@@ -1,17 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.9;
-// pragma abicoder v2;
 
 import "./Supply.sol";
 import "./interfaces/IUniUtils.sol";
-import "./libraries/SignatureUtils.sol";
-import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
-
-// import "@openzeppelin/contracts/math/Math.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 // deposit collateral in ave
-contract TroveManager is ERC721Enumerable, ERC721Holder, Ownable, SignUtils {
+contract TroveManager is ERC721Enumerable, Ownable {
     using EnumerableSet for EnumerableSet.UintSet;
 
     address private _supply;
@@ -23,6 +19,7 @@ contract TroveManager is ERC721Enumerable, ERC721Holder, Ownable, SignUtils {
     mapping(address => uint256) private _collateralFactors;
     mapping(address => bool) private _allowedCollateralTokens;
     mapping(address => uint24) private _oraclePoolFees;
+
     uint256 private _nextTroveId = 1;
     uint256 private constant MAX_INT = 2 ** 256 - 1;
     uint32 private _twapInterval = 300;
@@ -34,15 +31,17 @@ contract TroveManager is ERC721Enumerable, ERC721Holder, Ownable, SignUtils {
     event CollateralTokenChange(address token, bool isAllowed);
     event NewTrove(uint256 troveId);
 
+    struct Trove {
+        address token;
+        uint256 amountOrId;
+    }
+
     modifier troveOwner(uint256 troveId) {
         require(msg.sender == ownerOf(troveId), "sender not owner of trove");
         _;
     }
 
-    struct Trove {
-        address token;
-        uint256 amountOrId;
-    }
+    // init functions
 
     constructor(
         address WETH,
@@ -54,10 +53,6 @@ contract TroveManager is ERC721Enumerable, ERC721Holder, Ownable, SignUtils {
         _WETH = WETH;
 
         Supply(_supply).setTroveManager(address(this));
-    }
-
-    function getTrove(uint256 troveId) public view returns (Trove memory) {
-        return _troves[troveId];
     }
 
     function addCollateralToken(
@@ -77,6 +72,8 @@ contract TroveManager is ERC721Enumerable, ERC721Holder, Ownable, SignUtils {
         emit CollateralTokenChange(token, false);
     }
 
+    // state changes public
+
     function openTrove(address token, uint256 amountOrId) public {
         uint256 troveId = _nextTroveId++;
         _safeMint(msg.sender, troveId);
@@ -94,6 +91,85 @@ contract TroveManager is ERC721Enumerable, ERC721Holder, Ownable, SignUtils {
     function closeTrove(uint256 troveId) public troveOwner(troveId) {
         closeTroveInternal(troveId);
     }
+
+    function openLoans(
+        LoanOffer[] calldata loanOffers,
+        bytes[] calldata signatures,
+        uint256 amount,
+        uint256 duration,
+        uint256 troveId,
+        bool allowPartialExecution
+    ) public troveOwner(troveId) {
+        uint256 toBorrow = amount;
+        for (uint i = 0; i < loanOffers.length && toBorrow > 0; i++) {
+            uint256 offerAmount = min(toBorrow, loanOffers[i].amount);
+
+            openLoan(
+                loanOffers[i],
+                signatures[i],
+                offerAmount,
+                duration,
+                troveId
+            );
+
+            toBorrow -= offerAmount;
+        }
+        if (allowPartialExecution == false) {
+            require(toBorrow == 0, "could not borrow enough");
+        }
+    }
+
+    function openLoan(
+        LoanOffer calldata loanOffer,
+        bytes calldata signature,
+        uint256 amount,
+        uint256 duration,
+        uint256 troveId
+    ) public troveOwner(troveId) {
+        uint256 healthFactor = getHealthFactorBPS(
+            troveId,
+            amount,
+            loanOffer.token
+        );
+        require(healthFactor > HUNDRED_PERCENT_BPS, "health factor too low");
+
+        // change local state and transfer tokens
+        uint256 loanId = Supply(_supply).openLoan(
+            loanOffer,
+            signature,
+            amount,
+            duration,
+            _ownerOf(troveId),
+            troveId
+        );
+
+        _troveLoans[troveId].add(loanId);
+    }
+
+    function repayLoan(
+        uint256 troveId,
+        uint256 loanId,
+        uint256 newAmount
+    ) public troveOwner(troveId) {
+        repayLoanInternal(troveId, loanId, newAmount);
+    }
+
+    function liquidateTrove(uint256 troveId) public {
+        uint256 healthFactor = getHealthFactorBPS(troveId, 0, address(0));
+
+        require(healthFactor < HUNDRED_PERCENT_BPS, "trove is healthy");
+
+        uint256 numLoans = getNumLoansForTroveId(troveId);
+        for (uint i = 0; i < numLoans; i++) {
+            uint256 loanId = getLoanIdByIndexForTroveId(troveId, i);
+            repayLoanInternal(troveId, loanId, 0);
+        }
+
+        // todo split excess between liquidator and owner, handle bad debt
+        closeTroveInternal(troveId);
+    }
+
+    // state changes private
 
     function closeTroveInternal(uint256 troveId) private {
         require(
@@ -113,65 +189,6 @@ contract TroveManager is ERC721Enumerable, ERC721Holder, Ownable, SignUtils {
         _burn(troveId);
     }
 
-    function buildMessage(
-        Loan calldata loan,
-        address signer
-    ) public pure returns (bytes32) {
-        return
-            prefixed(
-                keccak256(
-                    abi.encodePacked(
-                        signer,
-                        loan.token,
-                        loan.depositId,
-                        loan.troveId,
-                        loan.start,
-                        loan.interestRateBPS
-                    )
-                )
-            );
-    }
-
-    function verifySignature(
-        Loan calldata loan,
-        bytes calldata sig
-    ) private view {
-        bytes32 message = buildMessage(loan, msg.sender); //  nonce, this ?
-        require(recoverSigner(message, sig) == msg.sender);
-    }
-
-    function openLoan(
-        uint256 troveId,
-        uint256 depositId,
-        address token,
-        uint256 amount,
-        uint256 duration
-    ) public troveOwner(troveId) {
-        uint256 healthFactor = getHealthFactorBPS(troveId, amount, token);
-
-        require(healthFactor > HUNDRED_PERCENT_BPS, "health factor too low");
-
-        // change local state and transfer tokens
-        uint256 loanId = Supply(_supply).openLoan(
-            token,
-            msg.sender,
-            depositId,
-            amount,
-            duration,
-            troveId
-        );
-
-        _troveLoans[troveId].add(loanId);
-    }
-
-    function repayLoan(
-        uint256 troveId,
-        uint256 loanId,
-        uint256 newAmount
-    ) public troveOwner(troveId) {
-        repayLoanInternal(troveId, loanId, newAmount);
-    }
-
     function repayLoanInternal(
         uint256 troveId,
         uint256 loanId,
@@ -183,19 +200,9 @@ contract TroveManager is ERC721Enumerable, ERC721Holder, Ownable, SignUtils {
         Supply(_supply).repayLoan(msg.sender, loanId, newAmount);
     }
 
-    function liquidateTrove(uint256 troveId) public {
-        uint256 healthFactor = getHealthFactorBPS(troveId, 0, address(0));
-
-        require(healthFactor < HUNDRED_PERCENT_BPS, "trove is healthy");
-
-        uint256 numLoans = getNumLoansForTroveId(troveId);
-        for (uint i = 0; i < numLoans; i++) {
-            uint256 loanId = getLoanIdByIndexForTroveId(troveId, i);
-            repayLoanInternal(troveId, loanId, 0);
-        }
-
-        // todo split excess between liquidator and owner, handle bad debt
-        closeTroveInternal(troveId);
+    // view functions
+    function getTrove(uint256 troveId) public view returns (Trove memory) {
+        return _troves[troveId];
     }
 
     function getNumLoansForTroveId(
@@ -211,6 +218,7 @@ contract TroveManager is ERC721Enumerable, ERC721Holder, Ownable, SignUtils {
         return (_troveLoans[troveId].at(index));
     }
 
+    // could there be so many loans that health becomes impossible to calculate without running out of gas?
     function getTroveLoansValue(
         uint256 troveId,
         uint256 extraAmount,
@@ -222,7 +230,7 @@ contract TroveManager is ERC721Enumerable, ERC721Holder, Ownable, SignUtils {
         for (uint i = 0; i < numLoans; i++) {
             uint256 loanId = getLoanIdByIndexForTroveId(troveId, i);
             (uint256 borrowed, uint256 interest) = Supply(_supply)
-                .getLoanAmountAndInterest(loanId);
+                .getLoanAmountAndMinInterest(loanId);
             totalOwed += borrowed + interest;
             if (i == 0) {
                 address borrowedToken = Supply(_supply).getLoanToken(loanId);
@@ -280,5 +288,9 @@ contract TroveManager is ERC721Enumerable, ERC721Holder, Ownable, SignUtils {
         } else {
             return (MAX_INT);
         }
+    }
+
+    function min(uint256 a, uint256 b) private pure returns (uint256) {
+        return a >= b ? b : a;
     }
 }

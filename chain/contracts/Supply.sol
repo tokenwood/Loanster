@@ -5,50 +5,62 @@ pragma solidity ^0.8.9;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import "./libraries/SignatureUtils.sol";
 
 // todo implement fee
-// todo optimize with tight variable packing?
-// what happens if owner gets compromised?
-struct Deposit {
+// add max loan time parameter (2/4 years?)
+// todo optimize with tight variable packing
+
+// future feature: allow to borrow from repaid loan with signature
+// future feature: secondary loan market (allow selling of loans with signature)
+
+struct LoanOffer {
+    address owner;
     address token;
-    uint256 amountDeposited;
-    uint256 interestRateBPS; // 100 = 1%
-    uint256 expiration; // timestamp
-    uint256 maxLoanDuration; // seconds
-    uint256 minLoanDuration; // seconds
-    uint256 claimableInterest;
+    uint256 offerId; // uint16?
+    uint256 nonce; // uint16?
+    uint256 minLoanAmount;
+    uint256 amount;
+    uint256 interestRateBPS; // uint16 (max value 65535)
+    uint256 expiration; // uint32 (max year 2106)
+    uint256 minLoanDuration; // uint32
+    uint256 maxLoanDuration; // uint32
 }
 
 struct Loan {
     address token;
-    uint256 depositId;
     uint256 troveId;
+    bytes32 offerKey;
     uint256 amount;
-    uint256 start;
-    uint256 interestRateBPS;
+    uint256 startTime; // uint32
+    uint256 minRepayTime; // uint32
+    uint256 expiration; // uint32
+    uint256 interestRateBPS; // uint16 ?
 }
 
-contract Supply is ERC721Enumerable, Ownable {
+contract Supply is ERC721Enumerable, Ownable, SignUtils {
     //todo remove EnumerableSet and use mapping as in latest ERC721.sol
-    using EnumerableSet for EnumerableSet.UintSet;
 
     mapping(address => bool) private _allowedDepositTokens;
-    mapping(uint256 => Deposit) private _deposits;
+    mapping(address => uint256) private _borrowFactorBPS;
+    mapping(bytes32 => uint256) private _offerNonces;
+    mapping(bytes32 => address) private _offerToken;
+    mapping(bytes32 => uint256) private _offerAmountBorrowed;
+    mapping(uint256 => uint256) private _claimableInterest;
+    mapping(uint256 => uint256) private _claimableRepayment;
     mapping(uint256 => Loan) private _loans;
-    mapping(uint256 => EnumerableSet.UintSet) private _depositLoans;
 
-    uint256 private _nextDepositId = 1;
     uint256 private _nextLoanId = 1;
     address private _troveManager;
 
     uint256 private constant ONE_YEAR_IN_SECONDS = 365 * 24 * 60 * 60;
     uint256 private constant MAX_INT = 2 ** 256 - 1;
 
-    event DepositTokenChange(address token, bool isAllowed);
-    event NewDeposit(uint256 depositId);
-    event NewLoan(uint256 loanId);
+    event SupplyTokenChanged(address token, bool isAllowed);
+    event NewLoan(uint256 troveId, uint256 loanId);
+    event LoanRepayment(uint256 loanId);
 
+    // init and configuration functions
     constructor() ERC721("DepositNFT", "ULD") {}
 
     function setTroveManager(address troveManager) public {
@@ -58,113 +70,93 @@ contract Supply is ERC721Enumerable, Ownable {
         }
     }
 
-    function addDepositToken(address token) public onlyOwner {
+    function addSupplyToken(
+        address token,
+        uint256 borrowFactorBPS
+    ) public onlyOwner {
         _allowedDepositTokens[token] = true;
+        _borrowFactorBPS[token] = borrowFactorBPS;
         ERC20(token).approve(address(this), MAX_INT); // what if runs out ?
-        emit DepositTokenChange(token, true);
+        emit SupplyTokenChanged(token, true);
     }
 
-    function removeDepositToken(address token) public onlyOwner {
+    function removeSupplyToken(address token) public onlyOwner {
         delete _allowedDepositTokens[token];
-        emit DepositTokenChange(token, false);
+        emit SupplyTokenChanged(token, false);
     }
 
-    function getDeposit(
-        uint256 depositId
-    ) public view returns (Deposit memory) {
-        return (_deposits[depositId]);
-    }
-
-    function getNumLoansForDepositId(
-        uint256 depositId
-    ) public view returns (uint256) {
-        return (_depositLoans[depositId].length());
-    }
-
-    function getLoanByIndexForDepositId(
-        uint256 depositId,
-        uint256 index
-    ) public view returns (uint256) {
-        return (_depositLoans[depositId].at(index));
-    }
-
-    function getAmountBorrowedForDepositId(
-        uint256 depositId
-    ) public view returns (uint256) {
-        uint256 numLoans = getNumLoansForDepositId(depositId);
-        uint256 amountBorrowed = 0;
-
-        for (uint i = 0; i < numLoans; i++) {
-            uint256 loanId = getLoanByIndexForDepositId(depositId, i);
-            amountBorrowed += _loans[loanId].amount;
-        }
-        return amountBorrowed;
-    }
-
-    function getLoan(uint256 loanId) public view returns (Loan memory) {
-        return _loans[loanId];
-    }
-
-    function getLoanAmountAndInterest(
-        uint256 loanId
-    ) public view returns (uint256, uint256) {
-        return (_loans[loanId].amount, getInterestForLoan(loanId));
-    }
-
-    function getLoanToken(uint256 loanId) public view returns (address) {
-        return (_loans[loanId].token);
-    }
-
-    function getInterestForLoan(uint256 loanId) public view returns (uint256) {
-        return
-            ((block.timestamp - _loans[loanId].start) *
-                _loans[loanId].interestRateBPS) / (ONE_YEAR_IN_SECONDS * 10000);
+    // state changing functions
+    function setOfferNonce(uint256 offerId, uint256 nonce) public {
+        _offerNonces[getOfferKey(msg.sender, offerId)] = nonce;
     }
 
     function openLoan(
-        address token,
-        address borrower,
-        uint256 depositId,
+        LoanOffer calldata loanOffer,
+        bytes calldata signature,
         uint256 amount,
         uint256 duration,
+        address borrower,
         uint256 troveId
     ) public returns (uint256) {
         require(
             msg.sender == _troveManager,
             "only trove manager can start loan"
         );
+        verifyLoanOfferSignature(loanOffer, signature);
+        bytes32 key = getOfferKey(loanOffer.owner, loanOffer.offerId);
 
-        Deposit storage d = _deposits[depositId];
+        require(_offerNonces[key] <= loanOffer.nonce, "invalid nonce");
+        _offerNonces[key] = loanOffer.nonce;
 
-        require(token == d.token, "wrong token");
+        if (_offerToken[key] == address(0)) {
+            _offerToken[key] = loanOffer.token;
+        } else {
+            require(_offerToken[key] == loanOffer.token);
+        }
+
+        // check if loan verifies parameters of offer
+        require(amount > loanOffer.minLoanAmount, "amount too small");
+        _offerAmountBorrowed[key] += amount;
         require(
-            (d.amountDeposited - getAmountBorrowedForDepositId(depositId)) >
-                amount,
+            loanOffer.amount > _offerAmountBorrowed[key],
             "not enough funds available"
         );
+
         require(
-            (block.timestamp + duration) < d.expiration,
+            block.timestamp < loanOffer.expiration,
             "supply expiration reached"
         );
-        require((duration < d.maxLoanDuration), "max duration reached");
+        require(
+            loanOffer.minLoanDuration < duration &&
+                duration < loanOffer.maxLoanDuration,
+            "invalid duration"
+        );
 
         uint256 loanId = _nextLoanId++;
         _loans[loanId] = Loan({
-            token: token,
-            depositId: depositId,
+            token: loanOffer.token,
             troveId: troveId,
+            offerKey: key,
             amount: amount,
-            start: block.timestamp,
-            interestRateBPS: d.interestRateBPS
+            startTime: block.timestamp,
+            minRepayTime: block.timestamp + loanOffer.minLoanDuration,
+            expiration: block.timestamp + duration,
+            interestRateBPS: loanOffer.interestRateBPS
         });
-        _depositLoans[depositId].add(loanId);
+
+        _safeMint(msg.sender, loanId);
 
         require(
-            ERC20(token).transferFrom(address(this), borrower, amount),
+            ERC20(loanOffer.token).transferFrom(
+                loanOffer.owner,
+                borrower,
+                amount
+            ),
             "transfer failed"
         );
 
-        emit NewLoan(loanId);
+        emit NewLoan(troveId, loanId);
+
         return loanId;
     }
 
@@ -178,105 +170,158 @@ contract Supply is ERC721Enumerable, Ownable {
             "only trove manager can repay loan"
         );
 
-        Loan storage l = _loans[loanId];
-        Deposit storage d = _deposits[l.depositId];
-
-        uint256 interest = getInterestForLoan(loanId);
-
+        Loan storage l = _loans[loanId]; //should the whole thing be loaded?
         require(
             newAmount < l.amount,
             "new amount larger or equal to current loan amount"
         );
 
-        uint256 amountToTransfer = l.amount + interest - newAmount;
-
-        d.claimableInterest += interest;
-        l.amount = newAmount;
-        l.start = block.timestamp;
-
-        if (newAmount == 0) {
-            _depositLoans[l.depositId].remove(loanId);
-        }
-
-        require(
-            ERC20(d.token).transferFrom(
-                borrower,
-                address(this),
-                amountToTransfer
-            ),
-            "transfer failed"
-        );
-    }
-
-    function getDepositId() public view returns (uint256) {
-        return (_nextDepositId);
-    }
-
-    function makeDeposit(
-        address token,
-        uint256 amount,
-        uint256 interestRateBPS,
-        uint256 expiration,
-        uint256 maxLoanDuration,
-        uint256 minLoanDuration
-    ) public {
-        require(_allowedDepositTokens[token], "unauthorized deposit token");
-        require(
-            ERC20(token).transferFrom(msg.sender, address(this), amount),
-            "transfer failed"
-        );
-
-        uint256 depositId = _nextDepositId++;
-
-        _safeMint(msg.sender, depositId);
-
-        _deposits[depositId] = Deposit({
-            token: token,
-            amountDeposited: amount,
-            expiration: expiration,
-            maxLoanDuration: maxLoanDuration,
-            minLoanDuration: minLoanDuration,
-            interestRateBPS: interestRateBPS,
-            claimableInterest: 0
-        });
-
-        emit NewDeposit(depositId);
-    }
-
-    function changeAmountDeposited(
-        uint256 depositId,
-        uint256 newAmount
-    ) public {
-        Deposit storage deposit = _deposits[depositId];
-        require(
-            ownerOf(depositId) == msg.sender,
-            "sender is not owner of deposit"
-        );
-
-        ERC20 token = ERC20(deposit.token);
-
-        uint256 amountDeposited = deposit.amountDeposited;
-        deposit.amountDeposited = newAmount;
-
-        if (newAmount > amountDeposited) {
-            uint256 amountToAdd = newAmount - amountDeposited;
-            require(
-                token.transferFrom(msg.sender, address(this), amountToAdd),
-                "transfer failed"
+        uint256 interest;
+        if (block.timestamp >= l.minRepayTime) {
+            interest = getInterest(
+                l.amount,
+                l.interestRateBPS,
+                max(l.minRepayTime, l.minRepayTime) - l.startTime
             );
         } else {
-            require(
-                newAmount >= getAmountBorrowedForDepositId(depositId),
-                "attempting to withdraw borrowed funds"
-            );
-            uint256 amountToRemove = amountDeposited - newAmount;
-            if (newAmount == 0) {
-                _burn(depositId);
-            }
-            require(
-                token.transferFrom(address(this), msg.sender, amountToRemove),
-                "transfer failed"
-            );
+            interest =
+                getInterest(
+                    l.amount,
+                    l.interestRateBPS,
+                    l.minRepayTime - l.startTime
+                ) -
+                getInterest(
+                    newAmount,
+                    l.interestRateBPS,
+                    l.minRepayTime - block.timestamp
+                );
         }
+
+        uint256 amountToTransfer = l.amount - newAmount;
+
+        _claimableInterest[loanId] += interest;
+        _claimableRepayment[loanId] += amountToTransfer;
+
+        l.amount = newAmount;
+        l.startTime = block.timestamp;
+
+        require(
+            ERC20(l.token).transferFrom(
+                borrower,
+                address(this),
+                interest + amountToTransfer
+            ),
+            "interest payment failed"
+        );
+
+        emit LoanRepayment(loanId);
+    }
+
+    function withdraw(uint256 loanId) public {
+        require(msg.sender == ownerOf(loanId));
+
+        uint256 claimable = _claimableInterest[loanId];
+        _claimableInterest[loanId] = 0;
+
+        uint256 repayment = _claimableRepayment[loanId];
+        _claimableRepayment[loanId] = 0;
+
+        require(
+            ERC20(_loans[loanId].token).transferFrom(
+                address(this),
+                ownerOf(loanId),
+                claimable + repayment
+            ),
+            "withdraw failed"
+        );
+    }
+
+    // view functions
+
+    function getOfferNonce(bytes32 offerKey) public view returns (uint256) {
+        return (_offerNonces[offerKey]);
+    }
+
+    function getLoanToken(uint256 loanId) public view returns (address) {
+        return (_loans[loanId].token);
+    }
+
+    function getLoan(uint256 loanId) public view returns (Loan memory) {
+        return _loans[loanId];
+    }
+
+    function getLoanAmountAndMinInterest(
+        uint256 loanId
+    ) public view returns (uint256, uint256) {
+        uint256 duration = max(block.timestamp, _loans[loanId].minRepayTime) -
+            _loans[loanId].startTime;
+        return (
+            _loans[loanId].amount,
+            getInterest(
+                _loans[loanId].amount,
+                _loans[loanId].interestRateBPS,
+                duration
+            )
+        );
+    }
+
+    // helper functions (pure)
+
+    function getInterest(
+        uint256 amount,
+        uint256 interestRateBPS,
+        uint256 duration
+    ) private pure returns (uint256) {
+        return ((amount * duration * interestRateBPS) /
+            (ONE_YEAR_IN_SECONDS * 10000)); // use openzeppelin safemath instead?
+    }
+
+    function buildLoanOfferMessage(
+        LoanOffer calldata loanOffer
+    ) public pure returns (bytes32) {
+        return
+            prefixed(
+                keccak256(
+                    abi.encodePacked(
+                        loanOffer.owner,
+                        loanOffer.token,
+                        loanOffer.offerId,
+                        loanOffer.nonce,
+                        loanOffer.minLoanAmount,
+                        loanOffer.amount,
+                        loanOffer.interestRateBPS,
+                        loanOffer.expiration,
+                        loanOffer.minLoanDuration,
+                        loanOffer.maxLoanDuration
+                    )
+                )
+            );
+    }
+
+    function verifyLoanOfferSignature(
+        LoanOffer calldata loanOffer,
+        bytes calldata sig
+    ) private pure {
+        bytes32 message = buildLoanOfferMessage(loanOffer);
+        require(
+            recoverSigner(message, sig) == loanOffer.owner,
+            "invalid signature"
+        );
+    }
+
+    // is this safe from collisions? could be replaced with mapping -> mapping for nonces and offerLoans.
+    function getOfferKey(
+        address sender,
+        uint256 offerId
+    ) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(sender, offerId));
+    }
+
+    function max(uint256 a, uint256 b) private pure returns (uint256) {
+        return a >= b ? a : b;
+    }
+
+    function min(uint256 a, uint256 b) private pure returns (uint256) {
+        return a >= b ? b : a;
     }
 }
