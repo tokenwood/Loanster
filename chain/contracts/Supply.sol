@@ -41,13 +41,10 @@ struct Loan {
 contract Supply is ERC721Enumerable, Ownable, SignUtils {
     //todo remove EnumerableSet and use mapping as in latest ERC721.sol
 
-    mapping(address => bool) private _allowedDepositTokens;
-    mapping(address => uint256) private _borrowFactorBPS;
     mapping(bytes32 => uint256) private _offerNonces;
     mapping(bytes32 => address) private _offerToken;
     mapping(bytes32 => uint256) private _offerAmountBorrowed;
-    mapping(uint256 => uint256) private _claimableInterest;
-    mapping(uint256 => uint256) private _claimableRepayment;
+    mapping(uint256 => uint256) private _claimable;
     mapping(uint256 => Loan) private _loans;
 
     uint256 private _nextLoanId = 1;
@@ -56,9 +53,8 @@ contract Supply is ERC721Enumerable, Ownable, SignUtils {
     uint256 private constant ONE_YEAR_IN_SECONDS = 365 * 24 * 60 * 60;
     uint256 private constant MAX_INT = 2 ** 256 - 1;
 
-    event SupplyTokenChanged(address token, bool isAllowed);
     event NewLoan(uint256 troveId, uint256 loanId);
-    event LoanRepayment(uint256 loanId);
+    event LoanRepayment(uint256 loanId, uint256 interest, uint256 newAmount);
 
     // init and configuration functions
     constructor() ERC721("DepositNFT", "ULD") {}
@@ -68,21 +64,6 @@ contract Supply is ERC721Enumerable, Ownable, SignUtils {
         if (_troveManager == address(0)) {
             _troveManager = troveManager;
         }
-    }
-
-    function addSupplyToken(
-        address token,
-        uint256 borrowFactorBPS
-    ) public onlyOwner {
-        _allowedDepositTokens[token] = true;
-        _borrowFactorBPS[token] = borrowFactorBPS;
-        ERC20(token).approve(address(this), MAX_INT); // what if runs out ?
-        emit SupplyTokenChanged(token, true);
-    }
-
-    function removeSupplyToken(address token) public onlyOwner {
-        delete _allowedDepositTokens[token];
-        emit SupplyTokenChanged(token, false);
     }
 
     // state changing functions
@@ -146,6 +127,8 @@ contract Supply is ERC721Enumerable, Ownable, SignUtils {
 
         _safeMint(msg.sender, loanId);
 
+        // ERC20(loanOffer.token).approve(address(this), amount);
+
         require(
             ERC20(loanOffer.token).transferFrom(
                 loanOffer.owner,
@@ -199,8 +182,7 @@ contract Supply is ERC721Enumerable, Ownable, SignUtils {
 
         uint256 amountToTransfer = l.amount - newAmount;
 
-        _claimableInterest[loanId] += interest;
-        _claimableRepayment[loanId] += amountToTransfer;
+        _claimable[loanId] += interest + amountToTransfer;
 
         l.amount = newAmount;
         l.startTime = block.timestamp;
@@ -214,23 +196,20 @@ contract Supply is ERC721Enumerable, Ownable, SignUtils {
             "interest payment failed"
         );
 
-        emit LoanRepayment(loanId);
+        emit LoanRepayment(loanId, interest, newAmount);
     }
 
     function withdraw(uint256 loanId) public {
         require(msg.sender == ownerOf(loanId));
 
-        uint256 claimable = _claimableInterest[loanId];
-        _claimableInterest[loanId] = 0;
-
-        uint256 repayment = _claimableRepayment[loanId];
-        _claimableRepayment[loanId] = 0;
+        uint256 claimable = _claimable[loanId];
+        _claimable[loanId] = 0;
 
         require(
             ERC20(_loans[loanId].token).transferFrom(
                 address(this),
                 ownerOf(loanId),
-                claimable + repayment
+                claimable
             ),
             "withdraw failed"
         );
@@ -279,30 +258,29 @@ contract Supply is ERC721Enumerable, Ownable, SignUtils {
     function buildLoanOfferMessage(
         LoanOffer calldata loanOffer
     ) public pure returns (bytes32) {
-        return
-            prefixed(
-                keccak256(
-                    abi.encodePacked(
-                        loanOffer.owner,
-                        loanOffer.token,
-                        loanOffer.offerId,
-                        loanOffer.nonce,
-                        loanOffer.minLoanAmount,
-                        loanOffer.amount,
-                        loanOffer.interestRateBPS,
-                        loanOffer.expiration,
-                        loanOffer.minLoanDuration,
-                        loanOffer.maxLoanDuration
-                    )
+        return (
+            keccak256(
+                abi.encodePacked(
+                    loanOffer.owner,
+                    loanOffer.token,
+                    loanOffer.offerId,
+                    loanOffer.nonce,
+                    loanOffer.minLoanAmount,
+                    loanOffer.amount,
+                    loanOffer.interestRateBPS,
+                    loanOffer.expiration,
+                    loanOffer.minLoanDuration,
+                    loanOffer.maxLoanDuration
                 )
-            );
+            )
+        );
     }
 
     function verifyLoanOfferSignature(
         LoanOffer calldata loanOffer,
         bytes calldata sig
-    ) private pure {
-        bytes32 message = buildLoanOfferMessage(loanOffer);
+    ) public pure {
+        bytes32 message = prefixed(buildLoanOfferMessage(loanOffer));
         require(
             recoverSigner(message, sig) == loanOffer.owner,
             "invalid signature"

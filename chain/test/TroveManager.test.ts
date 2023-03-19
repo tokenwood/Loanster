@@ -9,9 +9,14 @@ import { loadFixture, time } from "@nomicfoundation/hardhat-network-helpers";
 import { Token } from "@uniswap/sdk-core";
 
 import "../scripts/utils";
-import { deployTroveManager, deploySupply } from "../scripts/utils";
+import {
+  deployTroveManager,
+  deploySupply,
+  deployTokensFixture,
+} from "../scripts/utils";
 
 import hre from "hardhat";
+import { BigNumber } from "ethers";
 const networkName = hre.network.name;
 const chainId = hre.network.config.chainId;
 
@@ -35,6 +40,7 @@ describe("TroveManager", function () {
       supply.address,
       WETH_TOKEN.address
     );
+    await supply.setTroveManager(troveManager.address);
 
     console.log(`supply and troveManager deployed`);
     return { troveManager, supply };
@@ -72,16 +78,39 @@ describe("TroveManager", function () {
     await log_balance(WETH_TOKEN, account.address);
   }
 
-  it("deposit and withdraw usdc collateral should work", async function () {
-    const [account, account2] = await ethers.getSigners();
-
-    expect(networkName).to.equal("localhost");
-
-    await loadFixture(BuyTokensFixture);
+  it("add and remove token should only work if owner", async function () {
+    const [owner, account1] = await ethers.getSigners();
+    const { token } = await loadFixture(deployTokensFixture);
+    // const supply = await loadFixture(deploySupply);
     const { troveManager } = await loadFixture(deployTroveManagerFixture);
 
-    // const weth = await ethers.getContractAt("IWETH", WETH_TOKEN.address);
+    await expect(
+      troveManager.connect(owner).addSupplyToken(token.address, 10000)
+    ).to.not.be.reverted;
+    await expect(
+      troveManager.connect(account1).addSupplyToken(token.address, 10000)
+    ).to.be.revertedWith("Ownable: caller is not the owner");
+
+    await expect(troveManager.connect(owner).removeSupplyToken(token.address))
+      .to.not.be.reverted;
+    await expect(
+      troveManager.connect(account1).removeSupplyToken(token.address)
+    ).to.be.revertedWith("Ownable: caller is not the owner");
+  });
+
+  it("deposit and withdraw usdc collateral should work", async function () {
+    expect(networkName).to.equal("localhost");
+    await loadFixture(BuyTokensFixture);
+    const [account, account2] = await ethers.getSigners();
+    const { troveManager } = await loadFixture(deployTroveManagerFixture);
+
     const usdc = await ethers.getContractAt("ERC20", USDC_TOKEN.address);
+    await troveManager.addCollateralToken(
+      usdc.address,
+      BigNumber.from(9000),
+      500
+    );
+
     await usdc.approve(
       troveManager.address,
       ethers.utils.parseUnits("100000", 6)

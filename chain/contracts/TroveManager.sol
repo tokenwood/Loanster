@@ -6,7 +6,6 @@ import "./interfaces/IUniUtils.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-// deposit collateral in ave
 contract TroveManager is ERC721Enumerable, Ownable {
     using EnumerableSet for EnumerableSet.UintSet;
 
@@ -16,8 +15,11 @@ contract TroveManager is ERC721Enumerable, Ownable {
 
     mapping(uint256 => Trove) private _troves;
     mapping(uint256 => EnumerableSet.UintSet) private _troveLoans;
-    mapping(address => uint256) private _collateralFactors;
+    mapping(address => uint256) private _collateralFactorsBPS;
+    mapping(address => uint256) private _borrowFactorsBPS;
     mapping(address => bool) private _allowedCollateralTokens;
+    mapping(address => bool) private _allowedSupplyTokens;
+
     mapping(address => uint24) private _oraclePoolFees;
 
     uint256 private _nextTroveId = 1;
@@ -27,13 +29,13 @@ contract TroveManager is ERC721Enumerable, Ownable {
 
     event Debug(string message);
     event DebugAddress(address message);
-
+    event SupplyTokenChanged(address token, bool isAllowed);
     event CollateralTokenChange(address token, bool isAllowed);
     event NewTrove(uint256 troveId);
 
     struct Trove {
-        address token;
-        uint256 amountOrId;
+        address collateralToken;
+        uint256 amount;
     }
 
     modifier troveOwner(uint256 troveId) {
@@ -61,7 +63,7 @@ contract TroveManager is ERC721Enumerable, Ownable {
         uint24 oraclePoolFee
     ) public onlyOwner {
         _allowedCollateralTokens[token] = true;
-        _collateralFactors[token] = collateralFactorBPS;
+        _collateralFactorsBPS[token] = collateralFactorBPS;
         _oraclePoolFees[token] = oraclePoolFee;
         ERC20(token).approve(address(this), MAX_INT);
         emit CollateralTokenChange(token, true);
@@ -72,13 +74,33 @@ contract TroveManager is ERC721Enumerable, Ownable {
         emit CollateralTokenChange(token, false);
     }
 
+    function addSupplyToken(
+        address token,
+        uint256 borrowFactorBPS
+    ) public onlyOwner {
+        _allowedSupplyTokens[token] = true;
+        _borrowFactorsBPS[token] = borrowFactorBPS;
+        ERC20(token).approve(address(this), MAX_INT); // what if runs out ?
+        emit SupplyTokenChanged(token, true);
+    }
+
+    function removeSupplyToken(address token) public onlyOwner {
+        delete _allowedSupplyTokens[token];
+        emit SupplyTokenChanged(token, false);
+    }
+
     // state changes public
 
     function openTrove(address token, uint256 amountOrId) public {
+        require(
+            _allowedCollateralTokens[token],
+            "collateral token not allowed"
+        );
+
         uint256 troveId = _nextTroveId++;
         _safeMint(msg.sender, troveId);
 
-        _troves[troveId] = Trove({token: token, amountOrId: amountOrId});
+        _troves[troveId] = Trove({collateralToken: token, amount: amountOrId});
 
         require(
             ERC20(token).transferFrom(msg.sender, address(this), amountOrId),
@@ -126,6 +148,11 @@ contract TroveManager is ERC721Enumerable, Ownable {
         uint256 duration,
         uint256 troveId
     ) public troveOwner(troveId) {
+        require(
+            _allowedSupplyTokens[loanOffer.token],
+            "supply token not allowed"
+        );
+
         uint256 healthFactor = getHealthFactorBPS(
             troveId,
             amount,
@@ -178,10 +205,10 @@ contract TroveManager is ERC721Enumerable, Ownable {
         );
 
         require(
-            ERC20(_troves[troveId].token).transferFrom(
+            ERC20(_troves[troveId].collateralToken).transferFrom(
                 address(this),
                 msg.sender,
-                _troves[troveId].amountOrId
+                _troves[troveId].amount
             ),
             "transfer failed"
         );
@@ -219,7 +246,7 @@ contract TroveManager is ERC721Enumerable, Ownable {
     }
 
     // could there be so many loans that health becomes impossible to calculate without running out of gas?
-    function getTroveLoansValue(
+    function getTroveLoansValueEth(
         uint256 troveId,
         uint256 extraAmount,
         address token
@@ -253,20 +280,19 @@ contract TroveManager is ERC721Enumerable, Ownable {
         return loanValue;
     }
 
-    function getTroveCollateralValue(
+    function getTroveCollateralValueEth(
         uint256 troveId
     ) public view returns (uint256, uint256) {
-        Trove storage trove = _troves[troveId];
-        address token = trove.token;
+        address token = _troves[troveId].collateralToken;
 
         uint256 collateralValue = IUniUtils(_uniUtils).getTWAPValue(
-            trove.amountOrId,
+            _troves[troveId].amount,
             token,
             _WETH,
             _oraclePoolFees[token],
             _twapInterval
         );
-        uint256 collateralFactorBPS = _collateralFactors[token];
+        uint256 collateralFactorBPS = _collateralFactorsBPS[token];
 
         return (collateralValue, collateralFactorBPS);
     }
@@ -277,14 +303,17 @@ contract TroveManager is ERC721Enumerable, Ownable {
         address token
     ) public view returns (uint256) {
         (
-            uint256 collateralValue,
+            uint256 collateralValueEth,
             uint256 collateralFactorBPS
-        ) = getTroveCollateralValue(troveId);
+        ) = getTroveCollateralValueEth(troveId);
 
-        uint256 loanValue = getTroveLoansValue(troveId, extraAmount, token);
+        uint256 loanValue = getTroveLoansValueEth(troveId, extraAmount, token);
+        uint256 borrowFactorBPS = _borrowFactorsBPS[token];
 
         if (loanValue > 0) {
-            return ((collateralValue * collateralFactorBPS) / loanValue); // overflow risk?
+            return ((collateralValueEth *
+                collateralFactorBPS *
+                borrowFactorBPS) / (loanValue * 10000));
         } else {
             return (MAX_INT);
         }
