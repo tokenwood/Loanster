@@ -1,6 +1,10 @@
 import { ethers } from "hardhat";
 import deployments from "../../unilib/cache/deployments.json";
 
+export const ONE_YEAR_IN_SECS = 365 * 24 * 60 * 60;
+export const ONE_MONTH_IN_SECS = 30 * 24 * 60 * 60;
+export const ONE_DAY_IN_SECS = 24 * 60 * 60;
+
 export function getUniUtilsAddress() {
   if (deployments == undefined) {
     throw Error("uni utils not deployed");

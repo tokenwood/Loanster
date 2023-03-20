@@ -32,6 +32,7 @@ contract TroveManager is ERC721Enumerable, Ownable {
     event SupplyTokenChanged(address token, bool isAllowed);
     event CollateralTokenChange(address token, bool isAllowed);
     event NewTrove(uint256 troveId);
+    event NewLoan(uint256 troveId, uint256 loanId);
 
     struct Trove {
         address collateralToken;
@@ -76,10 +77,12 @@ contract TroveManager is ERC721Enumerable, Ownable {
 
     function addSupplyToken(
         address token,
-        uint256 borrowFactorBPS
+        uint256 borrowFactorBPS,
+        uint24 oraclePoolFee
     ) public onlyOwner {
         _allowedSupplyTokens[token] = true;
         _borrowFactorsBPS[token] = borrowFactorBPS;
+        _oraclePoolFees[token] = oraclePoolFee;
         ERC20(token).approve(address(this), MAX_INT); // what if runs out ?
         emit SupplyTokenChanged(token, true);
     }
@@ -103,7 +106,11 @@ contract TroveManager is ERC721Enumerable, Ownable {
         _troves[troveId] = Trove({collateralToken: token, amount: amountOrId});
 
         require(
-            ERC20(token).transferFrom(msg.sender, address(this), amountOrId),
+            IERC20(token).balanceOf(msg.sender) >= amountOrId,
+            "Insufficient WETH balance"
+        );
+        require(
+            IERC20(token).transferFrom(msg.sender, address(this), amountOrId),
             "transfer failed"
         );
 
@@ -166,11 +173,11 @@ contract TroveManager is ERC721Enumerable, Ownable {
             signature,
             amount,
             duration,
-            _ownerOf(troveId),
-            troveId
+            _ownerOf(troveId)
         );
 
         _troveLoans[troveId].add(loanId);
+        emit NewLoan(loanId, troveId);
     }
 
     function repayLoan(

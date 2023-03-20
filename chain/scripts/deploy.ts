@@ -26,12 +26,11 @@ async function main() {
   );
   console.log(`trove manager deployed to ${troveManager.address}`);
 
-  await supply.addDepositToken(USDC_TOKEN.address);
-  await supply.addDepositToken(CRV_TOKEN.address);
+  await troveManager.addSupplyToken(USDC_TOKEN.address, 8000, 500);
+  await troveManager.addSupplyToken(CRV_TOKEN.address, 6000, 500);
 
-  await troveManager.addCollateralToken(USDC_TOKEN.address, 7000, 500);
-  await troveManager.addCollateralToken(WETH_TOKEN.address, 6000, 0);
-  await troveManager.addCollateralToken(AGEUR_TOKEN.address, 6500, 500);
+  await troveManager.addCollateralToken(USDC_TOKEN.address, 8000, 500);
+  await troveManager.addCollateralToken(WETH_TOKEN.address, 10000, 0);
 
   const deployments = {
     uniUtils: getUniUtilsAddress(),

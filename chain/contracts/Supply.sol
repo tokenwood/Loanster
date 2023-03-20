@@ -29,13 +29,11 @@ struct LoanOffer {
 
 struct Loan {
     address token;
-    uint256 troveId;
-    bytes32 offerKey;
     uint256 amount;
-    uint256 startTime; // uint32
-    uint256 minRepayTime; // uint32
-    uint256 expiration; // uint32
-    uint256 interestRateBPS; // uint16 ?
+    uint32 startTime;
+    uint32 minRepayTime;
+    uint32 expiration;
+    uint32 interestRateBPS;
 }
 
 contract Supply is ERC721Enumerable, Ownable, SignUtils {
@@ -53,7 +51,6 @@ contract Supply is ERC721Enumerable, Ownable, SignUtils {
     uint256 private constant ONE_YEAR_IN_SECONDS = 365 * 24 * 60 * 60;
     uint256 private constant MAX_INT = 2 ** 256 - 1;
 
-    event NewLoan(uint256 troveId, uint256 loanId);
     event LoanRepayment(uint256 loanId, uint256 interest, uint256 newAmount);
 
     // init and configuration functions
@@ -76,30 +73,29 @@ contract Supply is ERC721Enumerable, Ownable, SignUtils {
         bytes calldata signature,
         uint256 amount,
         uint256 duration,
-        address borrower,
-        uint256 troveId
+        address borrower
     ) public returns (uint256) {
         require(
             msg.sender == _troveManager,
             "only trove manager can start loan"
         );
-        verifyLoanOfferSignature(loanOffer, signature);
+        verifyLoanOfferSignature(loanOffer, signature); //8k gas
         bytes32 key = getOfferKey(loanOffer.owner, loanOffer.offerId);
 
         require(_offerNonces[key] <= loanOffer.nonce, "invalid nonce");
         _offerNonces[key] = loanOffer.nonce;
 
         if (_offerToken[key] == address(0)) {
-            _offerToken[key] = loanOffer.token;
+            _offerToken[key] = loanOffer.token; //20k gas
         } else {
             require(_offerToken[key] == loanOffer.token);
         }
 
         // check if loan verifies parameters of offer
-        require(amount > loanOffer.minLoanAmount, "amount too small");
-        _offerAmountBorrowed[key] += amount;
+        require(amount >= loanOffer.minLoanAmount, "amount too small");
+        _offerAmountBorrowed[key] += amount; //20k gas
         require(
-            loanOffer.amount > _offerAmountBorrowed[key],
+            loanOffer.amount >= _offerAmountBorrowed[key],
             "not enough funds available"
         );
 
@@ -107,27 +103,22 @@ contract Supply is ERC721Enumerable, Ownable, SignUtils {
             block.timestamp < loanOffer.expiration,
             "supply expiration reached"
         );
-        require(
-            loanOffer.minLoanDuration < duration &&
-                duration < loanOffer.maxLoanDuration,
-            "invalid duration"
-        );
+        require(loanOffer.minLoanDuration < duration, "invalid duration");
+        require(duration < loanOffer.maxLoanDuration, "invalid duration");
 
         uint256 loanId = _nextLoanId++;
         _loans[loanId] = Loan({
             token: loanOffer.token,
-            troveId: troveId,
-            offerKey: key,
             amount: amount,
-            startTime: block.timestamp,
-            minRepayTime: block.timestamp + loanOffer.minLoanDuration,
-            expiration: block.timestamp + duration,
-            interestRateBPS: loanOffer.interestRateBPS
-        });
+            startTime: uint32(block.timestamp),
+            minRepayTime: uint32(block.timestamp + loanOffer.minLoanDuration),
+            expiration: uint32(block.timestamp + duration),
+            interestRateBPS: uint32(loanOffer.interestRateBPS)
+        }); // 70k gas
 
-        _safeMint(msg.sender, loanId);
+        _safeMint(loanOffer.owner, loanId); // costs 120k gas
 
-        // ERC20(loanOffer.token).approve(address(this), amount);
+        ERC20(loanOffer.token).approve(address(this), amount);
 
         require(
             ERC20(loanOffer.token).transferFrom(
@@ -137,8 +128,6 @@ contract Supply is ERC721Enumerable, Ownable, SignUtils {
             ),
             "transfer failed"
         );
-
-        emit NewLoan(troveId, loanId);
 
         return loanId;
     }
@@ -185,7 +174,7 @@ contract Supply is ERC721Enumerable, Ownable, SignUtils {
         _claimable[loanId] += interest + amountToTransfer;
 
         l.amount = newAmount;
-        l.startTime = block.timestamp;
+        l.startTime = uint32(block.timestamp);
 
         require(
             ERC20(l.token).transferFrom(
