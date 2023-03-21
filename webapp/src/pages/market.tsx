@@ -4,11 +4,11 @@ import { BasePage } from "components/BaseComponents";
 import { TableLoader } from "components/DataLoaders";
 import {
   formatDate,
-  getAmountAvailableForDepositInfo,
+  // getAmountAvailableForDepositInfo,
 } from "libs/unilend_utils";
 import { EventType } from "libs/eventEmitter";
 import { Th, Tr } from "@chakra-ui/react";
-import { getSortedSupply } from "libs/market_utils";
+import { getSortedOffers } from "libs/backend";
 import { ethers } from "ethers";
 
 export default function MarketPage() {
@@ -27,7 +27,7 @@ export default function MarketPage() {
             {"Offers"}
           </Heading> */}
           <TableLoader
-            fetchData={() => getSortedSupply(provider)}
+            fetchData={() => getSortedOffers()}
             reloadEvents={[{ eventType: EventType.SUPPLY_TOKEN_DEPOSITED }]}
             tableCaption={"Available offers"}
             makeTableHead={() => {
@@ -48,19 +48,18 @@ export default function MarketPage() {
                   <Th>{props.id.token.symbol}</Th>
                   <Th isNumeric>
                     {ethers.utils.formatUnits(
-                      getAmountAvailableForDepositInfo(props.id),
+                      0, // getAmountAvailableForDepositInfo(props.id),
                       props.id.token.decimals
                     )}
                   </Th>
                   <Th isNumeric>
-                    {props.id.depositInfo.interestRateBPS.toNumber() / 100 +
-                      " %"}
+                    {props.id.offer.interestRateBPS.toNumber() / 100 + " %"}
                   </Th>
                   <Th isNumeric>
-                    {props.id.depositInfo.minLoanDuration + "d"} /
-                    {props.id.depositInfo.maxLoanDuration + "d"}
+                    {props.id.offer.minLoanDuration + "d"} /
+                    {props.id.offer.maxLoanDuration + "d"}
                   </Th>
-                  <Th>{formatDate(props.id.depositInfo.expiration)}</Th>
+                  <Th>{formatDate(props.id.offer.expiration)}</Th>
                 </Tr>
               );
             }}

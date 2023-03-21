@@ -7,19 +7,14 @@ import {
 } from "components/BaseComponents";
 import ListLoader from "components/DataLoaders";
 import {
-  DepositInfo,
-  getDepositInfo,
-  getFullDepositInfo,
-  getSupplyABI,
   getSupplyAddress,
-  getSupplyDepositIds,
   getSupplyTokenAddresses,
   getTokenBalance,
   TokenBalanceInfo,
 } from "libs/unilend_utils";
 import { BigNumber } from "ethers";
 import { SupplyDepositInputs } from "components/DepositInputs";
-import { DepositView, TokenBalanceView } from "components/DataViews";
+import { TokenBalanceView } from "components/DataViews";
 import { eventEmitter, EventType } from "libs/eventEmitter";
 import { ReactNode } from "react";
 import { Flex, Spacer } from "@chakra-ui/react";
@@ -36,49 +31,16 @@ export default function SupplyPage() {
       <VStack align="left" spacing="4">
         <Box>
           <Heading as="h6" size="sm" mb="3">
-            {"Your supplies"}
+            {"Your Offers"}
           </Heading>
-          <ListLoader
-            fetchData={() => getSupplyDepositIds(provider, account!)}
-            reloadEvents={[{ eventType: EventType.SUPPLY_TOKEN_DEPOSITED }]}
-            makeListItem={(props) => {
-              return (
-                <BaseView
-                  key={"supply_deposit_" + props.id}
-                  fetcher={() => getFullDepositInfo(provider, props.id)}
-                  level={2}
-                  dataView={(data) => <DepositView data={data}></DepositView>}
-                  actions={[
-                    {
-                      action: "Withdraw",
-                      onClickView: (
-                        data: DepositInfo,
-                        actionFinished: () => any
-                      ) => (
-                        <Flex w="100%">
-                          <Spacer></Spacer>
-                          <ContractCallButton
-                            contractAddress={getSupplyAddress()}
-                            abi={getSupplyABI()}
-                            functionName={"changeAmountDeposited"}
-                            args={[props.id, 0]}
-                            enabled={true}
-                            callback={() => {
-                              eventEmitter.dispatch({
-                                eventType: EventType.SUPPLY_TOKEN_WITHDRAWN,
-                                suffix: data.token,
-                              });
-                              props.callback();
-                            }}
-                          ></ContractCallButton>
-                        </Flex>
-                      ),
-                    },
-                  ]}
-                ></BaseView>
-              );
-            }}
-          />
+          <Box>todo</Box>
+        </Box>
+
+        <Box>
+          <Heading as="h6" size="sm" mb="3">
+            {"Your Loans"}
+          </Heading>
+          <Box>todo</Box>
         </Box>
 
         <Box>

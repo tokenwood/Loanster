@@ -42,6 +42,14 @@ export const LUSD_TOKEN = new Token(
   "Liquity USD"
 );
 
+export const WBTC_TOKEN = new Token(
+  SupportedChainId.MAINNET,
+  "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+  18,
+  "WBTC",
+  "Wrapped Bitcoin"
+);
+
 export const AGEUR_TOKEN = new Token(
   SupportedChainId.MAINNET,
   "0x1a7e4e63778B4f12a199C062f3eFdD288afCBce8",

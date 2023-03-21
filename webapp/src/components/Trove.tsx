@@ -9,21 +9,19 @@ import {
   Flex,
 } from "@chakra-ui/react";
 import { Token } from "@uniswap/sdk-core";
-import { NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS } from "libs/constants";
 import { eventEmitter, EventType } from "libs/eventEmitter";
 import {
-  getLoanIds,
+  getTroveLoanIds,
   getToken,
   getTroveInfo,
   getTroveManagerABI,
   getTroveManagerAddress,
   TroveInfo,
 } from "libs/unilend_utils";
-import { FullPositionInfo, getFullPositionInfo } from "libs/uniswap_utils";
 import { Address, useProvider } from "wagmi";
 import { ContractCallButton, BaseView } from "./BaseComponents";
 import ListLoader, { DataLoader, MakeListItemProps } from "./DataLoaders";
-import { PositionView, TokenBalanceView } from "./DataViews";
+import { TokenBalanceView } from "./DataViews";
 import Loan from "./Loan";
 import { defaultBorderRadius, level2BorderColor } from "./Theme";
 
@@ -60,91 +58,50 @@ export default function Trove(props: TroveProps) {
                   <Heading as="h1" size="sm" mb="2" layerStyle={"level2"}>
                     {"Collateral"}
                   </Heading>
-                  {(childProps.data as TroveInfo).token ==
-                  NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS ? (
-                    <BaseView
-                      fetcher={() =>
-                        getFullPositionInfo(
-                          provider,
-                          childProps.data.amountOrId.toNumber()
-                        )
-                      }
-                      dataView={(data: FullPositionInfo) => {
-                        return (
-                          <PositionView fullPositionInfo={data}></PositionView>
-                        );
-                      }}
-                      actions={[
-                        {
-                          action: "Withdraw",
-                          onClickView: () => (
-                            <Flex w="100%">
-                              <Spacer></Spacer>
-                              <ContractCallButton
-                                contractAddress={getTroveManagerAddress()}
-                                abi={getTroveManagerABI()}
-                                functionName={"closeTrove"}
-                                args={[props.troveId]}
-                                enabled={true}
-                                callback={() => {
-                                  props.refetchTroves();
-                                  eventEmitter.dispatch({
-                                    eventType:
-                                      EventType.COLLATERAL_POSITION_WITHDRAWN,
-                                  });
-                                }}
-                              ></ContractCallButton>
-                            </Flex>
-                          ),
-                        },
-                      ]}
-                    ></BaseView>
-                  ) : (
-                    <BaseView
-                      fetcher={() => getToken(provider, childProps.data.token)}
-                      dataView={(data: Token) => {
-                        return (
-                          <TokenBalanceView
-                            amount={childProps.data.amountOrId}
-                            token={data}
-                          />
-                        );
-                      }}
-                      actions={[
-                        {
-                          action: "Withdraw",
-                          onClickView: (data: Token) => (
-                            <Flex w="100%">
-                              <Spacer></Spacer>
-                              <ContractCallButton
-                                contractAddress={getTroveManagerAddress()}
-                                abi={getTroveManagerABI()}
-                                functionName={"closeTrove"}
-                                args={[props.troveId]}
-                                enabled={true}
-                                callback={() => {
-                                  //   childProps.refetchData(); // reload trove info
-                                  props.refetchTroves();
-                                  eventEmitter.dispatch({
-                                    eventType:
-                                      EventType.COLLATERAL_TOKEN_WITHDRAWN,
-                                    suffix: data.address,
-                                  });
-                                }}
-                              ></ContractCallButton>
-                            </Flex>
-                          ),
-                        },
-                      ]}
-                    ></BaseView>
-                  )}
+                  <BaseView
+                    fetcher={() => getToken(provider, childProps.data.token)}
+                    dataView={(data: Token) => {
+                      return (
+                        <TokenBalanceView
+                          amount={childProps.data.amount}
+                          token={data}
+                        />
+                      );
+                    }}
+                    actions={[
+                      {
+                        action: "Withdraw",
+                        onClickView: (data: Token) => (
+                          <Flex w="100%">
+                            <Spacer></Spacer>
+                            <ContractCallButton
+                              contractAddress={getTroveManagerAddress()}
+                              abi={getTroveManagerABI()}
+                              functionName={"closeTrove"}
+                              args={[props.troveId]}
+                              enabled={true}
+                              callback={() => {
+                                //   childProps.refetchData(); // reload trove info
+                                props.refetchTroves();
+                                eventEmitter.dispatch({
+                                  eventType:
+                                    EventType.COLLATERAL_TOKEN_WITHDRAWN,
+                                  suffix: data.address,
+                                });
+                              }}
+                            ></ContractCallButton>
+                          </Flex>
+                        ),
+                      },
+                    ]}
+                  ></BaseView>
                 </Box>
                 <Box>
                   <Heading as="h1" size="sm" mb="2">
                     {"Loans"}
                   </Heading>
                   <ListLoader
-                    fetchData={() => getLoanIds(provider, props.troveId)}
+                    fetchData={() => getTroveLoanIds(provider, props.troveId)}
                     makeListItem={(builderProps) => {
                       return (
                         <Loan

@@ -14,14 +14,14 @@ import { ChildProps, DataLoader, TableLoader } from "components/DataLoaders";
 import { BorrowInputs, LoanTroveInput } from "components/DepositInputs";
 import { BigNumber, ethers } from "ethers";
 import { ADDRESS_TO_TOKEN } from "libs/constants";
+import { getOffers } from "libs/backend";
 import {
-  getLoans,
   getLoanStats,
   getNewTroveStats,
   LoanParameters,
   LoanStats,
   TroveStats,
-} from "libs/market_utils";
+} from "libs/unilend_utils";
 import { Price } from "@uniswap/sdk-core";
 
 import { useState } from "react";
@@ -74,14 +74,13 @@ export default function BorrowPage() {
             {isValidLoanParams(loanParams) ? (
               <TableLoader
                 key={loanParams?.amount! + loanParams?.tokenAddress!} //todo hash loanParms
-                fetchData={() => getLoans(provider, loanParams!)}
+                fetchData={() => getOffers(provider, loanParams!)}
                 dataLoaded={(tableData) => {
                   setLoanStats(getLoanStats(tableData));
                 }}
                 makeTableHead={() => {
                   return (
                     <Tr>
-                      <Th isNumeric>deposit id</Th>
                       <Th isNumeric>
                         {ADDRESS_TO_TOKEN[loanParams!.tokenAddress].symbol}
                       </Th>
@@ -92,8 +91,9 @@ export default function BorrowPage() {
                 }}
                 makeTableRow={(props) => {
                   return (
-                    <Tr key={props.id[0].depositId}>
-                      <Th isNumeric>{props.id[0].depositId}</Th>
+                    <Tr
+                      key={props.id[0].offer.owner + props.id[0].offer.offerId}
+                    >
                       <Th isNumeric>
                         {ethers.utils.formatUnits(
                           props.id[1],
@@ -101,12 +101,11 @@ export default function BorrowPage() {
                         )}
                       </Th>
                       <Th isNumeric>
-                        {props.id[0].depositInfo.interestRateBPS.toNumber() /
-                          100 +
+                        {props.id[0].offer.interestRateBPS.toNumber() / 100 +
                           " %"}
                       </Th>
                       <Th isNumeric>
-                        {props.id[0].depositInfo.minLoanDuration.toNumber()}
+                        {props.id[0].offer.minLoanDuration.toNumber()}
                       </Th>
                     </Tr>
                   );
@@ -199,10 +198,7 @@ export default function BorrowPage() {
           enabled={isValidLoanParams(loanParams)}
           args={[
             troveId,
-            loanStats?.loans[0][0].depositId,
-            loanStats?.token.address,
-            loanStats?.loans[0][1],
-            100000000,
+            //todo
           ]}
           callback={function () {
             throw new Error("Function not implemented.");

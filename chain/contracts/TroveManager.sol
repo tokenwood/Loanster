@@ -94,7 +94,7 @@ contract TroveManager is ERC721Enumerable, Ownable {
 
     // state changes public
 
-    function openTrove(address token, uint256 amountOrId) public {
+    function openTrove(address token, uint256 amount) public {
         require(
             _allowedCollateralTokens[token],
             "collateral token not allowed"
@@ -103,14 +103,14 @@ contract TroveManager is ERC721Enumerable, Ownable {
         uint256 troveId = _nextTroveId++;
         _safeMint(msg.sender, troveId);
 
-        _troves[troveId] = Trove({collateralToken: token, amount: amountOrId});
+        _troves[troveId] = Trove({collateralToken: token, amount: amount});
 
         require(
-            IERC20(token).balanceOf(msg.sender) >= amountOrId,
+            IERC20(token).balanceOf(msg.sender) >= amount,
             "Insufficient WETH balance"
         );
         require(
-            IERC20(token).transferFrom(msg.sender, address(this), amountOrId),
+            IERC20(token).transferFrom(msg.sender, address(this), amount),
             "transfer failed"
         );
 
