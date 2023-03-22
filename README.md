@@ -5,15 +5,18 @@
 replace {MY_INFURA_KEY} by your own infura key and run following commands:
 
 ```
-cd chain
+cd unilib
 yarn install
 yarn hardhat node --fork https://mainnet.infura.io/v3/{MY_INFURA_KEY}
+yarn hardhat run scripts/deploy.ts --network localhost
+cd ../chain
+yarn install
 yarn hardhat run scripts/deploy.ts --network localhost
 ```
 
 unilend should now be deployed to your local ethereum hard fork
 
-### to run tests:
+### to run smart contract tests:
 
 ```
 yarn hardhat test --network localhost

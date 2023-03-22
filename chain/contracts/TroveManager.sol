@@ -6,6 +6,9 @@ import "./interfaces/IUniUtils.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
+// gas savings: ERC721Enumerable -> ERC721, remove EnumerableSet (use mappings), store loan token in trove instead of loan (only once)
+// refactorOpenLoans to check healthFactor once
+
 contract TroveManager is ERC721Enumerable, Ownable {
     using EnumerableSet for EnumerableSet.UintSet;
 

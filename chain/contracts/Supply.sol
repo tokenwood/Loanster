@@ -116,9 +116,7 @@ contract Supply is ERC721Enumerable, Ownable, SignUtils {
             interestRateBPS: uint32(loanOffer.interestRateBPS)
         }); // 70k gas
 
-        _safeMint(loanOffer.owner, loanId); // costs 120k gas
-
-        ERC20(loanOffer.token).approve(address(this), amount);
+        _safeMint(loanOffer.owner, loanId); // costs 120k gas with ERC721Enumerable, 50k with ERC721
 
         require(
             ERC20(loanOffer.token).transferFrom(
@@ -234,7 +232,6 @@ contract Supply is ERC721Enumerable, Ownable, SignUtils {
     }
 
     // helper functions (pure)
-
     function getInterest(
         uint256 amount,
         uint256 interestRateBPS,
