@@ -50,6 +50,14 @@ export const WBTC_TOKEN = new Token(
   "Wrapped Bitcoin"
 );
 
+export const RETH_TOKEN = new Token(
+  SupportedChainId.MAINNET,
+  "0xae78736Cd615f374D3085123A210448E74Fc6393",
+  18,
+  "rETH",
+  "Rocket Pool ETH"
+);
+
 export const AGEUR_TOKEN = new Token(
   SupportedChainId.MAINNET,
   "0x1a7e4e63778B4f12a199C062f3eFdD288afCBce8",

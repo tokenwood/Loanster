@@ -1,9 +1,16 @@
 import { ethers } from "hardhat";
-import { deploySupply, deployTroveManager, getUniUtilsAddress } from "./utils";
 import {
-  AGEUR_TOKEN,
-  CRV_TOKEN,
+  buyToken,
+  deploySupply,
+  deployTroveManager,
+  depositWETH,
+  getUniUtilsAddress,
+} from "./utils";
+import {
+  LUSD_TOKEN,
+  RETH_TOKEN,
   USDC_TOKEN,
+  WBTC_TOKEN,
   WETH_TOKEN,
 } from "../../webapp/src/libs/constants";
 import hre from "hardhat";
@@ -26,11 +33,12 @@ async function main() {
   );
   console.log(`trove manager deployed to ${troveManager.address}`);
 
-  await troveManager.addSupplyToken(USDC_TOKEN.address, 8000, 500);
-  await troveManager.addSupplyToken(CRV_TOKEN.address, 6000, 500);
+  await troveManager.addSupplyToken(USDC_TOKEN.address, 9000, 500);
+  await troveManager.addSupplyToken(LUSD_TOKEN.address, 9000, 500);
+  await troveManager.addSupplyToken(WBTC_TOKEN.address, 8000, 500);
 
-  await troveManager.addCollateralToken(USDC_TOKEN.address, 8000, 500);
   await troveManager.addCollateralToken(WETH_TOKEN.address, 10000, 0);
+  await troveManager.addCollateralToken(RETH_TOKEN.address, 9000, 500);
 
   const deployments = {
     uniUtils: getUniUtilsAddress(),

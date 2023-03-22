@@ -1,16 +1,20 @@
 import {
-  LoanOfferStructOutput,
-  LoanStructOutput,
-} from "../../../chain/typechain-types/contracts/Supply";
-import { floatToBigNumber, getToken, LoanParameters } from "./unilend_utils";
+  floatToBigNumber,
+  getToken,
+  LoanParameters,
+  LoanType,
+  LoanOfferType,
+} from "./unilend_utils";
 import { Address, Provider } from "@wagmi/core";
 import { BigNumber, ethers } from "ethers";
 import { Token } from "@uniswap/sdk-core";
+import { concat } from "ethers/lib/utils.js";
 
 // todo: update offer state (amountBorrowed, cancelled) by listening to events
+// todo: make sure offers are valid by verifying owner balance and allowance
 
 export interface FullOfferInfo {
-  offer: LoanOfferStructOutput;
+  offer: LoanOfferType;
   signature: string;
   amountBorrowed: BigNumber;
   isCancelled: boolean;
@@ -20,15 +24,11 @@ export interface FullOfferInfo {
 let offers = new Map<string, FullOfferInfo>();
 let accountOffers = new Map<Address, Set<string>>();
 
-function getOfferKey(offer: LoanOfferStructOutput) {
+function getOfferKey(offer: LoanOfferType) {
   const a = ethers.utils.toUtf8Bytes(offer.owner);
   const b = ethers.utils.toUtf8Bytes(offer.offerId.toHexString());
 
-  const array = new Uint8Array(a.byteLength + b.byteLength);
-  array.set(a);
-  array.set(b, a.length);
-
-  return ethers.utils.keccak256(array);
+  return ethers.utils.keccak256(concat([a, b]));
 }
 
 export async function getOffers(provider: Provider, params: LoanParameters) {
@@ -67,9 +67,10 @@ export async function getOffers(provider: Provider, params: LoanParameters) {
 
 export async function submitOffer(
   provider: Provider,
-  offer: LoanOfferStructOutput,
+  offer: LoanOfferType,
   signature: string
 ) {
+  //todo verify signature is valid for offer
   const key = getOfferKey(offer);
   if (offers.get(key)) {
     throw new Error("offer id already used");

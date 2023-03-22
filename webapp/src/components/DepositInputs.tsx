@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Box, Flex, Select, Spacer, Text } from "@chakra-ui/react";
+import { Box, Button, Flex, Select, Spacer, Text } from "@chakra-ui/react";
 import { VStack } from "@chakra-ui/layout";
 import { Address, erc20ABI, useContractRead, useProvider } from "wagmi";
 import { BigNumber } from "ethers";
@@ -13,13 +13,17 @@ import {
   getSupplyTokens,
   floatToBigNumber,
   getTroveIds,
+  LoanParameters,
+  LoanOfferType,
+  getOfferMessageToSign,
 } from "libs/unilend_utils";
 import { ethers } from "ethers";
-import { ContractCallButton } from "./BaseComponents";
+import { ContractCallButton, SignButton } from "./BaseComponents";
 import { DateInput, MyNumberInput, TokenAmountInput } from "./InputFields";
 import { eventEmitter, EventType } from "libs/eventEmitter";
 import { DataLoader } from "./DataLoaders";
-import { LoanParameters } from "libs/market_utils";
+import { defaultBorderRadius, DEFAULT_SIZE } from "./Theme";
+import { submitOffer } from "libs/backend";
 
 export interface InputsProps {
   balanceData: TokenBalanceInfo;
@@ -106,14 +110,43 @@ export function CollateralDepositInputs(props: DepositInputsProps) {
   );
 }
 
-export function SupplyDepositInputs(props: DepositInputsProps) {
-  const [amountToDeposit, setAmountToDeposit] = useState<BigNumber>(
+export function MakeOfferInputs(props: DepositInputsProps) {
+  const [offerMaxAmount, setOfferMaxAmount] = useState<BigNumber>(
+    BigNumber.from(0)
+  );
+  const [offerMinAmount, setOfferMinAmount] = useState<BigNumber>(
     BigNumber.from(0)
   );
   const [expirationDate, setExpirationDate] = useState<number>(0);
   const [interestRate, setInterestRate] = useState<number>(0);
   const [maxDuration, setMaxDuration] = useState<number>(0);
   const [minDuration, setMinDuration] = useState<number>(0);
+  const [offerId, setOfferId] = useState<number>(0); //todo figure out what offer id to use
+  const provider = useProvider();
+
+  const [offer, setOffer] = useState<[LoanOfferType, string]>();
+
+  useEffect(() => {
+    if (canConfirm()) {
+      updateOffer();
+    }
+  }, [
+    offerMaxAmount,
+    offerMinAmount,
+    expirationDate,
+    interestRate,
+    maxDuration,
+    minDuration,
+    offerId,
+  ]);
+
+  //todo get offer message to sign synchronously instead (compute hash on front-end)
+  const updateOffer = async () => {
+    setOffer(undefined); //does this work?
+    const offer = makeOffer();
+    const message = await getOfferMessageToSign(provider, makeOffer());
+    setOffer([offer, message]);
+  };
 
   const { data: allowance, refetch: allowanceRefetch } = useContractRead({
     address: props.balanceData.token.address as Address,
@@ -131,17 +164,32 @@ export function SupplyDepositInputs(props: DepositInputsProps) {
 
   const canConfirm = () => {
     return (
-      BigNumber.from(0).lt(amountToDeposit) &&
-      amountToDeposit.lte(props.balanceData.amount)
+      BigNumber.from(0).lt(offerMaxAmount) &&
+      offerMaxAmount.lte(props.balanceData.amount)
     );
   };
+
+  function makeOffer(): LoanOfferType {
+    return {
+      owner: props.account as string,
+      token: props.balanceData.token.address as string,
+      offerId: BigNumber.from(offerId),
+      nonce: BigNumber.from(0),
+      minLoanAmount: offerMinAmount,
+      amount: offerMaxAmount,
+      interestRateBPS: BigNumber.from(interestRate),
+      expiration: BigNumber.from(expirationDate),
+      minLoanDuration: BigNumber.from(minDuration),
+      maxLoanDuration: BigNumber.from(maxDuration),
+    };
+  }
 
   return (
     <VStack w="65%" spacing={0} layerStyle={"level3"} padding={3}>
       <TokenAmountInput
         balanceData={props.balanceData}
         callback={(amount: BigNumber) => {
-          setAmountToDeposit(amount);
+          setOfferMaxAmount(amount);
         }}
       />
       <MyNumberInput
@@ -156,7 +204,7 @@ export function SupplyDepositInputs(props: DepositInputsProps) {
         precision={0}
         placeHolder="0"
         callback={(value: number) => {
-          setMaxDuration(value);
+          setMaxDuration(value * 60 * 60 * 24);
         }}
       ></MyNumberInput>
       <MyNumberInput
@@ -164,7 +212,7 @@ export function SupplyDepositInputs(props: DepositInputsProps) {
         precision={0}
         placeHolder="0"
         callback={(value: number) => {
-          setMinDuration(value);
+          setMinDuration(value * 60 * 60 * 24);
         }}
       ></MyNumberInput>
       <DateInput
@@ -175,27 +223,18 @@ export function SupplyDepositInputs(props: DepositInputsProps) {
       />
       <Flex w="100%" paddingTop={2}>
         <Spacer></Spacer>
-        {hasEnoughAllowance(allowance, amountToDeposit) ? (
-          <ContractCallButton
-            contractAddress={getSupplyAddress()}
-            abi={getSupplyABI()}
-            functionName={"makeDeposit"}
-            args={[
-              props.balanceData.token.address,
-              amountToDeposit,
-              BigNumber.from(Math.round(interestRate * 100)), // interest rate
-              BigNumber.from(expirationDate), // expiration timestamp
-              BigNumber.from(maxDuration), // max loan duration
-              BigNumber.from(minDuration), // min loan duration
-            ]}
-            enabled={canConfirm()}
-            callback={() => {
-              eventEmitter.dispatch({
-                eventType: EventType.SUPPLY_TOKEN_DEPOSITED,
-              });
-              props.callback();
+        {hasEnoughAllowance(allowance, offerMaxAmount) ? (
+          <SignButton
+            message={offer?.[1]!}
+            callbackData={offer?.[0]}
+            callback={(message, signature, account, data: LoanOfferType) => {
+              if (account != props.account) {
+                throw new Error("signed with different account");
+              }
+              submitOffer(provider, data, signature);
             }}
-          ></ContractCallButton>
+            enabled={canConfirm()}
+          ></SignButton>
         ) : (
           <ContractCallButton
             contractAddress={props.balanceData.token.address as Address}
@@ -232,7 +271,7 @@ export function BorrowInputs(props: BorrowInputProps) {
     props.callback({
       tokenAddress: tokenToBorrow!,
       amount: amountToBorrow,
-      term: 0,
+      duration: 0,
     });
   }, [tokenToBorrow, amountToBorrow]);
 

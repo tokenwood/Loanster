@@ -1,5 +1,11 @@
 import { VStack, Heading, Box, Flex, HStack } from "@chakra-ui/layout";
-import { Address, useContractWrite, usePrepareContractWrite } from "wagmi";
+import {
+  Address,
+  useContractWrite,
+  usePrepareContractWrite,
+  useProvider,
+  useSignMessage,
+} from "wagmi";
 import ClientOnly from "components/clientOnly";
 import { Button } from "@chakra-ui/react";
 import {
@@ -11,6 +17,7 @@ import { PropsWithChildren, ReactNode, useState } from "react";
 import { defaultBorderRadius } from "./Theme";
 import { DataLoader } from "./DataLoaders";
 import { EventId } from "libs/eventEmitter";
+import { verifyMessage } from "ethers/lib/utils.js";
 
 interface BasePageProps {
   account: Address | undefined;
@@ -89,6 +96,63 @@ export function ContractCallButton(props: ContractCallButtonProps) {
       onClick={onClick}
     >
       {props.buttonText ? props.buttonText : "Confirm"}
+    </Button>
+  );
+}
+
+interface SignButtonProps {
+  message: string;
+  callbackData?: any;
+  hidden?: boolean;
+  enabled?: boolean;
+  callback: (
+    message: string,
+    signature: string,
+    account: Address,
+    data: any
+  ) => any;
+  buttonText?: string;
+}
+
+export function SignButton(props: SignButtonProps) {
+  const provider = useProvider();
+
+  const {
+    data: signature,
+    isError,
+    isLoading,
+    signMessage,
+  } = useSignMessage({
+    onSuccess(data, variables) {
+      const address = verifyMessage(variables.message, data);
+      props.callback(
+        variables.message as string,
+        data,
+        address as Address,
+        props.callbackData
+      );
+    },
+  });
+
+  async function onClick() {
+    try {
+      signMessage({ message: props.message });
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  return (
+    <Button
+      colorScheme="green"
+      borderRadius={defaultBorderRadius}
+      size={DEFAULT_SIZE}
+      hidden={props.hidden}
+      alignSelf="center"
+      isDisabled={!props.enabled || isLoading || isError}
+      onClick={onClick}
+    >
+      {props.buttonText ? props.buttonText : "Sign"}
     </Button>
   );
 }

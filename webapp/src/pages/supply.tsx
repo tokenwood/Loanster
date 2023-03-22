@@ -13,7 +13,7 @@ import {
   TokenBalanceInfo,
 } from "libs/unilend_utils";
 import { BigNumber } from "ethers";
-import { SupplyDepositInputs } from "components/DepositInputs";
+import { MakeOfferInputs } from "components/DepositInputs";
 import { TokenBalanceView } from "components/DataViews";
 import { eventEmitter, EventType } from "libs/eventEmitter";
 import { ReactNode } from "react";
@@ -71,13 +71,13 @@ export default function SupplyPage() {
                   }}
                   actions={[
                     {
-                      action: "Deposit",
+                      action: "Make Offer",
                       onClickView: (
                         data: TokenBalanceInfo,
                         actionFinished: () => any
                       ) => {
                         return (
-                          <SupplyDepositInputs
+                          <MakeOfferInputs
                             account={account!}
                             balanceData={data}
                             approvalAddress={getSupplyAddress()}

@@ -8,12 +8,29 @@ import { BigNumber } from "ethers";
 import { ADDRESS_TO_TOKEN, WETH_TOKEN } from "./constants";
 import { SupportedChainId, Token } from "@uniswap/sdk-core";
 import { CurrencyAmount } from "@uniswap/sdk-core";
-
-import {
-  LoanOfferStructOutput,
-  LoanStructOutput,
-} from "../../../chain/typechain-types/contracts/Supply";
 import { FullOfferInfo } from "./backend";
+
+export type LoanOfferType = {
+  owner: string;
+  token: string;
+  offerId: BigNumber;
+  nonce: BigNumber;
+  minLoanAmount: BigNumber;
+  amount: BigNumber;
+  interestRateBPS: BigNumber;
+  expiration: BigNumber;
+  minLoanDuration: BigNumber;
+  maxLoanDuration: BigNumber;
+};
+
+export type LoanType = {
+  token: string;
+  amount: BigNumber;
+  startTime: number;
+  minRepayTime: number;
+  expiration: number;
+  interestRateBPS: number;
+};
 
 export interface LoanParameters {
   tokenAddress: Address;
@@ -296,4 +313,13 @@ export function floatToBigNumber(floatString: string, decimals: number) {
 export function formatDate(timestamp: BigNumber) {
   const date = new Date(timestamp.toNumber());
   return date.getFullYear() + "-" + date.getMonth() + "-" + date.getDay();
+}
+
+export async function getOfferMessageToSign(
+  provider: Provider,
+  offer: LoanOfferType
+) {
+  const contract = getSupplyContract(provider);
+  const message: string = await contract.buildLoanOfferMessage(offer);
+  return message;
 }

@@ -83,7 +83,6 @@ contract Supply is ERC721Enumerable, Ownable, SignUtils {
         bytes32 key = getOfferKey(loanOffer.owner, loanOffer.offerId);
 
         require(_offerNonces[key] <= loanOffer.nonce, "invalid nonce");
-        _offerNonces[key] = loanOffer.nonce;
 
         if (_offerToken[key] == address(0)) {
             _offerToken[key] = loanOffer.token; //20k gas
