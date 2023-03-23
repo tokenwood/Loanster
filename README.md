@@ -8,7 +8,7 @@ replace {MY_INFURA_KEY} by your own infura key and run following commands:
 Install nodejs and yarn
 
 ```bash
-brew install node
+brew install node@18 
 brew install yarn
 ```
 
@@ -17,8 +17,10 @@ brew install yarn
 ```bash
 cd unilib
 yarn install
-yarn hardhat node --fork https://mainnet.infura.io/v3/{MY_INFURA_KEY}
+yarn hardhat node --fork https://mainnet.infura.io/v3/{MY_INFURA_KEY}  # let this command run in a separate terminal
 yarn hardhat run scripts/deploy.ts --network localhost
+cd ../webapp
+yarn install
 cd ../chain
 yarn install
 yarn hardhat run scripts/deploy.ts --network localhost
