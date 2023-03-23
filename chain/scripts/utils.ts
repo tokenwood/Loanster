@@ -1,9 +1,13 @@
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { BigNumber } from "ethers";
 import { ethers } from "hardhat";
-import deployments from "../../unilib/cache/deployments.json";
+import unilib_deployment from "../../unilib/cache/deployments.json";
+import deployments from "../cache/deployments.json";
 import {
   V3_SWAP_ROUTER_ADDRESS,
   WETH_TOKEN,
 } from "../../webapp/src/libs/constants";
+import { TroveManager } from "../typechain-types/contracts/TroveManager";
 
 export const ONE_YEAR_IN_SECS = 365 * 24 * 60 * 60;
 export const ONE_MONTH_IN_SECS = 30 * 24 * 60 * 60;
@@ -12,10 +16,10 @@ export const ONE_DAY_IN_SECS = 24 * 60 * 60;
 const TIMESTAMP_2030 = 1893452400;
 
 export function getUniUtilsAddress() {
-  if (deployments == undefined) {
+  if (unilib_deployment == undefined) {
     throw Error("uni utils not deployed");
   }
-  return deployments.uniUtils;
+  return unilib_deployment.uniUtils;
 }
 
 export function getUniUtilsContract() {
@@ -25,6 +29,18 @@ export function getUniUtilsContract() {
 
 export function getWETHContract() {
   return ethers.getContractAt("IWETH", WETH_TOKEN.address);
+}
+
+export function getERC20Contract(address: string) {
+  return ethers.getContractAt("ERC20", address);
+}
+
+export function getTroveManagerContract() {
+  return ethers.getContractAt("TroveManager", deployments.troveManager);
+}
+
+export function getSupplyContract() {
+  return ethers.getContractAt("Supply", deployments.supply);
 }
 
 export async function deployTokensFixture() {
@@ -106,4 +122,28 @@ export async function buyToken(
 
   // await log_balance(WETH_TOKEN, account1.address);
   // await log_balance(USDC_TOKEN, account2.address);
+}
+
+export async function openTrove(
+  account: SignerWithAddress,
+  collateralToken: string,
+  collateralAmount: BigNumber,
+  troveManager: TroveManager
+) {
+  const tokenContract = await getERC20Contract(collateralToken);
+
+  await tokenContract
+    .connect(account)
+    .approve(troveManager.address, collateralAmount);
+
+  const openTroveTx = await troveManager
+    .connect(account)
+    .openTrove(collateralToken, collateralAmount);
+
+  const tokenId: BigNumber = (await openTroveTx.wait()).events?.filter((x) => {
+    return x.event == "Transfer";
+  })[0].args!["tokenId"];
+
+  console.log("trove opened with id:" + tokenId);
+  return tokenId;
 }

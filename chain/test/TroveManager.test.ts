@@ -16,6 +16,7 @@ import {
   ONE_DAY_IN_SECS,
   ONE_MONTH_IN_SECS,
   ONE_YEAR_IN_SECS,
+  openTrove,
 } from "../scripts/utils";
 
 import hre from "hardhat";
@@ -111,7 +112,6 @@ describe("TroveManager", function () {
   });
 
   it("deposit and withdraw usdc collateral should work", async function () {
-    console.log("blabla");
     expect(networkName).to.equal("localhost");
     const [owner, account1, account2] = await ethers.getSigners();
     const { troveManager, supply } = await loadFixture(
@@ -130,17 +130,13 @@ describe("TroveManager", function () {
     );
 
     // account1 opens trove with WETH as collateral
-    await weth
-      .connect(account1)
-      .approve(troveManager.address, ethers.utils.parseEther("100000"));
 
-    await expect(
+    const troveId = await openTrove(
+      account1,
+      WETH_TOKEN.address,
+      ethers.utils.parseEther("1"),
       troveManager
-        .connect(account1)
-        .openTrove(WETH_TOKEN.address, ethers.utils.parseEther("1"))
-    ).to.changeTokenBalance(weth, troveManager, ethers.utils.parseEther("1"));
-
-    const troveId = await troveManager.tokenOfOwnerByIndex(account1.address, 0); // may fail if already opened trove (in other tests?)
+    );
 
     // account1 borrows USDC from account2
     const expiration = (await time.latest()) + ONE_YEAR_IN_SECS;
@@ -148,7 +144,7 @@ describe("TroveManager", function () {
       owner: account2.address,
       token: usdc.address,
       offerId: BigNumber.from(1),
-      nonce: BigNumber.from(1),
+      nonce: BigNumber.from(0),
       minLoanAmount: BigNumber.from(0),
       amount: BigNumber.from(ethers.utils.parseUnits("1000", 6)),
       interestRateBPS: BigNumber.from(500),

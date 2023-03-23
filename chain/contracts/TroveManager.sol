@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 // gas savings: ERC721Enumerable -> ERC721, remove EnumerableSet (use mappings), store loan token in trove instead of loan (only once)
-// refactorOpenLoans to check healthFactor once
+// refactor OpenLoans to check healthFactor once
 
 contract TroveManager is ERC721Enumerable, Ownable {
     using EnumerableSet for EnumerableSet.UintSet;
@@ -34,7 +34,6 @@ contract TroveManager is ERC721Enumerable, Ownable {
     event DebugAddress(address message);
     event SupplyTokenChanged(address token, bool isAllowed);
     event CollateralTokenChange(address token, bool isAllowed);
-    event NewTrove(uint256 troveId);
     event NewLoan(uint256 troveId, uint256 loanId);
 
     struct Trove {
@@ -116,8 +115,6 @@ contract TroveManager is ERC721Enumerable, Ownable {
             IERC20(token).transferFrom(msg.sender, address(this), amount),
             "transfer failed"
         );
-
-        emit NewTrove(troveId);
     }
 
     function closeTrove(uint256 troveId) public troveOwner(troveId) {
@@ -293,9 +290,9 @@ contract TroveManager is ERC721Enumerable, Ownable {
     function getTroveCollateralValueEth(
         uint256 troveId
     ) public view returns (uint256, uint256) {
-        address token = _troves[troveId].collateralToken;
+        address token = _troves[troveId].collateralToken; // or call directly instead?
 
-        uint256 collateralValue = IUniUtils(_uniUtils).getTWAPValue(
+        uint256 collateralValue = IUniUtils(_uniUtils).getTWAPValue( // no need to pass _WETH
             _troves[troveId].amount,
             token,
             _WETH,
