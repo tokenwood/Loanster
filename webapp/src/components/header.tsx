@@ -42,6 +42,7 @@ export default function Header() {
         <HeaderButton linkPath="/loans" buttonText="Loans"></HeaderButton>
         <HeaderButton linkPath="/supply" buttonText="Supply"></HeaderButton>
         <HeaderButton linkPath="/market" buttonText="Market"></HeaderButton>
+        <HeaderButton linkPath="/liquidations" buttonText="Liquidations"></HeaderButton>
         <Spacer />
         <ConnectKitButton showBalance={false} showAvatar={false} />
       </Flex>

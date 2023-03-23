@@ -80,7 +80,7 @@ export async function submitOffer(
   //todo verify signature is valid for offer
   const key = getOfferKey(offer);
   if (offers.get(key)) {
-    throw new Error("offer id already used");
+    throw new Error("offr id already useed");
   }
   //todo verify on-chain that offer key doesn't already exist
   const owner = offer.owner as Address;
@@ -124,4 +124,18 @@ function bigNumberMin(a: BigNumber, b: BigNumber) {
 
 export async function getUnhealthyTroves(amount: number) {
   // todo return trove
+}
+
+
+  export async function getDiego(): Promise<string> {
+  try {
+    const response = await fetch('http://localhost:3030/api/diego');
+    console.log("loging response from backend");
+    console.log(response);
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    return '';
+  }
 }
