@@ -13,10 +13,10 @@ import { eventEmitter, EventType } from "libs/eventEmitter";
 import {
   getTroveLoanIds,
   getToken,
-  getTroveInfo,
   getTroveManagerABI,
   getTroveManagerAddress,
-  TroveInfo,
+  getFullTroveInfo,
+  FullTroveInfo,
 } from "libs/unilend_utils";
 import { Address, useProvider } from "wagmi";
 import { ContractCallButton, BaseView } from "./BaseComponents";
@@ -32,7 +32,7 @@ interface TroveProps {
 }
 
 interface TroveChildProps {
-  data: TroveInfo;
+  data: FullTroveInfo;
   refetchData: () => any;
 }
 
@@ -43,7 +43,7 @@ export default function Trove(props: TroveProps) {
     <DataLoader
       defaultValue={[]}
       // key={props.troveId.toString()}
-      fetcher={() => getTroveInfo(props.troveId, provider)}
+      fetcher={() => getFullTroveInfo(props.troveId, provider)}
       makeChildren={(childProps: TroveChildProps) => {
         return (
           <Card
@@ -59,11 +59,13 @@ export default function Trove(props: TroveProps) {
                     {"Collateral"}
                   </Heading>
                   <BaseView
-                    fetcher={() => getToken(provider, childProps.data.token)}
+                    fetcher={() =>
+                      Promise.resolve(childProps.data.collateralToken)
+                    }
                     dataView={(data: Token) => {
                       return (
                         <TokenBalanceView
-                          amount={childProps.data.amount}
+                          amount={childProps.data.collateralAmount}
                           token={data}
                         />
                       );
@@ -81,7 +83,6 @@ export default function Trove(props: TroveProps) {
                               args={[props.troveId]}
                               enabled={true}
                               callback={() => {
-                                //   childProps.refetchData(); // reload trove info
                                 props.refetchTroves();
                                 eventEmitter.dispatch({
                                   eventType:

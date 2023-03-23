@@ -16,7 +16,6 @@ import {
   formatDate,
   // FullDepositInfo,
   // getAmountLoanedForDepositInfo,
-  getTokenName,
 } from "libs/unilend_utils";
 import { statFontSize } from "./Theme";
 

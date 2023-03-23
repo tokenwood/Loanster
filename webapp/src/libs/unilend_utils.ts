@@ -4,6 +4,8 @@ import { erc20ABI, erc721ABI, Provider } from "@wagmi/core";
 import { ethers } from "ethers";
 import supplyContractJSON from "../../../chain/artifacts/contracts/Supply.sol/Supply.json";
 import troveManagerJSON from "../../../chain/artifacts/contracts/TroveManager.sol/TroveManager.json";
+import { TroveManager } from "../../../chain/typechain-types/contracts/TroveManager";
+import { Supply } from "../../../chain/typechain-types/contracts/Supply";
 import { BigNumber } from "ethers";
 import { ADDRESS_TO_TOKEN, WETH_TOKEN } from "./constants";
 import { SupportedChainId, Token } from "@uniswap/sdk-core";
@@ -51,9 +53,10 @@ export interface LoanStats {
   token: Token;
 }
 
-export interface TroveInfo {
-  token: Address;
-  amount: BigNumber;
+export interface FullTroveInfo {
+  collateralToken: Token;
+  collateralAmount: BigNumber;
+  loanIds: number[];
 }
 
 export interface TokenBalanceInfo {
@@ -71,10 +74,10 @@ export async function getNewTroveStats(
 
   // collateral value
   const [collateralValue, collateralFactorBPS]: [BigNumber, BigNumber] =
-    await contract.getTroveCollateralValue(troveId);
+    await contract.getTroveCollateralValueEth(troveId);
 
   // total loans value
-  const loansValue: BigNumber = await contract.getTroveLoansValue(
+  const loansValue: BigNumber = await contract.getTroveLoansValueEth(
     troveId,
     loanStats.amount,
     loanStats.token.address
@@ -121,14 +124,6 @@ export function getLoanStats(loans: [FullOfferInfo, BigNumber][]): LoanStats {
   };
 }
 
-export function getTokenName(address: string) {
-  if (ADDRESS_TO_TOKEN[address] !== undefined) {
-    return ADDRESS_TO_TOKEN[address].symbol!;
-  } else {
-    return address;
-  }
-}
-
 export async function getToken(provider: Provider, tokenAddress: string) {
   if (ADDRESS_TO_TOKEN[tokenAddress] !== undefined) {
     return ADDRESS_TO_TOKEN[tokenAddress];
@@ -170,11 +165,15 @@ export function getTroveManagerContract(provider: Provider) {
     getTroveManagerAddress(),
     getTroveManagerABI(),
     provider
-  );
+  ) as TroveManager;
 }
 
 export function getSupplyContract(provider: Provider) {
-  return new ethers.Contract(getSupplyAddress(), getSupplyABI(), provider);
+  return new ethers.Contract(
+    getSupplyAddress(),
+    getSupplyABI(),
+    provider
+  ) as Supply;
 }
 
 export function getSupplyAddress(): Address {
@@ -218,14 +217,22 @@ export async function getCollateralTokens(
   return getAllowedTokensFromEvents(events);
 }
 
-export async function getTroveInfo(
+export async function getFullTroveInfo(
   id: number,
   provider: Provider
-): Promise<TroveInfo> {
+): Promise<FullTroveInfo> {
   console.log("fetching trove info");
   const troveManager = getTroveManagerContract(provider);
-  const troveInfo: TroveInfo = await troveManager.getTrove(id);
-  return troveInfo;
+  const troveInfo = await troveManager.getTrove(id);
+
+  return {
+    collateralToken: await getToken(
+      provider,
+      troveInfo.collateralToken as Address
+    ),
+    collateralAmount: troveInfo.amount,
+    loanIds: await getTroveLoanIds(provider, id),
+  };
 }
 
 export function getAllowedTokensFromEvents(events: ethers.Event[]) {
@@ -254,7 +261,6 @@ export async function getTroveIds(
   account: Address
 ): Promise<number[]> {
   const troveManager = getTroveManagerContract(provider);
-  console.log(troveManager.address);
   return getERC721Ids(troveManager, account);
 }
 
@@ -265,9 +271,9 @@ export async function getTroveLoanIds(
   const troveManager = getTroveManagerContract(provider);
   console.log("fetching loan ids");
 
-  const numLoans: number = await troveManager.getNumLoansForTroveId(troveId);
+  const numLoans = await troveManager.getNumLoansForTroveId(troveId);
   const loanIds = [];
-  for (let i = 0; i < numLoans; i++) {
+  for (let i = 0; i < numLoans.toNumber(); i++) {
     const tokenOfOwnerByIndex: BigNumber =
       await troveManager.getLoanIdByIndexForTroveId(troveId, i);
     loanIds.push(tokenOfOwnerByIndex.toNumber());
@@ -289,7 +295,6 @@ export async function getERC721Ids(
   contract: ethers.Contract,
   account: Address
 ): Promise<number[]> {
-  console.log("hello");
   const balance: number = await contract.balanceOf(account);
   const requests = [];
   for (let i = 0; i < balance; i++) {
