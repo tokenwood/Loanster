@@ -80,7 +80,7 @@ export async function submitOffer(
   //todo verify signature is valid for offer
   const key = getOfferKey(offer);
   if (offers.get(key)) {
-    throw new Error("offr id already useed");
+    throw new Error("offer id already used");
   }
   //todo verify on-chain that offer key doesn't already exist
   const owner = offer.owner as Address;
