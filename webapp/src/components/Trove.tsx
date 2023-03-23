@@ -17,12 +17,14 @@ import {
   getTroveManagerAddress,
   getFullTroveInfo,
   FullTroveInfo,
+  getFullLoanInfo,
+  FullLoanInfo,
 } from "libs/unilend_utils";
 import { Address, useProvider } from "wagmi";
 import { ContractCallButton, BaseView } from "./BaseComponents";
 import ListLoader, { DataLoader, MakeListItemProps } from "./DataLoaders";
-import { TokenBalanceView } from "./DataViews";
-import Loan from "./Loan";
+import { LoanView, TokenBalanceView } from "./DataViews";
+import { RepayLoanInputs } from "./InputViews";
 import { defaultBorderRadius, level2BorderColor } from "./Theme";
 
 interface TroveProps {
@@ -103,13 +105,38 @@ export default function Trove(props: TroveProps) {
                   </Heading>
                   <ListLoader
                     fetchData={() => getTroveLoanIds(provider, props.troveId)}
-                    makeListItem={(builderProps) => {
+                    makeListItem={(listItemProps) => {
                       return (
-                        <Loan
-                          account={props.account}
-                          loanId={builderProps.id}
-                          key={builderProps.id}
-                        />
+                        <BaseView
+                          level={3}
+                          key={listItemProps.id.toString()}
+                          fetcher={() =>
+                            getFullLoanInfo(provider, listItemProps.id)
+                          }
+                          dataView={(data) => {
+                            return <LoanView data={data} />;
+                          }}
+                          actions={[
+                            {
+                              action: "Repay",
+                              onClickView: (
+                                data: FullLoanInfo,
+                                actionFinished: () => any
+                              ) => {
+                                return (
+                                  <RepayLoanInputs
+                                    account={props.account}
+                                    loanInfo={data}
+                                    troveInfo={childProps.data}
+                                    callback={() => {
+                                      actionFinished();
+                                    }}
+                                  />
+                                );
+                              },
+                            },
+                          ]}
+                        ></BaseView>
                       );
                     }}
                   ></ListLoader>

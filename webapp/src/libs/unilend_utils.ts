@@ -57,6 +57,15 @@ export interface FullTroveInfo {
   collateralToken: Token;
   collateralAmount: BigNumber;
   loanIds: number[];
+  troveId: number;
+}
+
+export interface FullLoanInfo {
+  loan: LoanType;
+  loanId: number;
+  interest: BigNumber;
+  claimable: BigNumber;
+  token: Token;
 }
 
 export interface TokenBalanceInfo {
@@ -223,6 +232,7 @@ export async function getFullTroveInfo(
 ): Promise<FullTroveInfo> {
   console.log("fetching trove info");
   const troveManager = getTroveManagerContract(provider);
+
   const troveInfo = await troveManager.getTrove(id);
 
   return {
@@ -232,6 +242,25 @@ export async function getFullTroveInfo(
     ),
     collateralAmount: troveInfo.amount,
     loanIds: await getTroveLoanIds(provider, id),
+    troveId: id,
+  };
+}
+
+export async function getFullLoanInfo(
+  provider: Provider,
+  loanId: number
+): Promise<FullLoanInfo> {
+  const supply = getSupplyContract(provider);
+  const loan = await supply.getLoan(loanId);
+  const [amount, minInterest] = await supply.getLoanAmountAndMinInterest(
+    loanId
+  );
+  return {
+    loan: loan,
+    loanId: loanId,
+    interest: minInterest,
+    claimable: BigNumber.from(0),
+    token: await getToken(provider, loan.token),
   };
 }
 
@@ -290,7 +319,6 @@ export async function getLoanIds(
   return getERC721Ids(supplyContract, account);
 }
 
-//todo use Promise.All() to parallelize
 export async function getERC721Ids(
   contract: ethers.Contract,
   account: Address
@@ -302,6 +330,19 @@ export async function getERC721Ids(
   }
   const tokenIdsBN: BigNumber[] = await Promise.all(requests);
   return tokenIdsBN.map((value) => value.toNumber());
+}
+
+export async function getERC20BalanceAndAllowance(
+  provider: Provider,
+  account: Address,
+  spender: Address,
+  tokenAddress: Address
+) {
+  const tokenContract = new ethers.Contract(tokenAddress, erc20ABI, provider);
+  const balance: BigNumber = await tokenContract.balanceOf(account);
+  const allowance: BigNumber = await tokenContract.allowance(account, spender);
+
+  return [balance, allowance];
 }
 
 export function floatToBigNumber(floatString: string, decimals: number) {

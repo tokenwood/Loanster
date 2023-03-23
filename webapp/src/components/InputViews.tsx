@@ -16,28 +16,17 @@ import {
   LoanParameters,
   LoanOfferType,
   getOfferMessageToSign,
+  FullLoanInfo,
+  FullTroveInfo,
+  getERC20BalanceAndAllowance,
 } from "libs/unilend_utils";
 import { ethers } from "ethers";
 import { ContractCallButton, SignButton } from "./BaseComponents";
 import { DateInput, MyNumberInput, TokenAmountInput } from "./InputFields";
 import { eventEmitter, EventType } from "libs/eventEmitter";
-import { DataLoader } from "./DataLoaders";
+import { ChildProps, DataLoader } from "./DataLoaders";
 import { defaultBorderRadius, DEFAULT_SIZE } from "./Theme";
 import { submitOffer } from "libs/backend";
-
-export interface InputsProps {
-  balanceData: TokenBalanceInfo;
-  callback: (name: string, value: any) => any;
-}
-
-export interface ContractCallProps {
-  tokenAddress: Address;
-  amount: BigNumber;
-  enabled: boolean;
-  expiration?: number;
-  maxDuration?: number;
-  callback: () => any;
-}
 
 export interface DepositInputsProps {
   account: Address;
@@ -107,6 +96,99 @@ export function CollateralDepositInputs(props: DepositInputsProps) {
         )}
       </Flex>
     </VStack>
+  );
+}
+
+export interface RepayLoanInputs {
+  account: Address;
+  loanInfo: FullLoanInfo;
+  troveInfo: FullTroveInfo;
+  callback: () => any;
+}
+
+export function RepayLoanInputs(props: RepayLoanInputs) {
+  const [newPrincipalAmount, setNewPrincipalAmount] = useState<BigNumber>(
+    BigNumber.from(0)
+  );
+  const provider = useProvider();
+
+  const hasEnoughAllowance = (
+    allowance: BigNumber | undefined,
+    amountToDeposit: BigNumber
+  ) => {
+    return allowance && allowance.gte(amountToDeposit);
+  };
+
+  const canConfirm = (balance: BigNumber) => {
+    return (
+      BigNumber.from(0).lt(newPrincipalAmount) &&
+      newPrincipalAmount.lte(balance)
+    );
+  };
+  const getStats = () => {
+    const principalAmount = props.loanInfo.loan.amount.sub(newPrincipalAmount);
+    const interestAmount = props.loanInfo.interest;
+    // new health factor
+  };
+  return (
+    <DataLoader
+      fetcher={() =>
+        getERC20BalanceAndAllowance(
+          provider,
+          props.account,
+          getSupplyAddress(),
+          props.loanInfo.token.address as Address
+        )
+      }
+      makeChildren={(childProps) => {
+        const [balance, allowance] = childProps.data;
+        return (
+          <VStack w="100%" layerStyle={"level3"} spacing={0} padding="2">
+            <MyNumberInput
+              name={"New Principal"}
+              callback={function (amount: number) {
+                setNewPrincipalAmount(
+                  floatToBigNumber(
+                    amount.toString(),
+                    props.loanInfo.token.decimals
+                  )
+                );
+              }}
+            ></MyNumberInput>
+
+            <Flex w="100%">
+              <Spacer></Spacer>
+              {hasEnoughAllowance(allowance, newPrincipalAmount) ? (
+                <ContractCallButton
+                  contractAddress={getTroveManagerAddress()}
+                  abi={getTroveManagerABI()}
+                  functionName={"repayLoan"}
+                  args={[
+                    props.troveInfo.troveId,
+                    props.loanInfo.loanId,
+                    newPrincipalAmount,
+                  ]}
+                  enabled={canConfirm(balance)}
+                  callback={() => {
+                    props.callback();
+                  }}
+                ></ContractCallButton>
+              ) : (
+                <ContractCallButton
+                  contractAddress={props.loanInfo.token.address as Address}
+                  abi={erc20ABI}
+                  functionName={"approve"}
+                  args={[getSupplyAddress(), ethers.constants.MaxUint256]}
+                  enabled={canConfirm(balance)}
+                  callback={childProps.refetchData}
+                  buttonText="Approve"
+                ></ContractCallButton>
+              )}
+            </Flex>
+          </VStack>
+        );
+      }}
+    ></DataLoader>
   );
 }
 

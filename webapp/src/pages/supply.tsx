@@ -5,8 +5,11 @@ import {
   BaseView,
   ContractCallButton,
 } from "components/BaseComponents";
-import ListLoader from "components/DataLoaders";
+import ListLoader, { MakeListItemProps } from "components/DataLoaders";
 import {
+  FullLoanInfo,
+  getFullLoanInfo,
+  getLoanIds,
   getSupplyABI,
   getSupplyAddress,
   getSupplyTokenAddresses,
@@ -16,7 +19,7 @@ import {
   TokenBalanceInfo,
 } from "libs/unilend_utils";
 import { MakeOfferInputs } from "components/InputViews";
-import { OfferView, TokenBalanceView } from "components/DataViews";
+import { LoanView, OfferView, TokenBalanceView } from "components/DataViews";
 import { eventEmitter, EventType } from "libs/eventEmitter";
 import {
   FullOfferInfo,
@@ -26,6 +29,7 @@ import {
 } from "libs/backend";
 import { Flex, Spacer } from "@chakra-ui/react";
 import { BigNumber } from "ethers";
+import { ReactNode } from "react";
 
 export default function SupplyPage() {
   const { address: account, isConnecting, isDisconnected } = useAccount();
@@ -95,7 +99,50 @@ export default function SupplyPage() {
           <Heading as="h6" size="sm" mb="3">
             {"Your Loans"}
           </Heading>
-          <Box>todo</Box>
+          <ListLoader
+            fetchData={() => getLoanIds(provider, account!)}
+            makeListItem={(props) => {
+              return (
+                <BaseView
+                  level={2}
+                  key={props.id}
+                  fetcher={() => getFullLoanInfo(provider, props.id)}
+                  dataView={(data) => {
+                    return <LoanView data={data} />;
+                  }}
+                  actions={[
+                    {
+                      action: "Claim",
+                      onClickView: (
+                        data: FullLoanInfo,
+                        actionFinished: () => any
+                      ) => {
+                        return (
+                          <Flex w="100%">
+                            <Spacer></Spacer>
+                            <ContractCallButton
+                              contractAddress={getSupplyAddress()}
+                              abi={getSupplyABI()}
+                              functionName={"withdraw"}
+                              args={[data.loanId]}
+                              enabled={data.claimable.gt(BigNumber.from(0))}
+                              callback={() => {
+                                actionFinished();
+                                eventEmitter.dispatch({
+                                  eventType: EventType.LOAN_CLAIMED,
+                                  suffix: data.token.address,
+                                });
+                              }}
+                            ></ContractCallButton>
+                          </Flex>
+                        );
+                      },
+                    },
+                  ]}
+                ></BaseView>
+              );
+            }}
+          ></ListLoader>
         </Box>
 
         <Box>
