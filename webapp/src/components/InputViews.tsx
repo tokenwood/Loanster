@@ -117,10 +117,10 @@ export function MakeOfferInputs(props: DepositInputsProps) {
   const [offerMinAmount, setOfferMinAmount] = useState<BigNumber>(
     BigNumber.from(0)
   );
-  const [expirationDate, setExpirationDate] = useState<number>(0);
-  const [interestRate, setInterestRate] = useState<number>(0);
-  const [maxDuration, setMaxDuration] = useState<number>(0);
-  const [minDuration, setMinDuration] = useState<number>(0);
+  const [expirationDateMilliseconds, setExpirationDate] = useState<number>(0);
+  const [interestRatePCT, setInterestRate] = useState<number>(0);
+  const [maxDurationDays, setMaxDuration] = useState<number>(0);
+  const [minDurationDays, setMinDuration] = useState<number>(0);
   const [offerId, setOfferId] = useState<number>(0); //todo figure out what offer id to use
   const provider = useProvider();
 
@@ -133,10 +133,10 @@ export function MakeOfferInputs(props: DepositInputsProps) {
   }, [
     offerMaxAmount,
     offerMinAmount,
-    expirationDate,
-    interestRate,
-    maxDuration,
-    minDuration,
+    expirationDateMilliseconds,
+    interestRatePCT,
+    maxDurationDays,
+    minDurationDays,
     offerId,
   ]);
 
@@ -169,6 +169,11 @@ export function MakeOfferInputs(props: DepositInputsProps) {
     );
   };
 
+  const sendOffer = async (offer: LoanOfferType, signature: string) => {
+    await submitOffer(provider, offer, signature);
+    props.callback();
+  };
+
   function makeOffer(): LoanOfferType {
     return {
       owner: props.account as string,
@@ -177,10 +182,10 @@ export function MakeOfferInputs(props: DepositInputsProps) {
       nonce: BigNumber.from(0),
       minLoanAmount: offerMinAmount,
       amount: offerMaxAmount,
-      interestRateBPS: BigNumber.from(interestRate),
-      expiration: BigNumber.from(expirationDate),
-      minLoanDuration: BigNumber.from(minDuration),
-      maxLoanDuration: BigNumber.from(maxDuration),
+      interestRateBPS: BigNumber.from(interestRatePCT * 100),
+      expiration: BigNumber.from(Math.floor(expirationDateMilliseconds / 1000)), // expiration date stored in seconds
+      minLoanDuration: BigNumber.from(minDurationDays * 60 * 60 * 24),
+      maxLoanDuration: BigNumber.from(maxDurationDays * 60 * 60 * 24),
     };
   }
 
@@ -204,7 +209,7 @@ export function MakeOfferInputs(props: DepositInputsProps) {
         precision={0}
         placeHolder="0"
         callback={(value: number) => {
-          setMaxDuration(value * 60 * 60 * 24);
+          setMaxDuration(value);
         }}
       ></MyNumberInput>
       <MyNumberInput
@@ -212,7 +217,7 @@ export function MakeOfferInputs(props: DepositInputsProps) {
         precision={0}
         placeHolder="0"
         callback={(value: number) => {
-          setMinDuration(value * 60 * 60 * 24);
+          setMinDuration(value);
         }}
       ></MyNumberInput>
       <DateInput
@@ -231,7 +236,7 @@ export function MakeOfferInputs(props: DepositInputsProps) {
               if (account != props.account) {
                 throw new Error("signed with different account");
               }
-              submitOffer(provider, data, signature);
+              sendOffer(data, signature);
             }}
             enabled={canConfirm()}
           ></SignButton>
@@ -271,7 +276,7 @@ export function BorrowInputs(props: BorrowInputProps) {
     props.callback({
       tokenAddress: tokenToBorrow!,
       amount: amountToBorrow,
-      duration: 0,
+      duration: 0, //todo
     });
   }, [tokenToBorrow, amountToBorrow]);
 

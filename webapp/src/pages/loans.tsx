@@ -14,7 +14,7 @@ import {
   TokenBalanceInfo,
 } from "libs/unilend_utils";
 import { Provider } from "@wagmi/core";
-import { CollateralDepositInputs } from "components/DepositInputs";
+import { CollateralDepositInputs } from "components/InputViews";
 import Trove from "components/Trove";
 import { TokenBalanceView } from "components/DataViews";
 import { eventEmitter, EventType } from "libs/eventEmitter";
@@ -35,10 +35,7 @@ export default function LoansPage() {
           </Heading>
           <ListLoader
             fetchData={() => getTroveIds(provider, account!)}
-            reloadEvents={[
-              { eventType: EventType.COLLATERAL_TOKEN_DEPOSITED },
-              { eventType: EventType.COLLATERAL_POSITION_DEPOSITED },
-            ]}
+            reloadEvents={[{ eventType: EventType.COLLATERAL_TOKEN_DEPOSITED }]}
             makeListItem={(props) => {
               return (
                 <Trove

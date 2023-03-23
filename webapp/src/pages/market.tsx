@@ -28,7 +28,7 @@ export default function MarketPage() {
           </Heading> */}
           <TableLoader
             fetchData={() => getSortedOffers()}
-            reloadEvents={[{ eventType: EventType.SUPPLY_TOKEN_DEPOSITED }]}
+            reloadEvents={[{ eventType: EventType.SUPPLY_OFFER_CREATED }]}
             tableCaption={"Available offers"}
             makeTableHead={() => {
               return (

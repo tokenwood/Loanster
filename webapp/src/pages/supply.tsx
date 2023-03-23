@@ -1,10 +1,6 @@
 import { VStack, Heading, Box } from "@chakra-ui/layout";
 import { useAccount, useProvider } from "wagmi";
-import {
-  BasePage,
-  BaseView,
-  ContractCallButton,
-} from "components/BaseComponents";
+import { BasePage, BaseView } from "components/BaseComponents";
 import ListLoader from "components/DataLoaders";
 import {
   getSupplyAddress,
@@ -12,12 +8,10 @@ import {
   getTokenBalance,
   TokenBalanceInfo,
 } from "libs/unilend_utils";
-import { BigNumber } from "ethers";
-import { MakeOfferInputs } from "components/DepositInputs";
-import { TokenBalanceView } from "components/DataViews";
+import { MakeOfferInputs } from "components/InputViews";
+import { OfferView, TokenBalanceView } from "components/DataViews";
 import { eventEmitter, EventType } from "libs/eventEmitter";
-import { ReactNode } from "react";
-import { Flex, Spacer } from "@chakra-ui/react";
+import { FullOfferInfo, getOffersFromOwner } from "libs/backend";
 
 export default function SupplyPage() {
   const { address: account, isConnecting, isDisconnected } = useAccount();
@@ -33,7 +27,23 @@ export default function SupplyPage() {
           <Heading as="h6" size="sm" mb="3">
             {"Your Offers"}
           </Heading>
-          <Box>todo</Box>
+          <ListLoader
+            fetchData={() => getOffersFromOwner(account!)}
+            reloadEvents={[{ eventType: EventType.SUPPLY_OFFER_CREATED }]}
+            makeListItem={(props) => {
+              return (
+                <BaseView
+                  fetcher={() => Promise.resolve(props.id)}
+                  level={2}
+                  key={props.id.key}
+                  dataView={(data: FullOfferInfo) => {
+                    return <OfferView data={data}></OfferView>;
+                  }}
+                  actions={[]}
+                ></BaseView>
+              );
+            }}
+          ></ListLoader>
         </Box>
 
         <Box>
@@ -57,7 +67,7 @@ export default function SupplyPage() {
                   fetcher={() => getTokenBalance(provider, props.id, account!)}
                   reloadEvents={[
                     {
-                      eventType: EventType.SUPPLY_TOKEN_WITHDRAWN,
+                      eventType: EventType.LOAN_CLAIMED,
                       suffix: props.id,
                     },
                   ]}
@@ -83,6 +93,10 @@ export default function SupplyPage() {
                             approvalAddress={getSupplyAddress()}
                             callback={() => {
                               actionFinished();
+                              console.log("dispatching event");
+                              eventEmitter.dispatch({
+                                eventType: EventType.SUPPLY_OFFER_CREATED,
+                              });
                             }}
                           />
                         );

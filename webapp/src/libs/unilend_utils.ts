@@ -311,8 +311,16 @@ export function floatToBigNumber(floatString: string, decimals: number) {
 }
 
 export function formatDate(timestamp: BigNumber) {
-  const date = new Date(timestamp.toNumber());
-  return date.getFullYear() + "-" + date.getMonth() + "-" + date.getDay();
+  const date = new Date(timestamp.toNumber() * 1000);
+  return (
+    date.getUTCFullYear() +
+    "-" +
+    (date.getUTCMonth() + 1).toLocaleString("en-US", {
+      minimumIntegerDigits: 2,
+    }) +
+    "-" +
+    date.getUTCDate().toLocaleString("en-US", { minimumIntegerDigits: 2 })
+  );
 }
 
 export async function getOfferMessageToSign(

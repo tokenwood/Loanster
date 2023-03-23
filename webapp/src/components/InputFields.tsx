@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Button,
@@ -157,6 +157,11 @@ export function DateInput(props: DateInputProps) {
   const [date, setDate] = useState(initDate());
   // const [value, setValue] = useState<string>(date.toISOString());
 
+  useEffect(() => {
+    props.callback(date.getTime());
+    console.log("date: " + date.getTime());
+  }, [date]);
+
   return (
     <Flex w="100%">
       <Text alignSelf="center">{props.name}</Text>
@@ -172,7 +177,6 @@ export function DateInput(props: DateInputProps) {
             setDate(newDate);
             console.log("new date: " + newDate.toISOString());
             console.log("new date timestamp: " + newDate.getTime());
-            props.callback(newDate.getTime());
           }}
         />
       </Box>
@@ -181,7 +185,7 @@ export function DateInput(props: DateInputProps) {
 }
 
 function initDate() {
-  const dateCopy = new Date();
-  dateCopy.setFullYear(dateCopy.getFullYear() + 1);
+  const dateCopy = new Date(new Date().getTime() + 60 * 60 * 24 * 7 * 1000);
+
   return dateCopy;
 }

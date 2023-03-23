@@ -11,7 +11,7 @@ import {
 } from "@chakra-ui/react";
 import { BasePage, ContractCallButton } from "components/BaseComponents";
 import { ChildProps, DataLoader, TableLoader } from "components/DataLoaders";
-import { BorrowInputs, LoanTroveInput } from "components/DepositInputs";
+import { BorrowInputs, LoanTroveInput } from "components/InputViews";
 import { BigNumber, ethers } from "ethers";
 import { ADDRESS_TO_TOKEN } from "libs/constants";
 import { getOffers } from "libs/backend";

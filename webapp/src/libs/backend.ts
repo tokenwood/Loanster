@@ -19,6 +19,7 @@ export interface FullOfferInfo {
   amountBorrowed: BigNumber;
   isCancelled: boolean;
   token: Token;
+  key: string;
 }
 
 let offers = new Map<string, FullOfferInfo>();
@@ -82,12 +83,15 @@ export async function submitOffer(
   }
   accountOffers.get(owner)?.add(key);
 
+  console.log("num offers:" + accountOffers.size);
+
   offers.set(key, {
     offer: offer,
     signature: signature,
     amountBorrowed: BigNumber.from(0),
     isCancelled: false,
     token: await getToken(provider, offer.token),
+    key: key,
   });
 }
 
@@ -96,6 +100,9 @@ export async function getOffersFromOwner(address: Address) {
   const a = accountOffers.get(address)?.forEach((key) => {
     output.push(offers.get(key)!);
   });
+  console.log("num offers:" + accountOffers.size);
+  console.log("num offers for owner:" + output.length);
+
   return output;
 }
 

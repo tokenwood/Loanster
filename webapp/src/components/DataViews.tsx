@@ -11,6 +11,7 @@ import {
 } from "@chakra-ui/react";
 import { Token } from "@uniswap/sdk-core";
 import { BigNumber, ethers } from "ethers";
+import { FullOfferInfo } from "libs/backend";
 import {
   formatDate,
   // FullDepositInfo,
@@ -39,62 +40,63 @@ export function TokenBalanceView(props: TokenBalanceViewProps) {
   );
 }
 
-// interface DepositViewProps {
-//   data: FullDepositInfo;
-// }
+interface OfferViewProps {
+  data: FullOfferInfo;
+}
 
-// export function DepositView(props: DepositViewProps) {
-//   return (
-//     <Flex w="100%">
-//       <Stat>
-//         <StatLabel>{getTokenName(props.data.depositInfo.token)}</StatLabel>
-//         <StatNumber fontSize={statFontSize}>
-//           {ethers.utils.formatUnits(
-//             props.data.depositInfo.amountDeposited,
-//             props.data.token.decimals
-//           )}
-//         </StatNumber>
-//       </Stat>
-//       <Stat>
-//         <StatLabel>Claimable</StatLabel>
-//         <StatNumber fontSize={statFontSize}>
-//           {ethers.utils.formatUnits(
-//             props.data.depositInfo.claimableInterest,
-//             props.data.token.decimals
-//           )}
-//         </StatNumber>
-//       </Stat>
-//       <Stat>
-//         <StatLabel>Loaned</StatLabel>
-//         <StatNumber fontSize={statFontSize}>
-//           {ethers.utils.formatUnits(
-//             getAmountLoanedForDepositInfo(props.data),
-//             props.data.token.decimals
-//           )}
-//         </StatNumber>
-//       </Stat>
-//       <Stat>
-//         <StatLabel>Interest rate</StatLabel>
-//         <StatNumber fontSize={statFontSize}>
-//           {props.data.depositInfo.interestRateBPS.toNumber() / 100 + " %"}
-//         </StatNumber>
-//       </Stat>
-//       <Stat>
-//         <StatLabel>Min/max duration</StatLabel>
-//         <StatNumber fontSize={statFontSize}>
-//           {props.data.depositInfo.minLoanDuration +
-//             "d / " +
-//             props.data.depositInfo.maxLoanDuration +
-//             "d"}
-//         </StatNumber>
-//       </Stat>
-
-//       <Stat>
-//         <StatLabel>Expiration date</StatLabel>
-//         <StatNumber fontSize={statFontSize}>
-//           {formatDate(props.data.depositInfo.expiration)}
-//         </StatNumber>
-//       </Stat>
-//     </Flex>
-//   );
-// }
+export function OfferView(props: OfferViewProps) {
+  return (
+    <Flex w="100%">
+      <Stat textAlign={"center"}>
+        <StatLabel>Token</StatLabel>
+        <StatNumber fontSize={statFontSize}>
+          {props.data.token.symbol}
+        </StatNumber>
+      </Stat>
+      <Stat textAlign={"center"}>
+        <StatLabel>Borrowed</StatLabel>
+        <StatNumber fontSize={statFontSize}>
+          {ethers.utils.formatUnits(
+            props.data.amountBorrowed,
+            props.data.token.decimals
+          ) +
+            " / " +
+            ethers.utils.formatUnits(
+              props.data.offer.amount,
+              props.data.token.decimals
+            )}
+        </StatNumber>
+      </Stat>
+      <Stat textAlign={"center"}>
+        <StatLabel>Interest rate</StatLabel>
+        <StatNumber fontSize={statFontSize}>
+          {props.data.offer.interestRateBPS.toNumber() / 100 + " %"}
+        </StatNumber>
+      </Stat>
+      <Stat textAlign={"center"}>
+        <StatLabel>Min loan amount</StatLabel>
+        <StatNumber fontSize={statFontSize}>
+          {ethers.utils.formatUnits(
+            props.data.offer.minLoanAmount,
+            props.data.token.decimals
+          )}
+        </StatNumber>
+      </Stat>
+      <Stat textAlign={"center"}>
+        <StatLabel>Min/max duration</StatLabel>
+        <StatNumber fontSize={statFontSize}>
+          {props.data.offer.minLoanDuration.toNumber() / 3600 / 24 +
+            "d / " +
+            props.data.offer.maxLoanDuration.toNumber() / 3600 / 24 +
+            "d"}
+        </StatNumber>
+      </Stat>
+      <Stat textAlign={"center"}>
+        <StatLabel>Expiration</StatLabel>
+        <StatNumber fontSize={statFontSize}>
+          {formatDate(props.data.offer.expiration)}
+        </StatNumber>
+      </Stat>
+    </Flex>
+  );
+}
