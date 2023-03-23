@@ -19,13 +19,12 @@ export interface FullOfferInfo {
   amountBorrowed: BigNumber;
   isCancelled: boolean;
   token: Token;
-  key: string;
 }
 
 let offers = new Map<string, FullOfferInfo>();
 let accountOffers = new Map<Address, Set<string>>();
 
-function getOfferKey(offer: LoanOfferType) {
+export function getOfferKey(offer: LoanOfferType) {
   const a = ethers.utils.toUtf8Bytes(offer.owner);
   const b = ethers.utils.toUtf8Bytes(offer.offerId.toHexString());
 
@@ -66,6 +65,13 @@ export async function getOffers(provider: Provider, params: LoanParameters) {
   return loans;
 }
 
+// this should be done by listening for nonce update events or checking nonce on-chain because may not get called
+export async function offerRevoked(data: FullOfferInfo) {
+  const key = getOfferKey(data.offer);
+  accountOffers.get(data.offer.owner as Address)?.delete(key);
+  offers.delete(key);
+}
+
 export async function submitOffer(
   provider: Provider,
   offer: LoanOfferType,
@@ -83,15 +89,12 @@ export async function submitOffer(
   }
   accountOffers.get(owner)?.add(key);
 
-  console.log("num offers:" + accountOffers.size);
-
   offers.set(key, {
     offer: offer,
     signature: signature,
     amountBorrowed: BigNumber.from(0),
     isCancelled: false,
     token: await getToken(provider, offer.token),
-    key: key,
   });
 }
 
@@ -100,8 +103,6 @@ export async function getOffersFromOwner(address: Address) {
   const a = accountOffers.get(address)?.forEach((key) => {
     output.push(offers.get(key)!);
   });
-  console.log("num offers:" + accountOffers.size);
-  console.log("num offers for owner:" + output.length);
 
   return output;
 }
