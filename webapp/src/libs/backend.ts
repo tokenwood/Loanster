@@ -127,13 +127,17 @@ export async function getUnhealthyTroves(amount: number) {
 }
 
 
-  export async function getDiego(): Promise<string> {
+interface DiegoResponse { value: string; }
+
+export async function getDiego(): Promise<string> {
   try {
     const response = await fetch('http://localhost:3030/api/diego');
     console.log("loging response from backend");
-    console.log(response);
-    const data = await response.json();
-    return data;
+    
+    const data: DiegoResponse = await response.json();
+    console.log(data);
+    return data.value;
+
   } catch (error) {
     console.error('Error fetching data:', error);
     return '';

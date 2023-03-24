@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 import { AppService } from './app.service';
 
 @Controller()
@@ -11,8 +11,22 @@ export class AppController {
   }
 
   @Get('/api/diego')
-  getDiego(): string {
+  getDiego() {
     return this.appService.getDiego();
+  }
+
+  @Post('/api/submit_offer')
+  postSubmitOffer(@Body() data: any) {
+
+    console.log('Request data:', data);
+
+    // Return a response
+    return {
+      message: 'Data received successfully',
+      data: data,
+    };
+
+    // return this.appService.postSubmitOffer();
   }
 
 }
