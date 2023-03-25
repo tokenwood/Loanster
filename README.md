@@ -6,11 +6,12 @@ replace {MY_INFURA_KEY} by your own infura key and run following commands:
 
 ### installation steps
 
-prerequisites: Install nodejs and yarn
+prerequisites: Install nodejs, yarn, docker
 
 ```bash
 brew install node@18
 brew install yarn
+brew install docker
 ```
 
 Install services:
@@ -33,8 +34,6 @@ yarn hardhat run scripts/deploy.ts --network localhost
 cd ../chain
 yarn hardhat run scripts/deploy.ts --network localhost
 ```
-
-### start
 
 unilend should now be deployed to your local ethereum hard fork
 
@@ -80,3 +79,13 @@ and import wallet from private key:
 cd backend
 npm run start:dev
 ```
+
+## database
+
+Postgres database is used for storing data. To run it locally, use docker-compose:
+
+```bash
+docker-compose up
+```
+
+You can use DBeaver Community to connect to the database for manual inspections.
