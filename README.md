@@ -30,10 +30,23 @@ yarn install
 ```bash
 cd unilib
 yarn hardhat node --fork https://mainnet.infura.io/v3/{MY_INFURA_KEY}  # let this command run in a separate terminal
+cd ../webapp
+yarn install
+cd ../chain
+yarn install
+```
+
+### start unilend to local hardfork
+
+```bash
+cd unilib
+yarn hardhat node --fork https://mainnet.infura.io/v3/{MY_INFURA_KEY}  # let this command run in a separate terminal
 yarn hardhat run scripts/deploy.ts --network localhost
 cd ../chain
 yarn hardhat run scripts/deploy.ts --network localhost
 ```
+
+### start
 
 unilend should now be deployed to your local ethereum hard fork
 
