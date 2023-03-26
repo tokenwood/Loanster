@@ -21,15 +21,15 @@ export class OfferService {
     return this.offerRepository.find();
   }
 
-  findOne(id: string): Promise<Offer> {
-    return this.offerRepository.findOne(id);
+  findOne(id: number): Promise<Offer> {
+    return this.offerRepository.findOneBy({id});
   }
 
-  async update(id: string, updatedOffer: UpdateOfferDto): Promise<void> {
+  async update(id: number, updatedOffer: UpdateOfferDto): Promise<void> {
     await this.offerRepository.update(id, updatedOffer);
   }
 
-  async delete(id: string): Promise<void> {
+  async delete(id: number): Promise<void> {
     await this.offerRepository.delete(id);
   }
 }

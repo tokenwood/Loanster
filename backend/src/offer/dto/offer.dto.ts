@@ -4,8 +4,8 @@ export class OfferDto {
     // This is the dto (Data Transfer Object) that is used to validate the data that is sent to the backend
 
     @IsNotEmpty()
-    @IsString()
-    id: string;  // offerId, BigNumber
+    @IsNumber()
+    id: number;  // offerId, BigNumber
 
     @IsNotEmpty()
     @IsString()

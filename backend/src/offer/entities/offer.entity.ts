@@ -4,7 +4,7 @@ import { Entity, Column, PrimaryColumn } from 'typeorm';
 export class Offer {
 
     @PrimaryColumn() // TODO: @PrimaryGeneratedColumn() ?
-    id: string;  // offerId, BigNumber
+    id: number;  // offerId, BigNumber
 
     @Column()
     owner: string;
