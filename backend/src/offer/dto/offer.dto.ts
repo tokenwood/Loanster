@@ -1,15 +1,45 @@
-//import { IsString, IsNumber, IsNotEmpty } from 'class-validator';
+import { IsString, IsNumber, IsNotEmpty } from 'class-validator';
 
 export class OfferDto {
-    // TODO: Add fields to update
     // This is the dto (Data Transfer Object) that is used to validate the data that is sent to the backend
 
-    // @IsNotEmpty()
-    // @IsString()
-    // id: string;
-  
-    // @IsNotEmpty()
-    // @IsNumber()
-    // price: number;  
+    @IsNotEmpty()
+    @IsString()
+    id: string;  // offerId, BigNumber
 
+    @IsNotEmpty()
+    @IsString()
+    owner: string;
+    
+    @IsNotEmpty()
+    @IsString()
+    token: string;
+    
+    @IsNotEmpty()
+    @IsString()
+    nonce: string;  // BigNumber
+    
+    @IsNotEmpty()
+    @IsString()
+    minLoanAmount: string;  // BigNumber
+    
+    @IsNotEmpty()
+    @IsString()
+    amount: string;  // BigNumber
+    
+    @IsNotEmpty()
+    @IsString()
+    interestRateBPS: string;  // BigNumber
+    
+    @IsNotEmpty()
+    @IsString()
+    expiration: string;  // BigNumber
+    
+    @IsNotEmpty()
+    @IsString()
+    minLoanDuration: string;  // BigNumber
+
+    @IsNotEmpty()
+    @IsString()
+    maxLoanDuration: string;  // BigNumber
 }

@@ -28,7 +28,7 @@ export class OfferController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.offerService.remove(+id);
+  delete(@Param('id') id: string) {
+    return this.offerService.delete(+id);
   }
 }
