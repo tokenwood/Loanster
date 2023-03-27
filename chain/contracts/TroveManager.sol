@@ -3,21 +3,22 @@ pragma solidity ^0.8.9;
 
 import "./Supply.sol";
 import "./interfaces/IUniUtils.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
-import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
-// gas savings: ERC721Enumerable -> ERC721, remove EnumerableSet (use mappings), store loan token in trove instead of loan (only once)
-// refactor OpenLoans to check healthFactor once
+// partial withdraws of trove
+// gas savings: store loan token in trove instead of loan (only once)
 
-contract TroveManager is ERC721Enumerable, Ownable {
-    using EnumerableSet for EnumerableSet.UintSet;
-
+contract TroveManager is ERC721, Ownable {
     address private _supply;
     address private _WETH;
     address private _uniUtils;
 
     mapping(uint256 => Trove) private _troves;
-    mapping(uint256 => EnumerableSet.UintSet) private _troveLoans;
+
+    mapping(uint256 => mapping(uint256 => uint256)) private _troveLoansMap;
+    mapping(uint256 => uint256) private _troveLoansLength;
+    mapping(uint256 => uint256) private _troveLoanIndex;
+
     mapping(address => uint256) private _collateralFactorsBPS;
     mapping(address => uint256) private _borrowFactorsBPS;
     mapping(address => bool) private _allowedCollateralTokens;
@@ -129,17 +130,18 @@ contract TroveManager is ERC721Enumerable, Ownable {
         uint256 troveId,
         bool allowPartialExecution
     ) public troveOwner(troveId) {
+        address token = loanOffers[0].token;
+        _healthCheck(token, amount, troveId);
+
         uint256 toBorrow = amount;
         for (uint i = 0; i < loanOffers.length && toBorrow > 0; i++) {
+            require(
+                loanOffers[i].token == token,
+                "offers have different tokens"
+            );
             uint256 offerAmount = min(toBorrow, loanOffers[i].amount);
 
-            openLoan(
-                loanOffers[i],
-                signatures[i],
-                offerAmount,
-                duration,
-                troveId
-            );
+            _openLoan(loanOffers[i], signatures[i], amount, duration, troveId);
 
             toBorrow -= offerAmount;
         }
@@ -155,18 +157,28 @@ contract TroveManager is ERC721Enumerable, Ownable {
         uint256 duration,
         uint256 troveId
     ) public troveOwner(troveId) {
-        require(
-            _allowedSupplyTokens[loanOffer.token],
-            "supply token not allowed"
-        );
+        _healthCheck(loanOffer.token, amount, troveId);
+        _openLoan(loanOffer, signature, amount, duration, troveId);
+    }
 
-        uint256 healthFactor = getHealthFactorBPS(
-            troveId,
-            amount,
-            loanOffer.token
-        );
+    function _healthCheck(
+        address token,
+        uint256 amount,
+        uint256 troveId
+    ) private view {
+        require(_allowedSupplyTokens[token], "supply token not allowed");
+
+        uint256 healthFactor = getHealthFactorBPS(troveId, amount, token);
         require(healthFactor > HUNDRED_PERCENT_BPS, "health factor too low");
+    }
 
+    function _openLoan(
+        LoanOffer calldata loanOffer,
+        bytes calldata signature,
+        uint256 amount,
+        uint256 duration,
+        uint256 troveId
+    ) private {
         // change local state and transfer tokens
         uint256 loanId = Supply(_supply).openLoan(
             loanOffer,
@@ -176,8 +188,38 @@ contract TroveManager is ERC721Enumerable, Ownable {
             _ownerOf(troveId)
         );
 
-        _troveLoans[troveId].add(loanId);
+        _addLoanToTroveEnumeration(troveId, loanId); //65k gas
         emit NewLoan(loanId, troveId);
+    }
+
+    function _addLoanToTroveEnumeration(
+        uint256 troveId,
+        uint256 tokenId
+    ) private {
+        uint256 length = _troveLoansLength[troveId];
+        _troveLoansMap[troveId][length] = tokenId;
+        _troveLoanIndex[tokenId] = length;
+        _troveLoansLength[tokenId] = length + 1;
+    }
+
+    function _removeLoanFromTroveEnumeration(
+        uint256 troveId,
+        uint256 loanId
+    ) private {
+        uint256 lastTokenIndex = _troveLoansLength[troveId] - 1;
+        _troveLoansLength[troveId] = lastTokenIndex;
+        uint256 loanIndex = _troveLoanIndex[loanId];
+
+        // When the token to delete is the last token, the swap operation is unnecessary
+        if (loanIndex != lastTokenIndex) {
+            uint256 lastLoanId = _troveLoansMap[troveId][lastTokenIndex];
+            _troveLoansMap[troveId][loanIndex] = lastLoanId; // Move the last token to the slot of the to-delete token
+            _troveLoanIndex[lastLoanId] = loanIndex; // Update the moved token's index
+        }
+
+        // This also deletes the contents at the last position of the array. necessary?
+        delete _troveLoanIndex[loanId];
+        delete _troveLoansMap[troveId][lastTokenIndex];
     }
 
     function repayLoan(
@@ -229,7 +271,7 @@ contract TroveManager is ERC721Enumerable, Ownable {
         uint256 newAmount
     ) private {
         if (newAmount == 0) {
-            _troveLoans[troveId].remove(loanId);
+            _removeLoanFromTroveEnumeration(troveId, loanId); // is this necessary? 3k gas
         }
         Supply(_supply).repayLoan(msg.sender, loanId, newAmount);
     }
@@ -242,14 +284,14 @@ contract TroveManager is ERC721Enumerable, Ownable {
     function getNumLoansForTroveId(
         uint256 troveId
     ) public view returns (uint256) {
-        return (_troveLoans[troveId].length());
+        return (_troveLoansLength[troveId]);
     }
 
     function getLoanIdByIndexForTroveId(
         uint256 troveId,
         uint256 index
     ) public view returns (uint256) {
-        return (_troveLoans[troveId].at(index));
+        return (_troveLoansMap[troveId][index]);
     }
 
     // could there be so many loans that health becomes impossible to calculate without running out of gas?

@@ -3,7 +3,7 @@ pragma solidity ^0.8.9;
 // pragma abicoder v2;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./libraries/SignatureUtils.sol";
 
@@ -36,7 +36,7 @@ struct Loan {
     uint32 interestRateBPS;
 }
 
-contract Supply is ERC721Enumerable, Ownable, SignUtils {
+contract Supply is ERC721, Ownable, SignUtils {
     //todo remove EnumerableSet and use mapping as in latest ERC721.sol
 
     mapping(bytes32 => uint256) private _offerNonces;
@@ -115,10 +115,10 @@ contract Supply is ERC721Enumerable, Ownable, SignUtils {
             interestRateBPS: uint32(loanOffer.interestRateBPS)
         }); // 70k gas
 
-        _safeMint(loanOffer.owner, loanId); // costs 120k gas with ERC721Enumerable, 50k with ERC721
+        _safeMint(loanOffer.owner, loanId); // 50k gas
 
         require(
-            ERC20(loanOffer.token).transferFrom(
+            ERC20(loanOffer.token).transferFrom( // 25k gas
                 loanOffer.owner,
                 borrower,
                 amount

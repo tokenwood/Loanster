@@ -1,6 +1,6 @@
-# Unilend
+# Loanster
 
-## deploy unilend to local hardfork
+## deploy Loanster to local hardfork
 
 replace {MY_INFURA_KEY} by your own infura key and run following commands:
 
@@ -25,18 +25,7 @@ cd ../chain
 yarn install
 ```
 
-### start unilend to local hardfork
-
-```bash
-cd unilib
-yarn hardhat node --fork https://mainnet.infura.io/v3/{MY_INFURA_KEY}  # let this command run in a separate terminal
-cd ../webapp
-yarn install
-cd ../chain
-yarn install
-```
-
-### start unilend to local hardfork
+### Start local ethereum hard fork and deploy Loanster
 
 ```bash
 cd unilib
@@ -46,9 +35,14 @@ cd ../chain
 yarn hardhat run scripts/deploy.ts --network localhost
 ```
 
-### start
+optionally, to buy tokens, deposit collateral and open loans:
 
-unilend should now be deployed to your local ethereum hard fork
+```bash
+cd chain
+yarn hardhat run scripts/mock.ts --network localhost
+```
+
+Loanster should now be deployed to your local ethereum hard fork
 
 ### to run smart contract tests:
 
@@ -56,7 +50,7 @@ unilend should now be deployed to your local ethereum hard fork
 yarn hardhat test --network localhost
 ```
 
-## start unilend UI
+## start loanster UI
 
 create webapp/.env file with your infura key:
 

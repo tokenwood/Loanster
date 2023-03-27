@@ -1,7 +1,6 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import { Contract, BigNumber, ContractReceipt } from "ethers";
-import { NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS } from "../../webapp/src/libs/constants";
 import { loadFixture, time } from "@nomicfoundation/hardhat-network-helpers";
 
 import {
@@ -58,6 +57,15 @@ describe("Supply", function () {
       BigNumber.from(10 * ONE_DAY_IN_SECS),
       account2.address
     );
+
+    const openLoanTx2 = await supply.openLoan(
+      offer,
+      signature,
+      BigNumber.from(300),
+      BigNumber.from(10 * ONE_DAY_IN_SECS),
+      account2.address
+    );
+
     await expect(openLoanTx).to.changeTokenBalances(
       token,
       [account1, account2],
