@@ -1,19 +1,19 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
 import { AppService } from './app.service';
 // import { LoanOfferType } from '@webapp/libs/types';
-import { BigNumber } from "ethers";
+import { BigNumber } from 'ethers';
 
 export type LoanOfferType = {
   owner: string;
   token: string;
-  offerId: BigNumber;
-  nonce: BigNumber;
+  offerId: number;
+  nonce: number;
   minLoanAmount: BigNumber;
   amount: BigNumber;
-  interestRateBPS: BigNumber;
-  expiration: BigNumber;
-  minLoanDuration: BigNumber;
-  maxLoanDuration: BigNumber;
+  interestRateBPS: number;
+  expiration: number;
+  minLoanDuration: number;
+  maxLoanDuration: number;
 };
 
 function parseBigNumberInResponse(response: [key: any]): any {
@@ -42,9 +42,8 @@ export class AppController {
 
   @Post('/api/submit_offer')
   postSubmitOffer(@Body() data: any) {
-
     console.log('Request data:', data);
-    
+
     // Use JSON.parse to convert the JSON string into a TypeScript object
     const parsedData = parseBigNumberInResponse(data);
 
@@ -56,5 +55,4 @@ export class AppController {
 
     // return this.appService.postSubmitOffer();
   }
-
 }

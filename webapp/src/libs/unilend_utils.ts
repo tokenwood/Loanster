@@ -15,14 +15,14 @@ import { FullOfferInfo } from "./backend";
 export type LoanOfferType = {
   owner: string;
   token: string;
-  offerId: BigNumber;
-  nonce: BigNumber;
+  offerId: number;
+  nonce: number;
   minLoanAmount: BigNumber;
   amount: BigNumber;
-  interestRateBPS: BigNumber;
-  expiration: BigNumber;
-  minLoanDuration: BigNumber;
-  maxLoanDuration: BigNumber;
+  interestRateBPS: number;
+  expiration: number;
+  minLoanDuration: number;
+  maxLoanDuration: number;
 };
 
 export type LoanType = {
@@ -120,7 +120,7 @@ export function getLoanStats(loans: [FullOfferInfo, BigNumber][]): LoanStats {
   for (let i = 0; i < loans.length; i++) {
     totalAmount = totalAmount.add(loans[i][1]);
     totalInterest = totalInterest.add(
-      loans[i][0].offer.interestRateBPS.mul(loans[i][1])
+      BigNumber.from(loans[i][0].offer.interestRateBPS).mul(loans[i][1])
     );
     // minInterest = minInterest.add(loans[i][0].depositInfo.minLoanDuration.mul(loans[i][0].depositInfo.interestRateBPS).mod())
   }
@@ -349,7 +349,6 @@ export async function getERC721Ids(
     return acc;
   }, new Set<number>());
 
-  console.log("ids: " + Array.from(tokenIds));
   return Array.from(tokenIds);
 }
 

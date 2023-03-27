@@ -26,7 +26,9 @@ let accountOffers = new Map<Address, Set<string>>();
 
 export function getOfferKey(offer: LoanOfferType) {
   const a = ethers.utils.toUtf8Bytes(offer.owner);
-  const b = ethers.utils.toUtf8Bytes(offer.offerId.toHexString());
+  const b = ethers.utils.toUtf8Bytes(
+    BigNumber.from(offer.offerId).toHexString()
+  );
 
   return ethers.utils.keccak256(concat([a, b]));
 }
@@ -38,8 +40,8 @@ export async function getOffers(provider: Provider, params: LoanParameters) {
   const sortedOffers = await getSortedOffers((info) => {
     return (
       params.tokenAddress == info.offer.token &&
-      params.duration <= info.offer.maxLoanDuration.toNumber() &&
-      params.duration >= info.offer.minLoanDuration.toNumber()
+      params.duration <= info.offer.maxLoanDuration &&
+      params.duration >= info.offer.minLoanDuration
     );
   });
 
@@ -77,24 +79,22 @@ export async function submitOffer(
   offer: LoanOfferType,
   signature: string
 ) {
-
-  const offerWithSignature =  {
+  const offerWithSignature = {
     ...offer,
-    ...{"signature": signature}
-  }
+    ...{ signature: signature },
+  };
+
+  offerWithSignature;
   // testing posting to backend
   const response = await fetch("http://localhost:3030/offer/", {
-    method: 'POST',
-    body: JSON.stringify( offerWithSignature ),
-    headers: {'Content-Type': 'application/json; charset=UTF-8'} }
-  );
+    method: "POST",
+    body: JSON.stringify(offerWithSignature),
+    headers: { "Content-Type": "application/json; charset=UTF-8" },
+  });
 
   const data = await response.json();
   console.log(data);
   // end testing
-  
-  
-
 
   // const owner = offer.owner as Address;
   // if (!accountOffers.has(owner)) {
@@ -138,20 +138,20 @@ export async function getUnhealthyTroves(amount: number) {
   // todo return trove
 }
 
-
-interface DiegoResponse { value: string; }
+interface DiegoResponse {
+  value: string;
+}
 
 export async function getDiego(): Promise<string> {
   try {
-    const response = await fetch('http://localhost:3030/api/diego');
+    const response = await fetch("http://localhost:3030/api/diego");
     console.log("loging response from backend");
-    
+
     const data: DiegoResponse = await response.json();
     console.log(data);
     return data.value;
-
   } catch (error) {
-    console.error('Error fetching data:', error);
-    return '';
+    console.error("Error fetching data:", error);
+    return "";
   }
 }

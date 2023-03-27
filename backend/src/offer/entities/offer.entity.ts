@@ -2,37 +2,39 @@ import { Entity, Column, PrimaryColumn } from 'typeorm';
 
 @Entity()
 export class Offer {
+  @PrimaryColumn() // TODO: @PrimaryGeneratedColumn() ?
+  key: string;
 
-    @PrimaryColumn() // TODO: @PrimaryGeneratedColumn() ?
-    id: number;  // offerId, BigNumber
+  @Column()
+  offerId: number;
 
-    @Column()
-    owner: string;
-    
-    @Column()
-    signature: string;
+  @Column()
+  owner: string;
 
-    @Column()
-    token: string;
-    
-    @Column()
-    nonce: string;  // BigNumber
-    
-    @Column()
-    minLoanAmount: string;  // BigNumber
-    
-    @Column()
-    amount: string;  // BigNumber
-    
-    @Column()
-    interestRateBPS: string;  // BigNumber
-    
-    @Column()
-    expiration: string;  // BigNumber
-    
-    @Column()
-    minLoanDuration: string;  // BigNumber
+  @Column()
+  signature: string;
 
-    @Column()
-    maxLoanDuration: string;  // BigNumber
+  @Column()
+  token: string;
+
+  @Column()
+  nonce: number;
+
+  @Column()
+  minLoanAmount: string; // BigNumber
+
+  @Column()
+  amount: string; // BigNumber
+
+  @Column()
+  interestRateBPS: number;
+
+  @Column()
+  expiration: number;
+
+  @Column()
+  minLoanDuration: number;
+
+  @Column()
+  maxLoanDuration: number;
 }

@@ -200,7 +200,7 @@ export function MakeOfferInputs(props: DepositInputsProps) {
     BigNumber.from(0)
   );
   const [expirationDateMilliseconds, setExpirationDate] = useState<number>(0);
-  const [interestRatePCT, setInterestRate] = useState<number>(0);
+  const [interestRatePCT, setInterestRatePCT] = useState<number>(0);
   const [maxDurationDays, setMaxDuration] = useState<number>(0);
   const [minDurationDays, setMinDuration] = useState<number>(0);
   const [offerId, setOfferId] = useState<number>(0); //todo figure out what offer id to use
@@ -260,14 +260,14 @@ export function MakeOfferInputs(props: DepositInputsProps) {
     return {
       owner: props.account as string,
       token: props.balanceData.token.address as string,
-      offerId: BigNumber.from(offerId),
-      nonce: BigNumber.from(0),
+      offerId: offerId,
+      nonce: 0,
       minLoanAmount: offerMinAmount,
       amount: offerMaxAmount,
-      interestRateBPS: BigNumber.from(interestRatePCT * 100),
-      expiration: BigNumber.from(Math.floor(expirationDateMilliseconds / 1000)), // expiration date stored in seconds
-      minLoanDuration: BigNumber.from(minDurationDays * 60 * 60 * 24),
-      maxLoanDuration: BigNumber.from(maxDurationDays * 60 * 60 * 24),
+      interestRateBPS: Math.floor(interestRatePCT * 100), //make sure precision = 2
+      expiration: Math.floor(expirationDateMilliseconds / 1000), // expiration date stored in seconds
+      minLoanDuration: minDurationDays * 60 * 60 * 24,
+      maxLoanDuration: maxDurationDays * 60 * 60 * 24,
     };
   }
 
@@ -283,7 +283,7 @@ export function MakeOfferInputs(props: DepositInputsProps) {
         name="Interest rate (%)"
         precision={2}
         callback={(rate: number) => {
-          setInterestRate(rate);
+          setInterestRatePCT(rate);
         }}
       ></MyNumberInput>
       <MyNumberInput

@@ -11,7 +11,8 @@ prerequisites: Install nodejs, yarn, docker
 ```bash
 brew install node@18
 brew install yarn
-brew install docker
+brew install --cask docker
+brew install docker-compose
 ```
 
 Install services:
@@ -80,6 +81,16 @@ currency symbol: ETH
 and import wallet from private key:
 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
 
+## database
+
+Postgres database is used for storing data. To run it locally, use docker-compose:
+
+```bash
+docker-compose up
+```
+
+You can use DBeaver Community to connect to the database for manual inspections.
+
 ## backend
 
 ```bash
@@ -93,7 +104,7 @@ check offer creation:
 curl -X POST 'localhost:3030/offer' \
 -H 'Content-Type: application/json' \
 -d '{
-"id": 12345,
+"offerId": 12345,
 "owner": "0x1234567890123456789012345678901234567890",
 "token": "0x1234567890123456789012345678901234567890",
 "nonce": "1",
@@ -102,16 +113,7 @@ curl -X POST 'localhost:3030/offer' \
 "interestRateBPS": "500",
 "expiration": "3600",
 "minLoanDuration": "86400",
-"maxLoanDuration": "2592000"
+"maxLoanDuration": "2592000",
+"signature": "0xouiqsdfoihqsdfoih1239U"
 }'
 ```
-
-## database
-
-Postgres database is used for storing data. To run it locally, use docker-compose:
-
-```bash
-docker-compose up
-```
-
-You can use DBeaver Community to connect to the database for manual inspections.

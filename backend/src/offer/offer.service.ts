@@ -12,9 +12,7 @@ export class OfferService {
     private offerRepository: Repository<Offer>,
   ) {}
 
-
   create(offer: CreateOfferDto): Promise<CreateOfferDto> {
-
     // TODO: Validate the offer
     // check that signature is the signature of the offer.owner
     // todo verify on-chain that offer key doesn't already exist
@@ -24,7 +22,7 @@ export class OfferService {
     // if (offers.get(key)) {
     //   throw new Error("offer id already used");
     // }
-  
+
     return this.offerRepository.save(offer);
   }
 
@@ -32,15 +30,15 @@ export class OfferService {
     return this.offerRepository.find();
   }
 
-  findOne(id: number): Promise<Offer> {
-    return this.offerRepository.findOneBy({id});
-  }
+  // findOne(id: number): Promise<Offer> {
+  //   return this.offerRepository.findOneBy({id});
+  // }
 
-  async update(id: number, updatedOffer: UpdateOfferDto): Promise<void> {
-    await this.offerRepository.update(id, updatedOffer);
-  }
+  // async update(id: number, updatedOffer: UpdateOfferDto): Promise<void> {
+  //   await this.offerRepository.update(id, updatedOffer);
+  // }
 
-  async delete(id: number): Promise<void> {
-    await this.offerRepository.delete(id);
-  }
+  // async delete(id: number): Promise<void> {
+  //   await this.offerRepository.delete(id);
+  // }
 }
