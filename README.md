@@ -29,7 +29,7 @@ yarn install
 
 ```bash
 cd unilib
-yarn hardhat node --fork https://mainnet.infura.io/v3/{MY_INFURA_KEY}  # let this command run in a separate terminal
+yarn hardhat node --fork https://mainnet.infura.io/v3/${MY_INFURA_KEY}  # let this command run in a separate terminal
 yarn hardhat run scripts/deploy.ts --network localhost
 cd ../chain
 yarn hardhat run scripts/deploy.ts --network localhost
@@ -85,6 +85,25 @@ and import wallet from private key:
 ```bash
 cd backend
 npm run start:dev
+```
+
+check offer creation:
+
+```bash
+curl -X POST 'localhost:3030/offer' \
+-H 'Content-Type: application/json' \
+-d '{
+"id": 12345,
+"owner": "0x1234567890123456789012345678901234567890",
+"token": "0x1234567890123456789012345678901234567890",
+"nonce": "1",
+"minLoanAmount": "1000000000000000000",
+"amount": "2000000000000000000",
+"interestRateBPS": "500",
+"expiration": "3600",
+"minLoanDuration": "86400",
+"maxLoanDuration": "2592000"
+}'
 ```
 
 ## database

@@ -78,36 +78,36 @@ export async function submitOffer(
   signature: string
 ) {
 
+  const offerWithSignature =  {
+    ...offer,
+    ...{"signature": signature}
+  }
   // testing posting to backend
-  // const response = await fetch("http://localhost:3030/api/submit_offer", {
-  //   method: 'POST',
-  //   body: JSON.stringify( offer ),
-  //   headers: {'Content-Type': 'application/json; charset=UTF-8'} }
-  // );
+  const response = await fetch("http://localhost:3030/offer/", {
+    method: 'POST',
+    body: JSON.stringify( offerWithSignature ),
+    headers: {'Content-Type': 'application/json; charset=UTF-8'} }
+  );
 
-  // const data = await response.json();
-  // console.log(data);
+  const data = await response.json();
+  console.log(data);
   // end testing
   
-  //todo verify signature is valid for offer
-  const key = getOfferKey(offer);
-  if (offers.get(key)) {
-    throw new Error("offer id already used");
-  }
-  //todo verify on-chain that offer key doesn't already exist
-  const owner = offer.owner as Address;
-  if (!accountOffers.has(owner)) {
-    accountOffers.set(owner, new Set<string>());
-  }
-  accountOffers.get(owner)?.add(key);
+  
 
-  offers.set(key, {
-    offer: offer,
-    signature: signature,
-    amountBorrowed: BigNumber.from(0),
-    isCancelled: false,
-    token: await getToken(provider, offer.token),
-  });
+
+  // const owner = offer.owner as Address;
+  // if (!accountOffers.has(owner)) {
+  //   accountOffers.set(owner, new Set<string>());
+  // }
+  // accountOffers.get(owner)?.add(key);
+  // offers.set(key, {
+  //   offer: offer,
+  //   signature: signature,
+  //   amountBorrowed: BigNumber.from(0),
+  //   isCancelled: false,
+  //   token: await getToken(provider, offer.token),
+  // });
 }
 
 export async function getOffersFromOwner(address: Address) {

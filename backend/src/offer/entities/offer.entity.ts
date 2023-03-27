@@ -10,6 +10,9 @@ export class Offer {
     owner: string;
     
     @Column()
+    signature: string;
+
+    @Column()
     token: string;
     
     @Column()

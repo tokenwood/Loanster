@@ -13,6 +13,10 @@ export class OfferDto {
     
     @IsNotEmpty()
     @IsString()
+    signature: string;
+
+    @IsNotEmpty()
+    @IsString()
     token: string;
     
     @IsNotEmpty()

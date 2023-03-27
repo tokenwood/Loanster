@@ -14,6 +14,17 @@ export class OfferService {
 
 
   create(offer: CreateOfferDto): Promise<CreateOfferDto> {
+
+    // TODO: Validate the offer
+    // check that signature is the signature of the offer.owner
+    // todo verify on-chain that offer key doesn't already exist
+    // verify there is no other current offer with same key (= hash(owner, id))
+
+    // const key = getOfferKey(offer);
+    // if (offers.get(key)) {
+    //   throw new Error("offer id already used");
+    // }
+  
     return this.offerRepository.save(offer);
   }
 
