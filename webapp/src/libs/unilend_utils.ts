@@ -1,7 +1,7 @@
 import { Address } from "wagmi";
 import deployments from "../../../chain/cache/deployments.json";
 import { erc20ABI, erc721ABI, Provider } from "@wagmi/core";
-import { ethers } from "ethers";
+import { ethers, utils } from "ethers";
 import supplyContractJSON from "../../../chain/artifacts/contracts/Supply.sol/Supply.json";
 import troveManagerJSON from "../../../chain/artifacts/contracts/TroveManager.sol/TroveManager.json";
 import { TroveManager } from "../../../chain/typechain-types/contracts/TroveManager";
@@ -323,13 +323,34 @@ export async function getERC721Ids(
   contract: ethers.Contract,
   account: Address
 ): Promise<number[]> {
-  const balance: number = await contract.balanceOf(account);
-  const requests = [];
-  for (let i = 0; i < balance; i++) {
-    requests.push(contract.tokenOfOwnerByIndex(account, i));
-  }
-  const tokenIdsBN: BigNumber[] = await Promise.all(requests);
-  return tokenIdsBN.map((value) => value.toNumber());
+  const addressBytes32 = ethers.utils.hexZeroPad(account, 32);
+  const topics = [
+    utils.id("Transfer(address,address,uint256)"),
+    [addressBytes32, ethers.constants.HashZero],
+    [ethers.constants.HashZero, addressBytes32],
+  ];
+
+  // Query the blockchain for Transfer events to or from the specified address
+  const transferEvents = await contract.queryFilter({ topics });
+  transferEvents.sort((a, b) => a.blockNumber - b.blockNumber);
+
+  // Extract the token IDs from the Transfer events
+  const tokenIds = transferEvents.reduce((acc: Set<number>, event) => {
+    const from = event.args![0];
+    const to = event.args![1];
+    const tokenId = event.args![2].toString();
+
+    if (from.toLowerCase() === account.toLowerCase()) {
+      acc.delete(Number(tokenId));
+    } else if (to.toLowerCase() === account.toLowerCase()) {
+      acc.add(Number(tokenId));
+    }
+
+    return acc;
+  }, new Set<number>());
+
+  console.log("ids: " + Array.from(tokenIds));
+  return Array.from(tokenIds);
 }
 
 export async function getERC20BalanceAndAllowance(
