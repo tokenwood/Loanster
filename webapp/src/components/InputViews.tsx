@@ -252,7 +252,7 @@ export function MakeOfferInputs(props: DepositInputsProps) {
   };
 
   const sendOffer = async (offer: LoanOfferType, signature: string) => {
-    await submitOffer(provider, offer, signature);
+    await submitOffer(offer, signature);
     props.callback();
   };
 

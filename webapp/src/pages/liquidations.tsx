@@ -20,7 +20,6 @@ import { OfferView, TokenBalanceView } from "components/DataViews";
 import { eventEmitter, EventType } from "libs/eventEmitter";
 import {
   FullOfferInfo,
-  getDiego,
   getOfferKey,
   getOffersFromOwner,
   offerRevoked,

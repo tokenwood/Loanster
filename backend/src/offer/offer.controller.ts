@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { OfferService } from './offer.service';
 import { CreateOfferDto } from './dto/create-offer.dto';
@@ -19,14 +20,13 @@ export class OfferController {
 
   @Post()
   create(@Body() createOfferDto: CreateOfferDto) {
-    console.log('offer received: ');
-    console.log(createOfferDto);
-
-    createOfferDto.key = getOfferKey(
-      createOfferDto.owner,
-      createOfferDto.offerId,
-    );
+    parseBigNumbers(createOfferDto);
     return this.offerService.create(createOfferDto);
+  }
+
+  @Get('from_owner')
+  findOffersFromOwner(@Query('owner') owner: string) {
+    return this.offerService.findOffersFromOwner(owner);
   }
 
   @Get()
@@ -50,9 +50,12 @@ export class OfferController {
   // }
 }
 
-function getOfferKey(owner: string, offerId: number) {
-  const a = ethers.utils.toUtf8Bytes(owner);
-  const b = ethers.utils.toUtf8Bytes(BigNumber.from(offerId).toHexString());
-
-  return ethers.utils.keccak256(concat([a, b]));
+function parseBigNumbers(response: CreateOfferDto): any {
+  for (const key in response) {
+    const value = response[key];
+    if (value.type === 'BigNumber') {
+      response[key] = value.hex;
+    }
+  }
+  return response;
 }

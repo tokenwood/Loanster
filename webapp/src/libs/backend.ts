@@ -21,6 +21,8 @@ export interface FullOfferInfo {
   token: Token;
 }
 
+export type OfferResponse = LoanOfferType & { signature: string };
+
 let offers = new Map<string, FullOfferInfo>();
 let accountOffers = new Map<Address, Set<string>>();
 
@@ -74,48 +76,51 @@ export async function offerRevoked(data: FullOfferInfo) {
   offers.delete(key);
 }
 
-export async function submitOffer(
-  provider: Provider,
-  offer: LoanOfferType,
-  signature: string
-) {
+export async function submitOffer(offer: LoanOfferType, signature: string) {
   const offerWithSignature = {
     ...offer,
     ...{ signature: signature },
   };
 
-  offerWithSignature;
-  // testing posting to backend
-  const response = await fetch("http://localhost:3030/offer/", {
-    method: "POST",
-    body: JSON.stringify(offerWithSignature),
-    headers: { "Content-Type": "application/json; charset=UTF-8" },
-  });
-
-  const data = await response.json();
-  console.log(data);
-  // end testing
-
-  // const owner = offer.owner as Address;
-  // if (!accountOffers.has(owner)) {
-  //   accountOffers.set(owner, new Set<string>());
-  // }
-  // accountOffers.get(owner)?.add(key);
-  // offers.set(key, {
-  //   offer: offer,
-  //   signature: signature,
-  //   amountBorrowed: BigNumber.from(0),
-  //   isCancelled: false,
-  //   token: await getToken(provider, offer.token),
-  // });
+  try {
+    const response = await fetch("http://localhost:3030/offer/", {
+      method: "POST",
+      body: JSON.stringify(offerWithSignature),
+      headers: { "Content-Type": "application/json; charset=UTF-8" },
+    });
+    const data = await response.json();
+  } catch (error) {
+    console.error("Error submitting offer:", error);
+  }
 }
 
-export async function getOffersFromOwner(address: Address) {
+export async function getOffersFromOwner(provider: Provider, address: Address) {
   let output: FullOfferInfo[] = [];
-  const a = accountOffers.get(address)?.forEach((key) => {
-    output.push(offers.get(key)!);
-  });
 
+  console.log("getting offers from owner");
+  try {
+    const url = new URL("http://localhost:3030/offer/from_owner");
+    url.searchParams.append("owner", address);
+    const response = await fetch(url, {
+      method: "GET",
+      headers: { "Content-Type": "application/json; charset=UTF-8" },
+    });
+
+    const data: OfferResponse[] = await response.json();
+    for (const item of data) {
+      item.amount = BigNumber.from(item.amount);
+      item.minLoanAmount = BigNumber.from(item.minLoanAmount);
+      output.push({
+        offer: item,
+        signature: item.signature,
+        amountBorrowed: BigNumber.from(0),
+        isCancelled: false,
+        token: await getToken(provider, item.token),
+      });
+    }
+  } catch (error) {
+    console.error("Error fetching offers from owner:", error);
+  }
   return output;
 }
 

@@ -46,12 +46,13 @@ export default function SupplyPage() {
             {"Your Offers"}
           </Heading>
           <ListLoader
-            fetchData={() => getOffersFromOwner(account!)}
+            fetchData={() => getOffersFromOwner(provider, account!)}
             reloadEvents={[
               { eventType: EventType.SUPPLY_OFFER_CREATED },
               { eventType: EventType.SUPPLY_OFFER_CANCELLED },
             ]}
             makeListItem={(props) => {
+              console.log("list item: " + props);
               return (
                 <BaseView
                   fetcher={() => Promise.resolve(props.id)}

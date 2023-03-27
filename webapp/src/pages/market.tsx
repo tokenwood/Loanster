@@ -53,7 +53,7 @@ export default function MarketPage() {
                     )}
                   </Th>
                   <Th isNumeric>
-                    {props.id.offer.interestRateBPS.toNumber() / 100 + " %"}
+                    {props.id.offer.interestRateBPS / 100 + " %"}
                   </Th>
                   <Th isNumeric>
                     {props.id.offer.minLoanDuration + "d"} /

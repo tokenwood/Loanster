@@ -70,7 +70,7 @@ export function OfferView(props: OfferViewProps) {
       <Stat textAlign={"center"}>
         <StatLabel>Interest rate</StatLabel>
         <StatNumber fontSize={statFontSize}>
-          {props.data.offer.interestRateBPS.toNumber() / 100 + " %"}
+          {props.data.offer.interestRateBPS / 100 + " %"}
         </StatNumber>
       </Stat>
       <Stat textAlign={"center"}>
@@ -85,9 +85,9 @@ export function OfferView(props: OfferViewProps) {
       <Stat textAlign={"center"}>
         <StatLabel>Min/max duration</StatLabel>
         <StatNumber fontSize={statFontSize}>
-          {props.data.offer.minLoanDuration.toNumber() / 3600 / 24 +
+          {props.data.offer.minLoanDuration / 3600 / 24 +
             "d / " +
-            props.data.offer.maxLoanDuration.toNumber() / 3600 / 24 +
+            props.data.offer.maxLoanDuration / 3600 / 24 +
             "d"}
         </StatNumber>
       </Stat>
@@ -141,13 +141,13 @@ export function LoanView(props: LoanViewProps) {
       <Stat textAlign={"center"}>
         <StatLabel>Min Repayment Date</StatLabel>
         <StatNumber fontSize={statFontSize}>
-          {formatDate(BigNumber.from(props.data.loan.minRepayTime))}
+          {formatDate(props.data.loan.minRepayTime)}
         </StatNumber>
       </Stat>
       <Stat textAlign={"center"}>
         <StatLabel>Due Date</StatLabel>
         <StatNumber fontSize={statFontSize}>
-          {formatDate(BigNumber.from(props.data.loan.expiration))}
+          {formatDate(props.data.loan.expiration)}
         </StatNumber>
       </Stat>
     </Flex>

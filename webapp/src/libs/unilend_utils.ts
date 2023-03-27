@@ -376,8 +376,8 @@ export function floatToBigNumber(floatString: string, decimals: number) {
   return BigNumber.from(numberString);
 }
 
-export function formatDate(timestamp: BigNumber) {
-  const date = new Date(timestamp.toNumber() * 1000);
+export function formatDate(timestamp: number) {
+  const date = new Date(timestamp * 1000);
   return (
     date.getUTCFullYear() +
     "-" +

@@ -80,7 +80,7 @@ contract Supply is ERC721, Ownable, SignUtils {
             "only trove manager can start loan"
         );
         verifyLoanOfferSignature(loanOffer, signature); //8k gas
-        bytes32 key = getOfferKey(loanOffer.owner, loanOffer.offerId);
+        bytes32 key = getOfferKey(loanOffer.owner, loanOffer.offerId); // should use hash of message as key instead?
 
         require(_offerNonces[key] <= loanOffer.nonce, "invalid nonce");
 
