@@ -6,8 +6,7 @@ export class AppService {
     return 'Hello world!';
   }
 
-  getDiego(): string {
-    return 'Hello Diego!';
+  getDiego() {
+    return {'value':'Diego'};
   }
-
 }

@@ -77,6 +77,18 @@ export async function submitOffer(
   offer: LoanOfferType,
   signature: string
 ) {
+
+  // testing posting to backend
+  // const response = await fetch("http://localhost:3030/api/submit_offer", {
+  //   method: 'POST',
+  //   body: JSON.stringify( offer ),
+  //   headers: {'Content-Type': 'application/json; charset=UTF-8'} }
+  // );
+
+  // const data = await response.json();
+  // console.log(data);
+  // end testing
+  
   //todo verify signature is valid for offer
   const key = getOfferKey(offer);
   if (offers.get(key)) {
@@ -127,13 +139,17 @@ export async function getUnhealthyTroves(amount: number) {
 }
 
 
-  export async function getDiego(): Promise<string> {
+interface DiegoResponse { value: string; }
+
+export async function getDiego(): Promise<string> {
   try {
     const response = await fetch('http://localhost:3030/api/diego');
     console.log("loging response from backend");
-    console.log(response);
-    const data = await response.json();
-    return data;
+    
+    const data: DiegoResponse = await response.json();
+    console.log(data);
+    return data.value;
+
   } catch (error) {
     console.error('Error fetching data:', error);
     return '';
