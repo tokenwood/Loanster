@@ -4,6 +4,7 @@ import {
   deploySupply,
   deployTroveManager,
   depositWETH,
+  getERC20Contract,
   getSupplyContract,
   getTroveManagerContract,
   getUniUtilsAddress,
@@ -60,13 +61,14 @@ async function main() {
 
   // open 1 loan
   console.log("creating loan offer");
+  const offerAmount = BigNumber.from(ethers.utils.parseUnits("1000", 6));
   const offer: LoanOfferStruct = {
     owner: owner.address,
     token: USDC_TOKEN.address,
     offerId: BigNumber.from(100),
     nonce: BigNumber.from(0),
     minLoanAmount: BigNumber.from(0),
-    amount: BigNumber.from(ethers.utils.parseUnits("1000", 6)),
+    amount: offerAmount,
     interestRateBPS: BigNumber.from(500),
     expiration: BigNumber.from(expiration),
     minLoanDuration: BigNumber.from(0),
@@ -78,6 +80,9 @@ async function main() {
   const signature = await owner.signMessage(
     ethers.utils.arrayify(offerMessage)
   );
+
+  const tokenContract = await getERC20Contract(USDC_TOKEN.address);
+  await tokenContract.connect(owner).approve(supply.address, offerAmount);
 
   console.log("opening loan");
   const openLoanTx = await troveManager.connect(owner).openLoan(

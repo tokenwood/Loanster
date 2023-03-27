@@ -10,7 +10,6 @@ async function main() {
     throw error("should deploy to localhost");
   }
 
-  console.log("hello");
   const uniUtils = await deployUniUtils();
   console.log(`uni utils deployed to ${uniUtils.address}`);
 

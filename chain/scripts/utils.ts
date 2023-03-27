@@ -105,9 +105,14 @@ export async function buyToken(
 
   await depositWETH(amountETH);
 
-  const weth = (await getWETHContract())
+  const weth = await (await getWETHContract())
     .connect(owner)
-    .approve(swapRouter.address, ethers.utils.parseUnits("100", 18));
+    .approve(
+      swapRouter.address,
+      ethers.utils.parseUnits(amountETH.toString(), 18)
+    );
+
+  console.log("swapping");
 
   const swap = await swapRouter.connect(owner).exactInputSingle({
     tokenIn: WETH_TOKEN.address,
