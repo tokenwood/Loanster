@@ -324,10 +324,9 @@ contract TroveManager is ERC721, Ownable {
 
         uint256 total = totalOwed + extraAmount;
 
-        uint256 loanValue = IUniUtils(_uniUtils).getTWAPValue(
+        uint256 loanValue = IUniUtils(_uniUtils).getTWAPValueEth(
             total,
             token,
-            _WETH,
             _oraclePoolFees[token],
             _twapInterval
         );
@@ -339,16 +338,15 @@ contract TroveManager is ERC721, Ownable {
     ) public view returns (uint256, uint256) {
         address token = _troves[troveId].collateralToken; // or call directly instead?
 
-        uint256 collateralValue = IUniUtils(_uniUtils).getTWAPValue( // no need to pass _WETH
+        uint256 collateralValueX96 = IUniUtils(_uniUtils).getTWAPValueEth(
             _troves[troveId].amount,
             token,
-            _WETH,
             _oraclePoolFees[token],
             _twapInterval
         );
         uint256 collateralFactorBPS = _collateralFactorsBPS[token];
 
-        return (collateralValue, collateralFactorBPS);
+        return (collateralValueX96, collateralFactorBPS);
     }
 
     function getHealthFactorBPS(

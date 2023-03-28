@@ -16,6 +16,7 @@ import { eventEmitter, EventId, EventType } from "libs/eventEmitter";
 
 export interface MakeListItemProps<T> {
   id: T;
+  index: number;
   callback: () => any;
 }
 
@@ -34,9 +35,10 @@ export default function ListLoader<T>(props: ListLoaderProps<T>) {
       makeChildren={(childProps: ChildProps<T[]>) => {
         return (
           <VStack>
-            {childProps.data.map((id: T) =>
+            {childProps.data.map((id: T, index: number) =>
               props.makeListItem({
                 id: id,
+                index: index,
                 callback: childProps.refetchData,
               })
             )}
@@ -79,9 +81,10 @@ export function TableLoader<T>(props: TableLoaderProps<T>) {
                 <></>
               )}
               <Tbody>
-                {childProps.data.map((id: T) =>
+                {childProps.data.map((id: T, index: number) =>
                   props.makeTableRow({
                     id: id,
+                    index: index,
                     callback: childProps.refetchData,
                   })
                 )}

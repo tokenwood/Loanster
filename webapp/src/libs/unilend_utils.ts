@@ -78,7 +78,10 @@ export async function getNewTroveStats(
   loanStats: LoanStats,
   troveId: number
 ): Promise<TroveStats> {
-  console.log("fetching trove stats");
+  // console.log("fetching trove stats");
+  // console.log(
+  //   ethers.utils.formatUnits(loanStats.amount, loanStats.token.decimals)
+  // );
   const contract = getTroveManagerContract(provider);
 
   // collateral value

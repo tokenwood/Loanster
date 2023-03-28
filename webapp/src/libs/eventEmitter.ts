@@ -6,6 +6,7 @@ export enum EventType {
   LOAN_CREATED,
   LOAN_REPAID,
   LOAN_CLAIMED,
+  LOAN_PARAMS_CHANGED,
 }
 
 export interface EventId {

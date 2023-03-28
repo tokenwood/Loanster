@@ -24,9 +24,10 @@ import {
 } from "libs/unilend_utils";
 import { Price } from "@uniswap/sdk-core";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAccount, useProvider } from "wagmi";
 import { getTroveManagerABI, getTroveManagerAddress } from "libs/unilend_utils";
+import { eventEmitter, EventType } from "libs/eventEmitter";
 
 export default function BorrowPage() {
   const { address: account, isConnecting, isDisconnected } = useAccount();
@@ -41,6 +42,12 @@ export default function BorrowPage() {
     }
     return loanParams.amount > 0 && loanParams.tokenAddress != undefined;
   }
+
+  useEffect(() => {
+    eventEmitter.dispatch({
+      eventType: EventType.NEW_LOAN_PARAMS_CHANGED,
+    });
+  }, [loanParams]);
 
   function showTroveStats(
     loanStats: LoanStats | undefined,
@@ -81,6 +88,7 @@ export default function BorrowPage() {
                 makeTableHead={() => {
                   return (
                     <Tr>
+                      <Th isNumeric>Loan #</Th>
                       <Th isNumeric>
                         {ADDRESS_TO_TOKEN[loanParams!.tokenAddress].symbol}
                       </Th>
@@ -94,6 +102,7 @@ export default function BorrowPage() {
                     <Tr
                       key={props.id[0].offer.owner + props.id[0].offer.offerId}
                     >
+                      <Th isNumeric>{props.index}</Th>
                       <Th isNumeric>
                         {ethers.utils.formatUnits(
                           props.id[1],
@@ -147,8 +156,11 @@ export default function BorrowPage() {
               <DataLoader
                 key={loanParams?.amount! + loanParams?.tokenAddress! + troveId}
                 fetcher={() => {
-                  return getNewTroveStats(provider, loanStats!, troveId!);
+                  return getNewTroveStats(provider, loanStats!, troveId!); //todo FIX, this doesn't contain the latest loanStats
                 }}
+                reloadEvents={[
+                  { eventType: EventType.NEW_LOAN_PARAMS_CHANGED },
+                ]}
                 makeChildren={(childProps) => {
                   return (
                     <TableContainer w="100%">
