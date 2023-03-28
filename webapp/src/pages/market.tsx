@@ -1,5 +1,5 @@
 import { VStack, Box } from "@chakra-ui/layout";
-import { useAccount, useProvider } from "wagmi";
+import { Address, useAccount, useProvider } from "wagmi";
 import { BasePage } from "components/BaseComponents";
 import { TableLoader } from "components/DataLoaders";
 import {
@@ -27,7 +27,7 @@ export default function MarketPage() {
             {"Offers"}
           </Heading> */}
           <TableLoader
-            fetchData={() => getSortedOffers()}
+            fetchData={() => getSortedOffers(provider)}
             reloadEvents={[{ eventType: EventType.SUPPLY_OFFER_CREATED }]}
             tableCaption={"Available offers"}
             makeTableHead={() => {

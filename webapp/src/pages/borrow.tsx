@@ -101,12 +101,9 @@ export default function BorrowPage() {
                         )}
                       </Th>
                       <Th isNumeric>
-                        {props.id[0].offer.interestRateBPS.toNumber() / 100 +
-                          " %"}
+                        {props.id[0].offer.interestRateBPS / 100 + " %"}
                       </Th>
-                      <Th isNumeric>
-                        {props.id[0].offer.minLoanDuration.toNumber()}
-                      </Th>
+                      <Th isNumeric>{props.id[0].offer.minLoanDuration}</Th>
                     </Tr>
                   );
                 }}

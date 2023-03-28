@@ -21,9 +21,6 @@ export class OfferService {
     // verify there is no other current offer with same key (= hash(owner, id))
     // if this fails, propagate error to front-end
 
-    // console.log('offer received: ');
-    // console.log(offer);
-
     offer.key = getOfferKey(offer.owner, offer.offerId);
 
     return this.offerRepository.save(offer);
@@ -37,8 +34,19 @@ export class OfferService {
     });
   }
 
-  findAll() {
-    return this.offerRepository.find();
+  findAllByToken(token?: string) {
+    const output = this.offerRepository.find({
+      where: {
+        token: token,
+      },
+      order: {
+        token: 'ASC',
+        interestRateBPS: 'ASC',
+      },
+    });
+    console.log('token output: ');
+    console.log(output);
+    return output;
   }
 
   // findOne(id: number): Promise<Offer> {
@@ -59,4 +67,8 @@ function getOfferKey(owner: string, offerId: number) {
   const b = ethers.utils.toUtf8Bytes(BigNumber.from(offerId).toHexString());
 
   return ethers.utils.keccak256(concat([a, b]));
+}
+
+function bigNumberMin(a: BigNumber, b: BigNumber) {
+  return a.lt(b) ? a : b;
 }

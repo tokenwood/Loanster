@@ -30,8 +30,8 @@ export class OfferController {
   }
 
   @Get()
-  findAll() {
-    return this.offerService.findAll();
+  findAllByToken(@Query('token') token?: string) {
+    return this.offerService.findAllByToken(token);
   }
 
   // @Get(':id')

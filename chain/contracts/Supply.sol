@@ -52,6 +52,7 @@ contract Supply is ERC721, Ownable, SignUtils {
     uint256 private constant MAX_INT = 2 ** 256 - 1;
 
     event LoanRepayment(uint256 loanId, uint256 interest, uint256 newAmount);
+    event NonceUpdated(address owner, uint256 offerId, uint256 nonce);
 
     // init and configuration functions
     constructor() ERC721("DepositNFT", "ULD") {}
@@ -66,6 +67,7 @@ contract Supply is ERC721, Ownable, SignUtils {
     // state changing functions
     function setOfferNonce(uint256 offerId, uint256 nonce) public {
         _offerNonces[getOfferKey(msg.sender, offerId)] = nonce;
+        emit NonceUpdated(msg.sender, offerId, nonce);
     }
 
     function openLoan(
