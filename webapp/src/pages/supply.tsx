@@ -24,7 +24,7 @@ import { eventEmitter, EventType } from "libs/eventEmitter";
 import {
   FullOfferInfo,
   getOfferKey,
-  getOffersFromOwner,
+  getOffersFrom,
   offerRevoked,
 } from "libs/backend";
 import { Flex, Spacer } from "@chakra-ui/react";
@@ -46,7 +46,7 @@ export default function SupplyPage() {
             {"Your Offers"}
           </Heading>
           <ListLoader
-            fetchData={() => getOffersFromOwner(provider, account!)}
+            fetchData={() => getOffersFrom(provider, account!)}
             reloadEvents={[
               { eventType: EventType.SUPPLY_OFFER_CREATED },
               { eventType: EventType.SUPPLY_OFFER_CANCELLED },

@@ -35,7 +35,12 @@ contract TroveManager is ERC721, Ownable {
     event DebugAddress(address message);
     event SupplyTokenChanged(address token, bool isAllowed);
     event CollateralTokenChange(address token, bool isAllowed);
-    event NewLoan(uint256 troveId, uint256 loanId);
+    event NewLoan(
+        address owner,
+        uint256 offerId,
+        uint256 loanId,
+        uint256 troveId
+    );
 
     struct Trove {
         address collateralToken;
@@ -189,7 +194,7 @@ contract TroveManager is ERC721, Ownable {
         );
 
         _addLoanToTroveEnumeration(troveId, loanId); //65k gas
-        emit NewLoan(loanId, troveId);
+        emit NewLoan(loanOffer.owner, loanOffer.offerId, loanId, troveId);
     }
 
     function _addLoanToTroveEnumeration(

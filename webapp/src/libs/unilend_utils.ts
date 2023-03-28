@@ -10,7 +10,7 @@ import { BigNumber } from "ethers";
 import { ADDRESS_TO_TOKEN, WETH_TOKEN } from "./constants";
 import { SupportedChainId, Token } from "@uniswap/sdk-core";
 import { CurrencyAmount } from "@uniswap/sdk-core";
-import { FullOfferInfo } from "./backend";
+import { FullOfferInfo, getOffersFrom } from "./backend";
 
 export type LoanOfferType = {
   owner: string;
@@ -396,4 +396,29 @@ export async function getOfferMessageToSign(
   const contract = getSupplyContract(provider);
   const message: string = await contract.buildLoanOfferMessage(offer);
   return message;
+}
+
+export async function getUnusedOfferId(provider: Provider, account: Address) {
+  console.log("getting unused offer id");
+  const offerResponses = await getOffersFrom(provider, account); // should be cached
+
+  const maxOfferId = Math.max(
+    ...offerResponses.map((offerResponse) => offerResponse.offer.offerId)
+  );
+
+  const troveManager = await getTroveManagerContract(provider);
+  const addressBytes32 = ethers.utils.hexZeroPad(account, 32);
+  const topics = [
+    utils.id("NewLoan(address,uint256,uint256,uint256)"),
+    addressBytes32,
+  ];
+  const newLoanEvents = await troveManager.queryFilter({ topics }); // should be cached
+
+  const maxUsedId = newLoanEvents.reduce((acc: number, event) => {
+    const owner = event.args![0];
+    const offerId = event.args![1];
+    return Math.max(offerId, acc);
+  }, 0);
+
+  return Math.max(maxUsedId, maxOfferId) + 1;
 }

@@ -4,9 +4,10 @@ import {
   LoanParameters,
   LoanType,
   LoanOfferType,
+  getTroveManagerContract,
 } from "./unilend_utils";
 import { Address, Provider } from "@wagmi/core";
-import { BigNumber, ethers } from "ethers";
+import { BigNumber, ethers, utils } from "ethers";
 import { Token } from "@uniswap/sdk-core";
 import { concat } from "ethers/lib/utils.js";
 
@@ -94,13 +95,13 @@ export async function submitOffer(offer: LoanOfferType, signature: string) {
   }
 }
 
-export async function getOffersFromOwner(provider: Provider, address: Address) {
+export async function getOffersFrom(provider: Provider, account: Address) {
   let output: FullOfferInfo[] = [];
 
   console.log("getting offers from owner");
   try {
     const url = new URL("http://localhost:3030/offer/from_owner");
-    url.searchParams.append("owner", address);
+    url.searchParams.append("owner", account);
     const response = await fetch(url, {
       method: "GET",
       headers: { "Content-Type": "application/json; charset=UTF-8" },
@@ -122,6 +123,33 @@ export async function getOffersFromOwner(provider: Provider, address: Address) {
     console.error("Error fetching offers from owner:", error);
   }
   return output;
+}
+
+// should this be done on back-end?
+export async function getUnusedLoanId(provider: Provider, account: Address) {
+  console.log("getting unused loan id");
+  const offerResponses = await getOffersFrom(provider, account); // should be cached
+
+  const maxOfferId = Math.max(
+    ...offerResponses.map((offerResponse) => offerResponse.offer.offerId)
+  );
+
+  const troveManager = await getTroveManagerContract(provider);
+  const addressBytes32 = ethers.utils.hexZeroPad(account, 32);
+  const topics = [
+    utils.id("NewLoan(address,uint256,uint256,uint256)"),
+    addressBytes32,
+  ];
+  const newLoanEvents = await troveManager.queryFilter({ topics }); // should be cached
+
+  const maxUsedId = newLoanEvents.reduce((acc: number, event) => {
+    const owner = event.args![0];
+    const offerId = event.args![1];
+    return Math.max(offerId, acc);
+    return acc;
+  }, 0);
+
+  return Math.max(maxUsedId, maxOfferId) + 1;
 }
 
 export async function getSortedOffers(

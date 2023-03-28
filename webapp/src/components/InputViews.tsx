@@ -19,6 +19,7 @@ import {
   FullLoanInfo,
   FullTroveInfo,
   getERC20BalanceAndAllowance,
+  getUnusedOfferId,
 } from "libs/unilend_utils";
 import { ethers } from "ethers";
 import { ContractCallButton, SignButton } from "./BaseComponents";
@@ -203,12 +204,24 @@ export function MakeOfferInputs(props: DepositInputsProps) {
   const [interestRatePCT, setInterestRatePCT] = useState<number>(0);
   const [maxDurationDays, setMaxDuration] = useState<number>(0);
   const [minDurationDays, setMinDuration] = useState<number>(0);
-  const [offerId, setOfferId] = useState<number>(0); //todo figure out what offer id to use
+  const [offerId, setOfferId] = useState<number>(); //todo figure out what offer id to use
+  const [isLoadingOfferId, setIsLoadingOfferId] = useState<boolean>(false);
   const provider = useProvider();
 
   const [offer, setOffer] = useState<[LoanOfferType, string]>();
 
+  const getOfferId = async () => {
+    if (!isLoadingOfferId) {
+      setIsLoadingOfferId(true);
+      const offerId = await getUnusedOfferId(provider, props.account);
+      setOfferId(offerId);
+    }
+  };
+
   useEffect(() => {
+    if (offerId == undefined) {
+      getOfferId();
+    }
     if (canConfirm()) {
       updateOffer();
     }
@@ -246,6 +259,7 @@ export function MakeOfferInputs(props: DepositInputsProps) {
 
   const canConfirm = () => {
     return (
+      offerId != undefined &&
       BigNumber.from(0).lt(offerMaxAmount) &&
       offerMaxAmount.lte(props.balanceData.amount)
     );
@@ -260,7 +274,7 @@ export function MakeOfferInputs(props: DepositInputsProps) {
     return {
       owner: props.account as string,
       token: props.balanceData.token.address as string,
-      offerId: offerId,
+      offerId: offerId!,
       nonce: 0,
       minLoanAmount: offerMinAmount,
       amount: offerMaxAmount,
