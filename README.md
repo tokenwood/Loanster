@@ -1,30 +1,20 @@
 # Loanster
 
-## deploy Loanster to local hardfork
+## installation steps
+
+```bash
+make install
+```
+
+## Start all services
+
+```bash
+make start_all
+```
+
+### deploy Loanster to local hardfork
 
 replace {MY_INFURA_KEY} by your own infura key and run following commands:
-
-### installation steps
-
-prerequisites: Install nodejs, yarn, docker
-
-```bash
-brew install node@18
-brew install yarn
-brew install --cask docker
-brew install docker-compose
-```
-
-Install services:
-
-```bash
-cd unilib
-yarn install
-cd ../webapp
-yarn install
-cd ../chain
-yarn install
-```
 
 ### Start local ethereum hard fork and deploy Loanster
 
@@ -96,24 +86,4 @@ You can use DBeaver Community to connect to the database for manual inspections.
 ```bash
 cd backend
 npm run start:dev
-```
-
-check offer creation:
-
-```bash
-curl -X POST 'localhost:3030/offer' \
--H 'Content-Type: application/json' \
--d '{
-"offerId": 12345,
-"owner": "0x1234567890123456789012345678901234567890",
-"token": "0x1234567890123456789012345678901234567890",
-"nonce": "1",
-"minLoanAmount": "1000000000000000000",
-"amount": "2000000000000000000",
-"interestRateBPS": "500",
-"expiration": "3600",
-"minLoanDuration": "86400",
-"maxLoanDuration": "2592000",
-"signature": "0xouiqsdfoihqsdfoih1239U"
-}'
 ```
