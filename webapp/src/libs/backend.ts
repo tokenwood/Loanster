@@ -175,21 +175,3 @@ function bigNumberMin(a: BigNumber, b: BigNumber) {
 export async function getUnhealthyTroves(amount: number) {
   // todo return trove
 }
-
-interface DiegoResponse {
-  value: string;
-}
-
-export async function getDiego(): Promise<string> {
-  try {
-    const response = await fetch("http://localhost:3030/api/diego");
-    console.log("loging response from backend");
-
-    const data: DiegoResponse = await response.json();
-    console.log(data);
-    return data.value;
-  } catch (error) {
-    console.error("Error fetching data:", error);
-    return "";
-  }
-}
