@@ -11,11 +11,9 @@ import {
   ONE_DAY_IN_SECS,
   ONE_MONTH_IN_SECS,
   ONE_YEAR_IN_SECS,
-  openTrove,
+  depositCollateral,
 } from "./utils";
 import {
-  AGEUR_TOKEN,
-  CRV_TOKEN,
   LUSD_TOKEN,
   RETH_TOKEN,
   USDC_TOKEN,
@@ -50,7 +48,7 @@ async function main() {
 
   // open 1 troves
   console.log("opening trove");
-  const troveId = await openTrove(
+  const troveId = await depositCollateral(
     owner,
     WETH_TOKEN.address,
     ethers.utils.parseEther("1"),
@@ -89,8 +87,7 @@ async function main() {
     offer,
     signature,
     BigNumber.from(ethers.utils.parseUnits("100", 6)), // amount
-    BigNumber.from(10 * ONE_DAY_IN_SECS), // duration
-    troveId // troveId
+    BigNumber.from(10 * ONE_DAY_IN_SECS) // duration
   );
 }
 

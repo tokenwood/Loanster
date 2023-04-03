@@ -219,10 +219,11 @@ contract Supply is ERC721, Ownable, SignUtils {
 
     function getLoanAmountAndMinInterest(
         uint256 loanId
-    ) public view returns (uint256, uint256) {
+    ) public view returns (address, uint256, uint256) {
         uint256 duration = max(block.timestamp, _loans[loanId].minRepayTime) -
             _loans[loanId].startTime;
         return (
+            _loans[loanId].token,
             _loans[loanId].amount,
             getInterest(
                 _loans[loanId].amount,

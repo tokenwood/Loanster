@@ -3,21 +3,21 @@ pragma solidity ^0.8.9;
 
 import "./Supply.sol";
 import "./interfaces/IUniUtils.sol";
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-// partial withdraws of trove
-// gas savings: store loan token in trove instead of loan (only once)
+contract TroveManager is Ownable {
+    using EnumerableSet for EnumerableSet.AddressSet;
 
-contract TroveManager is ERC721, Ownable {
     address private _supply;
-    address private _WETH;
     address private _uniUtils;
 
-    mapping(uint256 => Trove) private _troves;
+    // mapping(uint256 => Trove) private _troves;
+    mapping(address => mapping(address => uint256)) _depositAmounts;
+    mapping(address => EnumerableSet.AddressSet) _depositTokens;
 
-    mapping(uint256 => mapping(uint256 => uint256)) private _troveLoansMap;
-    mapping(uint256 => uint256) private _troveLoansLength;
-    mapping(uint256 => uint256) private _troveLoanIndex;
+    mapping(address => mapping(uint256 => uint256)) private _accountLoansMap;
+    mapping(address => uint256) private _accountLoansLength;
+    mapping(uint256 => uint256) private _accountLoanIndex; // loan id to index in map
 
     mapping(address => uint256) private _collateralFactorsBPS;
     mapping(address => uint256) private _borrowFactorsBPS;
@@ -36,32 +36,17 @@ contract TroveManager is ERC721, Ownable {
     event SupplyTokenChanged(address token, bool isAllowed);
     event CollateralTokenChange(address token, bool isAllowed);
     event NewLoan(
-        address owner,
+        address lender,
         uint256 offerId,
         uint256 loanId,
-        uint256 troveId
+        address borrower
     );
-
-    struct Trove {
-        address collateralToken;
-        uint256 amount;
-    }
-
-    modifier troveOwner(uint256 troveId) {
-        require(msg.sender == ownerOf(troveId), "sender not owner of trove");
-        _;
-    }
 
     // init functions
 
-    constructor(
-        address WETH,
-        address supply,
-        address uniUtils
-    ) ERC721("TroveNFT", "ULT") {
+    constructor(address supply, address uniUtils) {
         _uniUtils = uniUtils;
         _supply = supply;
-        _WETH = WETH;
 
         Supply(_supply).setTroveManager(address(this));
     }
@@ -102,16 +87,15 @@ contract TroveManager is ERC721, Ownable {
 
     // state changes public
 
-    function openTrove(address token, uint256 amount) public {
+    function deposit(address token, uint256 amount) public {
+        // should there be a minimum deposit amount?
         require(
             _allowedCollateralTokens[token],
             "collateral token not allowed"
         );
 
-        uint256 troveId = _nextTroveId++;
-        _safeMint(msg.sender, troveId);
-
-        _troves[troveId] = Trove({collateralToken: token, amount: amount});
+        _depositAmounts[msg.sender][token] += amount;
+        _depositTokens[msg.sender].add(token);
 
         require(
             IERC20(token).balanceOf(msg.sender) >= amount,
@@ -123,8 +107,21 @@ contract TroveManager is ERC721, Ownable {
         );
     }
 
-    function closeTrove(uint256 troveId) public troveOwner(troveId) {
-        closeTroveInternal(troveId);
+    function withdraw(address token, uint256 newAmount) public {
+        uint256 withdrawAmount = _depositAmounts[msg.sender][token] - newAmount;
+        _depositAmounts[msg.sender][token] = newAmount;
+        if (newAmount == 0) {
+            _depositTokens[msg.sender].remove(token);
+        }
+        _healthCheck(msg.sender, address(0), 0);
+        require(
+            IERC20(token).transferFrom(
+                address(this),
+                msg.sender,
+                withdrawAmount
+            ),
+            "transfer failed"
+        );
     }
 
     function openLoans(
@@ -132,11 +129,10 @@ contract TroveManager is ERC721, Ownable {
         bytes[] calldata signatures,
         uint256 amount,
         uint256 duration,
-        uint256 troveId,
         bool allowPartialExecution
-    ) public troveOwner(troveId) {
+    ) public {
         address token = loanOffers[0].token;
-        _healthCheck(token, amount, troveId);
+        _healthCheck(msg.sender, token, amount);
 
         uint256 toBorrow = amount;
         for (uint i = 0; i < loanOffers.length && toBorrow > 0; i++) {
@@ -146,7 +142,13 @@ contract TroveManager is ERC721, Ownable {
             );
             uint256 offerAmount = min(toBorrow, loanOffers[i].amount);
 
-            _openLoan(loanOffers[i], signatures[i], amount, duration, troveId);
+            _openLoan(
+                loanOffers[i],
+                signatures[i],
+                amount,
+                duration,
+                msg.sender
+            );
 
             toBorrow -= offerAmount;
         }
@@ -159,21 +161,20 @@ contract TroveManager is ERC721, Ownable {
         LoanOffer calldata loanOffer,
         bytes calldata signature,
         uint256 amount,
-        uint256 duration,
-        uint256 troveId
-    ) public troveOwner(troveId) {
-        _healthCheck(loanOffer.token, amount, troveId);
-        _openLoan(loanOffer, signature, amount, duration, troveId);
+        uint256 duration
+    ) public {
+        // _healthCheck(msg.sender, loanOffer.token, amount);
+        _openLoan(loanOffer, signature, amount, duration, msg.sender);
     }
 
-    function _healthCheck(
-        address token,
-        uint256 amount,
-        uint256 troveId
-    ) private view {
-        require(_allowedSupplyTokens[token], "supply token not allowed");
+    // state changes private
 
-        uint256 healthFactor = getHealthFactorBPS(troveId, amount, token);
+    function _healthCheck(
+        address account,
+        address token,
+        uint256 amount
+    ) private view {
+        uint256 healthFactor = getHealthFactorBPS(account, amount, token);
         require(healthFactor > HUNDRED_PERCENT_BPS, "health factor too low");
     }
 
@@ -182,190 +183,195 @@ contract TroveManager is ERC721, Ownable {
         bytes calldata signature,
         uint256 amount,
         uint256 duration,
-        uint256 troveId
+        address account
     ) private {
-        // change local state and transfer tokens
+        require(
+            _allowedSupplyTokens[loanOffer.token],
+            "supply token not allowed"
+        );
+
         uint256 loanId = Supply(_supply).openLoan(
             loanOffer,
             signature,
             amount,
             duration,
-            _ownerOf(troveId)
+            account
         );
 
-        _addLoanToTroveEnumeration(troveId, loanId); //65k gas
-        emit NewLoan(loanOffer.owner, loanOffer.offerId, loanId, troveId);
+        _addLoanToAccountEnumeration(account, loanId); //65k gas
+        emit NewLoan(loanOffer.owner, loanOffer.offerId, loanId, account);
     }
 
-    function _addLoanToTroveEnumeration(
-        uint256 troveId,
-        uint256 tokenId
-    ) private {
-        uint256 length = _troveLoansLength[troveId];
-        _troveLoansMap[troveId][length] = tokenId;
-        _troveLoanIndex[tokenId] = length;
-        _troveLoansLength[tokenId] = length + 1;
-    }
-
-    function _removeLoanFromTroveEnumeration(
-        uint256 troveId,
+    function _addLoanToAccountEnumeration(
+        address account,
         uint256 loanId
     ) private {
-        uint256 lastTokenIndex = _troveLoansLength[troveId] - 1;
-        _troveLoansLength[troveId] = lastTokenIndex;
-        uint256 loanIndex = _troveLoanIndex[loanId];
+        uint256 length = _accountLoansLength[account];
+        _accountLoansMap[account][length] = loanId;
+        _accountLoanIndex[loanId] = length;
+        _accountLoansLength[account] = length + 1;
+    }
+
+    function _removeLoanFromAccountEnumeration(
+        address account,
+        uint256 loanId
+    ) private {
+        uint256 lastTokenIndex = _accountLoansLength[account] - 1;
+        _accountLoansLength[account] = lastTokenIndex;
+        uint256 loanIndex = _accountLoanIndex[loanId];
 
         // When the token to delete is the last token, the swap operation is unnecessary
         if (loanIndex != lastTokenIndex) {
-            uint256 lastLoanId = _troveLoansMap[troveId][lastTokenIndex];
-            _troveLoansMap[troveId][loanIndex] = lastLoanId; // Move the last token to the slot of the to-delete token
-            _troveLoanIndex[lastLoanId] = loanIndex; // Update the moved token's index
+            uint256 lastLoanId = _accountLoansMap[account][lastTokenIndex];
+            _accountLoansMap[account][loanIndex] = lastLoanId; // Move the last token to the slot of the to-delete token
+            _accountLoanIndex[lastLoanId] = loanIndex; // Update the moved token's index
         }
 
         // This also deletes the contents at the last position of the array. necessary?
-        delete _troveLoanIndex[loanId];
-        delete _troveLoansMap[troveId][lastTokenIndex];
+        delete _accountLoanIndex[loanId];
+        delete _accountLoansMap[account][lastTokenIndex];
     }
 
-    function repayLoan(
-        uint256 troveId,
-        uint256 loanId,
-        uint256 newAmount
-    ) public troveOwner(troveId) {
-        repayLoanInternal(troveId, loanId, newAmount);
+    function repayLoan(uint256 loanId, uint256 newAmount) public {
+        require(
+            _accountLoansMap[msg.sender][_accountLoanIndex[loanId]] == loanId,
+            "msg.sender not owner of loan"
+        );
+        repayLoanInternal(msg.sender, msg.sender, loanId, newAmount);
     }
 
-    function liquidateTrove(uint256 troveId) public {
-        uint256 healthFactor = getHealthFactorBPS(troveId, 0, address(0));
+    // todo split excess between liquidator and owner, handle bad debt
+    function liquidateAccount(address account) public {
+        uint256 healthFactor = getHealthFactorBPS(account, 0, address(0));
 
-        require(healthFactor < HUNDRED_PERCENT_BPS, "trove is healthy");
+        require(healthFactor < HUNDRED_PERCENT_BPS, "account is healthy");
 
-        uint256 numLoans = getNumLoansForTroveId(troveId);
+        uint256 numLoans = getNumLoansForAccount(account);
         for (uint i = 0; i < numLoans; i++) {
-            uint256 loanId = getLoanIdByIndexForTroveId(troveId, i);
-            repayLoanInternal(troveId, loanId, 0);
+            uint256 loanId = getLoanIdByIndexForAccount(account, i);
+            repayLoanInternal(account, msg.sender, loanId, 0);
         }
-
-        // todo split excess between liquidator and owner, handle bad debt
-        closeTroveInternal(troveId);
-    }
-
-    // state changes private
-
-    function closeTroveInternal(uint256 troveId) private {
-        require(
-            getNumLoansForTroveId(troveId) == 0,
-            "must close loans before withdrawing"
-        );
-
-        require(
-            ERC20(_troves[troveId].collateralToken).transferFrom(
-                address(this),
-                msg.sender,
-                _troves[troveId].amount
-            ),
-            "transfer failed"
-        );
-
-        _burn(troveId);
     }
 
     function repayLoanInternal(
-        uint256 troveId,
+        address borrower,
+        address repayer,
         uint256 loanId,
         uint256 newAmount
     ) private {
         if (newAmount == 0) {
-            _removeLoanFromTroveEnumeration(troveId, loanId); // is this necessary? 3k gas
+            _removeLoanFromAccountEnumeration(borrower, loanId); // is this necessary? 3k gas
         }
-        Supply(_supply).repayLoan(msg.sender, loanId, newAmount);
+        Supply(_supply).repayLoan(repayer, loanId, newAmount);
     }
 
     // view functions
-    function getTrove(uint256 troveId) public view returns (Trove memory) {
-        return _troves[troveId];
-    }
-
-    function getNumLoansForTroveId(
-        uint256 troveId
+    function getNumDepositsForAccount(
+        address account
     ) public view returns (uint256) {
-        return (_troveLoansLength[troveId]);
+        return (_accountLoansLength[account]);
     }
 
-    function getLoanIdByIndexForTroveId(
-        uint256 troveId,
+    function getDepositByIndexForAccount(
+        address account,
+        uint256 index
+    ) public view returns (address, uint256) {
+        address token = _depositTokens[account].at(index);
+        return (token, _depositAmounts[account][token]);
+    }
+
+    function getNumLoansForAccount(
+        address account
+    ) public view returns (uint256) {
+        return (_accountLoansLength[account]);
+    }
+
+    function getLoanIdByIndexForAccount(
+        address account,
         uint256 index
     ) public view returns (uint256) {
-        return (_troveLoansMap[troveId][index]);
+        return (_accountLoansMap[account][index]);
+    }
+
+    function getLoanValueEth(
+        address token,
+        uint256 amount
+    ) public view returns (uint, uint) {
+        uint256 loanValue = IUniUtils(_uniUtils).getTWAPValueEth(
+            amount,
+            token,
+            _oraclePoolFees[token],
+            _twapInterval
+        );
+        return (loanValue, (loanValue * 10000) / _borrowFactorsBPS[token]);
     }
 
     // could there be so many loans that health becomes impossible to calculate without running out of gas?
-    function getTroveLoansValueEth(
-        uint256 troveId,
-        uint256 extraAmount,
-        address token
-    ) public view returns (uint256) {
-        uint256 numLoans = getNumLoansForTroveId(troveId);
-        uint256 totalOwed;
+    function getLoansValueEth(
+        address account
+    ) public view returns (uint256, uint256) {
+        uint256 numLoans = getNumLoansForAccount(account);
+        uint256 totalDebt;
+        uint256 adjustedTotalDebt;
 
+        //todo gas optim: how expensive is twap call ? could be aggregated by tokens first
         for (uint i = 0; i < numLoans; i++) {
-            uint256 loanId = getLoanIdByIndexForTroveId(troveId, i);
-            (uint256 borrowed, uint256 interest) = Supply(_supply)
-                .getLoanAmountAndMinInterest(loanId);
-            totalOwed += borrowed + interest;
-            if (i == 0) {
-                address borrowedToken = Supply(_supply).getLoanToken(loanId);
-                require(
-                    token == borrowedToken,
-                    "trying to borrow 2 different tokens"
-                );
-            }
+            uint256 loanId = getLoanIdByIndexForAccount(account, i);
+            (address token, uint256 borrowed, uint256 interest) = Supply(
+                _supply
+            ).getLoanAmountAndMinInterest(loanId);
+            (uint256 loanValue, uint256 adjustedLoanValue) = getLoanValueEth(
+                token,
+                borrowed + interest
+            );
+            totalDebt += loanValue;
+            adjustedTotalDebt += adjustedLoanValue;
         }
 
-        uint256 total = totalOwed + extraAmount;
-
-        uint256 loanValue = IUniUtils(_uniUtils).getTWAPValueEth(
-            total,
-            token,
-            _oraclePoolFees[token],
-            _twapInterval
-        );
-        return loanValue;
+        return (totalDebt, adjustedTotalDebt);
     }
 
-    function getTroveCollateralValueEth(
-        uint256 troveId
+    function getCollateralValueEth(
+        address account
     ) public view returns (uint256, uint256) {
-        address token = _troves[troveId].collateralToken; // or call directly instead?
+        uint256 collateralValue;
+        uint256 adjustedCollateralValue;
+        for (uint i = 0; i < _depositTokens[account].length(); i++) {
+            address token = _depositTokens[account].at(i);
+            uint256 value = IUniUtils(_uniUtils).getTWAPValueEth(
+                _depositAmounts[account][token],
+                token,
+                _oraclePoolFees[token],
+                _twapInterval
+            );
+            collateralValue += value;
+            adjustedCollateralValue +=
+                (value * _collateralFactorsBPS[token]) /
+                10000; // openzeppelin safemath instead?
+        }
 
-        uint256 collateralValueX96 = IUniUtils(_uniUtils).getTWAPValueEth(
-            _troves[troveId].amount,
-            token,
-            _oraclePoolFees[token],
-            _twapInterval
-        );
-        uint256 collateralFactorBPS = _collateralFactorsBPS[token];
-
-        return (collateralValueX96, collateralFactorBPS);
+        return (collateralValue, adjustedCollateralValue);
     }
 
     function getHealthFactorBPS(
-        uint256 troveId,
+        address account,
         uint256 extraAmount,
         address token
     ) public view returns (uint256) {
-        (
-            uint256 collateralValueEth,
-            uint256 collateralFactorBPS
-        ) = getTroveCollateralValueEth(troveId);
+        (, uint256 adjustedCollateralValueEth) = getCollateralValueEth(account);
+        (, uint256 adjustedLoanValueEth) = getLoansValueEth(account);
 
-        uint256 loanValue = getTroveLoansValueEth(troveId, extraAmount, token);
-        uint256 borrowFactorBPS = _borrowFactorsBPS[token];
+        if (extraAmount > 0) {
+            (, uint256 adjustedNewLoanValue) = getLoanValueEth(
+                token,
+                extraAmount
+            );
+            adjustedLoanValueEth += adjustedNewLoanValue;
+        }
 
-        if (loanValue > 0) {
-            return ((collateralValueEth *
-                collateralFactorBPS *
-                borrowFactorBPS) / (loanValue * 10000));
+        if (adjustedLoanValueEth > 0) {
+            return ((adjustedCollateralValueEth * 10000) /
+                (adjustedLoanValueEth));
         } else {
             return (MAX_INT);
         }

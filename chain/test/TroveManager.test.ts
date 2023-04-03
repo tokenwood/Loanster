@@ -16,7 +16,7 @@ import {
   ONE_DAY_IN_SECS,
   ONE_MONTH_IN_SECS,
   ONE_YEAR_IN_SECS,
-  openTrove,
+  depositCollateral,
 } from "../scripts/utils";
 
 import hre from "hardhat";
@@ -44,10 +44,7 @@ describe("TroveManager", function () {
 
   async function deployTroveManagerFixture() {
     const supply = await deploySupply();
-    const troveManager = await deployTroveManager(
-      supply.address,
-      WETH_TOKEN.address
-    );
+    const troveManager = await deployTroveManager(supply.address);
     await supply.setTroveManager(troveManager.address);
 
     console.log(`supply and troveManager deployed`);
@@ -130,8 +127,7 @@ describe("TroveManager", function () {
     );
 
     // account1 opens trove with WETH as collateral
-
-    const troveId = await openTrove(
+    const troveId = await depositCollateral(
       account1,
       WETH_TOKEN.address,
       ethers.utils.parseEther("1"),
@@ -165,8 +161,7 @@ describe("TroveManager", function () {
       offer,
       signature,
       BigNumber.from(ethers.utils.parseUnits("100", 6)), // amount
-      BigNumber.from(10 * ONE_DAY_IN_SECS), // duration
-      troveId // troveId
+      BigNumber.from(10 * ONE_DAY_IN_SECS) // duration
     );
 
     await expect(openLoanTx).to.changeTokenBalances(
@@ -178,7 +173,6 @@ describe("TroveManager", function () {
     const loanId: BigNumber = (await openLoanTx.wait()).events?.filter((x) => {
       return x.event == "NewLoan";
     })[0].args!["loanId"];
-
     console.log("loanId " + loanId);
 
     await usdc
@@ -187,7 +181,7 @@ describe("TroveManager", function () {
 
     const repayLoanTx = await troveManager
       .connect(account1)
-      .repayLoan(troveId, loanId, BigNumber.from(0));
+      .repayLoan(loanId, BigNumber.from(0));
 
     await expect(repayLoanTx).to.changeTokenBalances(
       usdc,
@@ -195,13 +189,8 @@ describe("TroveManager", function () {
       [-100000000, 100000000]
     );
 
-    // await expect(
-    //   troveManager.connect(account2).closeTrove(troveId)
-    // ).to.be.revertedWith("sender not owner of trove");
-
-    // todo fix: contract doesn't have authorisation to send usdc
     await expect(
-      troveManager.connect(account1).closeTrove(troveId)
+      troveManager.connect(account1).withdraw(WETH_TOKEN.address, 0)
     ).to.changeTokenBalance(weth, account1, ethers.utils.parseEther("1"));
   });
 });

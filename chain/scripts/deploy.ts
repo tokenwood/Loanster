@@ -27,10 +27,7 @@ async function main() {
   const supply = await deploySupply();
   console.log(`supply deployed to ${supply.address}`);
 
-  const troveManager = await deployTroveManager(
-    supply.address,
-    WETH_TOKEN.address
-  );
+  const troveManager = await deployTroveManager(supply.address);
   console.log(`trove manager deployed to ${troveManager.address}`);
 
   await troveManager.addSupplyToken(USDC_TOKEN.address, 9000, 500);

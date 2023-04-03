@@ -67,14 +67,9 @@ export async function deploySupply() {
   return supply;
 }
 
-export async function deployTroveManager(
-  supplyAddress: string,
-  wethAddress: string
-) {
+export async function deployTroveManager(supplyAddress: string) {
   const TroveManager = await ethers.getContractFactory("TroveManager");
-
   const troveManager = await TroveManager.deploy(
-    wethAddress,
     supplyAddress,
     getUniUtilsAddress()
   );
@@ -129,7 +124,7 @@ export async function buyToken(
   // await log_balance(USDC_TOKEN, account2.address);
 }
 
-export async function openTrove(
+export async function depositCollateral(
   account: SignerWithAddress,
   collateralToken: string,
   collateralAmount: BigNumber,
@@ -141,14 +136,7 @@ export async function openTrove(
     .connect(account)
     .approve(troveManager.address, collateralAmount);
 
-  const openTroveTx = await troveManager
+  await troveManager
     .connect(account)
-    .openTrove(collateralToken, collateralAmount);
-
-  const tokenId: BigNumber = (await openTroveTx.wait()).events?.filter((x) => {
-    return x.event == "Transfer";
-  })[0].args!["tokenId"];
-
-  console.log("trove opened with id:" + tokenId);
-  return tokenId;
+    .deposit(collateralToken, collateralAmount);
 }
