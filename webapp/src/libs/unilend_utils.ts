@@ -416,6 +416,22 @@ export async function getLenderLoanIds(
   return getERC721Ids(supplyContract, account);
 }
 
+export async function getAccounts(provider: Provider) {
+
+  const troveManager = getTroveManagerContract(provider);
+  const topics = [utils.id("NewLoan(address,uint256,uint256, address)")]
+  
+  const events = await troveManager.queryFilter({ topics });
+
+  const accounts = events.reduce((acc: Set<Address>, event) => {
+    const account: Address = event.args![3];
+      acc.add(account);
+    return acc;
+  }, new Set<Address>());
+
+  return Array.from(accounts)
+}
+
 export async function getERC721Ids(
   contract: ethers.Contract,
   account: Address

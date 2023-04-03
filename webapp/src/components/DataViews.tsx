@@ -186,3 +186,56 @@ function getWidth(key: string, colDims: { [key: string]: number }) {
   }
   return (colDims[key] * 100) / totalWidth + "%";
 }
+
+interface AccountViewProps {
+  data: FullLoanInfo;
+}
+
+export function AccountView(props: AccountViewProps) {
+  return (
+    <Flex w="100%">
+      <Stat textAlign={"center"}>
+        <StatLabel>Token</StatLabel>
+        <StatNumber fontSize={statFontSize}>
+          {props.data.token.symbol}
+        </StatNumber>
+      </Stat>
+      <Stat textAlign={"center"}>
+        <StatLabel>Debt</StatLabel>
+        <StatNumber fontSize={statFontSize}>
+          {ethers.utils.formatUnits(
+            props.data.loan.amount.add(props.data.interest),
+            props.data.token.decimals
+          )}
+        </StatNumber>
+      </Stat>
+      <Stat textAlign={"center"}>
+        <StatLabel>Claimable</StatLabel>
+        <StatNumber fontSize={statFontSize}>
+          {ethers.utils.formatUnits(
+            props.data.claimable,
+            props.data.token.decimals
+          )}
+        </StatNumber>
+      </Stat>
+      <Stat textAlign={"center"}>
+        <StatLabel>Interest rate</StatLabel>
+        <StatNumber fontSize={statFontSize}>
+          {props.data.loan.interestRateBPS / 100 + " %"}
+        </StatNumber>
+      </Stat>
+      <Stat textAlign={"center"}>
+        <StatLabel>Min Repayment Date</StatLabel>
+        <StatNumber fontSize={statFontSize}>
+          {formatDate(props.data.loan.minRepayTime)}
+        </StatNumber>
+      </Stat>
+      <Stat textAlign={"center"}>
+        <StatLabel>Due Date</StatLabel>
+        <StatNumber fontSize={statFontSize}>
+          {formatDate(props.data.loan.expiration)}
+        </StatNumber>
+      </Stat>
+    </Flex>
+  );
+}

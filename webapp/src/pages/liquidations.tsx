@@ -8,8 +8,8 @@ import {
 import ListLoader from "components/DataLoaders";
 import {
   FullLoanInfo,
-  getFullLoanInfo,
-  getLoanIds,
+  getAccounts,
+  getFullAccountInfo,
   getSupplyABI,
   getSupplyAddress,
 } from "libs/unilend_utils";
@@ -27,57 +27,56 @@ export default function LiquidationsPage() {
       isConnecting={isConnecting}
       isDisconnected={isDisconnected}
     >
-      <VStack align="left" spacing="4">
-        <Box>
-          <Heading as="h6" size="sm" mb="3">
-            {"Loans"}
-          </Heading>
-          <ListLoader
-            fetchData={() => getLoanIds(provider, account!)}
-            makeListItem={(props) => {
-              return (
-                <BaseView
-                  level={2}
-                  key={props.id}
-                  fetcher={() => getFullLoanInfo(provider, props.id)}
-                  dataView={(data) => {
-                    return <LoanView data={data} />;
-                  }}
-                  actions={[
-                    {
-                      action: "Claim",
-                      onClickView: (
-                        data: FullLoanInfo,
-                        actionFinished: () => any
-                      ) => {
-                        return (
-                          <Flex w="100%">
-                            <Spacer></Spacer>
-                            <ContractCallButton
-                              contractAddress={getSupplyAddress()}
-                              abi={getSupplyABI()}
-                              functionName={"withdraw"}
-                              args={[data.loanId]}
-                              enabled={data.claimable.gt(BigNumber.from(0))}
-                              callback={() => {
-                                actionFinished();
-                                eventEmitter.dispatch({
-                                  eventType: EventType.LOAN_CLAIMED,
-                                  suffix: data.token.address,
-                                });
-                              }}
-                            ></ContractCallButton>
-                          </Flex>
-                        );
-                      },
+      <VStack align="left" spacing="4"></VStack>
+      <Box>
+        <Heading as="h6" size="sm" mb="3">
+          {"Loans"}
+        </Heading>
+        <ListLoader
+          fetchData={() => getAccounts(provider)}
+          makeListItem={(props) => {
+            return (
+              <BaseView
+                level={2}
+                key={props.id}
+                fetcher={() => getFullAccountInfo(props.id, provider)}
+                dataView={(data) => {
+                  return <LoanView data={data} />;
+                }}
+                actions={[
+                  {
+                    action: "Liquidate",
+                    onClickView: (
+                      data: FullLoanInfo,
+                      actionFinished: () => any
+                    ) => {
+                      return (
+                        <Flex w="100%">
+                          <Spacer></Spacer>
+                          <ContractCallButton
+                            contractAddress={getSupplyAddress()}
+                            abi={getSupplyABI()}
+                            functionName={"withdraw"}
+                            args={[data.loanId]}
+                            enabled={data.claimable.gt(BigNumber.from(0))}
+                            callback={() => {
+                              actionFinished();
+                              eventEmitter.dispatch({
+                                eventType: EventType.LOAN_CLAIMED,
+                                suffix: data.token.address,
+                              });
+                            }}
+                          ></ContractCallButton>
+                        </Flex>
+                      );
                     },
-                  ]}
-                ></BaseView>
-              );
-            }}
-          ></ListLoader>
-        </Box>
-      </VStack>
+                  },
+                ]}
+              ></BaseView>
+            );
+          }}
+        ></ListLoader>
+      </Box>
     </BasePage>
   );
 }
