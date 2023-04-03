@@ -26,7 +26,6 @@ contract TroveManager is Ownable {
 
     mapping(address => uint24) private _oraclePoolFees;
 
-    uint256 private _nextTroveId = 1;
     uint256 private constant MAX_INT = 2 ** 256 - 1;
     uint32 private _twapInterval = 300;
     uint256 private constant HUNDRED_PERCENT_BPS = 10000;
@@ -163,7 +162,7 @@ contract TroveManager is Ownable {
         uint256 amount,
         uint256 duration
     ) public {
-        // _healthCheck(msg.sender, loanOffer.token, amount);
+        _healthCheck(msg.sender, loanOffer.token, amount); //94k gas
         _openLoan(loanOffer, signature, amount, duration, msg.sender);
     }
 

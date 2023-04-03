@@ -1,5 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { Box, Button, Flex, Select, Spacer, Text } from "@chakra-ui/react";
+import {
+  Box,
+  Button,
+  Flex,
+  Select,
+  Spacer,
+  Text,
+  Th,
+  Tr,
+} from "@chakra-ui/react";
 import { VStack } from "@chakra-ui/layout";
 import { Address, erc20ABI, useContractRead, useProvider } from "wagmi";
 import { BigNumber } from "ethers";
@@ -12,22 +21,26 @@ import {
   getSupplyTokenAddresses,
   getSupplyTokens,
   floatToBigNumber,
-  getTroveIds,
+  getBorrowerLoanIds,
   LoanParameters,
   LoanOfferType,
   getOfferMessageToSign,
   FullLoanInfo,
-  FullTroveInfo,
+  FullAccountInfo,
   getERC20BalanceAndAllowance,
   getUnusedOfferId,
+  getLoanStats,
+  LoanStats,
 } from "libs/unilend_utils";
 import { ethers } from "ethers";
 import { ContractCallButton, SignButton } from "./BaseComponents";
 import { DateInput, MyNumberInput, TokenAmountInput } from "./InputFields";
 import { eventEmitter, EventType } from "libs/eventEmitter";
-import { ChildProps, DataLoader } from "./DataLoaders";
+import { ChildProps, DataLoader, TableLoader } from "./DataLoaders";
 import { defaultBorderRadius, DEFAULT_SIZE } from "./Theme";
-import { submitOffer } from "libs/backend";
+import { getOffers, submitOffer } from "libs/backend";
+import { Token } from "@uniswap/sdk-core";
+import { ADDRESS_TO_TOKEN } from "libs/constants";
 
 export interface DepositInputsProps {
   account: Address;
@@ -77,7 +90,7 @@ export function CollateralDepositInputs(props: DepositInputsProps) {
           <ContractCallButton
             contractAddress={getTroveManagerAddress()}
             abi={getTroveManagerABI()}
-            functionName={"openTrove"}
+            functionName={"deposit"}
             args={[props.balanceData.token.address, amountToDeposit]}
             enabled={canConfirm()}
             callback={() => {
@@ -103,7 +116,6 @@ export function CollateralDepositInputs(props: DepositInputsProps) {
 export interface RepayLoanInputs {
   account: Address;
   loanInfo: FullLoanInfo;
-  troveInfo: FullTroveInfo;
   callback: () => any;
 }
 
@@ -164,11 +176,7 @@ export function RepayLoanInputs(props: RepayLoanInputs) {
                   contractAddress={getTroveManagerAddress()}
                   abi={getTroveManagerABI()}
                   functionName={"repayLoan"}
-                  args={[
-                    props.troveInfo.troveId,
-                    props.loanInfo.loanId,
-                    newPrincipalAmount,
-                  ]}
+                  args={[props.loanInfo.loanId, newPrincipalAmount]}
                   enabled={canConfirm(balance)}
                   callback={() => {
                     props.callback();
@@ -354,63 +362,32 @@ export function MakeOfferInputs(props: DepositInputsProps) {
 
 interface BorrowInputProps {
   account: Address;
+  token: Token;
   callback: (params: LoanParameters) => any;
 }
 
 export function BorrowInputs(props: BorrowInputProps) {
-  const [tokenToBorrow, setTokenToBorrow] = useState<Address>();
   const [amountToBorrow, setAmountToBorrow] = useState<number>(0);
   const [term, setTerm] = useState<number>();
   const [minDuration, setMinDuration] = useState<number>();
+  const [loanParams, setLoanParams] = useState<LoanParameters>();
+  const [loanStats, setLoanStats] = useState<LoanStats>();
   const provider = useProvider();
 
-  const handleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setTokenToBorrow(event.target.value as Address);
-  };
+  function isValidLoanParams() {
+    return loanParams !== undefined && amountToBorrow > 0;
+  }
 
   useEffect(() => {
-    props.callback({
-      tokenAddress: tokenToBorrow!,
+    setLoanParams({
+      tokenAddress: props.token.address as Address,
       amount: amountToBorrow,
       duration: 0, //todo
     });
-  }, [tokenToBorrow, amountToBorrow]);
+  }, [amountToBorrow]);
 
   return (
-    <VStack w="100%" spacing={0} layerStyle={"level3"} padding={3}>
-      <DataLoader
-        fetcher={() => getSupplyTokens(provider)}
-        defaultValue={[]}
-        dataLoaded={(tokens) => {
-          if (tokenToBorrow == undefined) {
-            setTokenToBorrow(tokens[0].address as Address);
-          }
-        }}
-        makeChildren={(childProps) => {
-          return (
-            <Flex w="100%">
-              <Text alignSelf={"center"} ml="0">
-                {"Token"}
-              </Text>
-              <Spacer />
-              <Select
-                width={"100px"}
-                textAlign={"right"}
-                // placeholder="Select"
-                value={tokenToBorrow}
-                onChange={handleChange}
-              >
-                {childProps.data.map((token) => (
-                  <option value={token.address} key={token.address}>
-                    {token.symbol}
-                  </option>
-                ))}
-              </Select>
-            </Flex>
-          );
-        }}
-      ></DataLoader>
-
+    <VStack w="100%" spacing={0} layerStyle={"level2"} padding={3}>
       <MyNumberInput
         name="Amount"
         // precision={0}
@@ -433,62 +410,68 @@ export function BorrowInputs(props: BorrowInputProps) {
           setMinDuration(value);
         }}
       ></MyNumberInput> */}
-    </VStack>
-  );
-}
 
-interface LoanTroveInputProps {
-  account: Address;
-  callback: (troveId: number) => any;
-}
+      {isValidLoanParams() ? (
+        <TableLoader
+          key={amountToBorrow + props.token.address} //todo hash loanParms
+          fetchData={() => getOffers(provider, loanParams!)}
+          dataLoaded={(tableData) => {
+            console.log("table data");
+            console.log(tableData);
+            setLoanStats(getLoanStats(tableData));
+          }}
+          makeTableHead={() => {
+            return (
+              <Tr>
+                <Th isNumeric>Loan #</Th>
+                <Th isNumeric>{props.token.symbol}</Th>
+                <Th isNumeric>Rate</Th>
+                <Th isNumeric>Min Duration</Th>
+              </Tr>
+            );
+          }}
+          makeTableRow={(props) => {
+            return (
+              <Tr key={props.id[0].offer.owner + props.id[0].offer.offerId}>
+                <Th isNumeric>{props.index}</Th>
+                <Th isNumeric>
+                  {ethers.utils.formatUnits(
+                    props.id[1],
+                    props.id[0].token.decimals
+                  )}
+                </Th>
+                <Th isNumeric>
+                  {props.id[0].offer.interestRateBPS / 100 + " %"}
+                </Th>
+                <Th isNumeric>{props.id[0].offer.minLoanDuration}</Th>
+              </Tr>
+            );
+          }}
+          makeTableFooter={(tableData) => {
+            const loanStats = getLoanStats(tableData);
 
-export function LoanTroveInput(props: LoanTroveInputProps) {
-  const [troveId, setTroveId] = useState<number>();
-  const provider = useProvider();
-
-  const handleTroveChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const troveId = parseInt(event.target.value);
-    setTroveId(troveId);
-    props.callback(troveId);
-  };
-
-  return (
-    <VStack
-      w="100%"
-      spacing={0}
-      layerStyle={"level3"}
-      padding={3}
-      alignSelf="center"
-    >
-      <DataLoader
-        fetcher={() => getTroveIds(provider, props.account)}
-        makeChildren={(props) => {
-          return (
-            <Flex w="100%">
-              <Text alignSelf={"center"} ml="0">
-                {"Trove"}
-              </Text>
-              <Spacer />
-              <Select
-                width={"30%"}
-                textAlign={"right"}
-                placeholder="Select"
-                value={troveId}
-                onChange={handleTroveChange}
-              >
-                {props.data.map((selectedTroveId) => (
-                  <option
-                    value={selectedTroveId.toString()}
-                    key={selectedTroveId}
-                  >
-                    trove id: {selectedTroveId}
-                  </option>
-                ))}
-              </Select>
-            </Flex>
-          );
-        }}
-      ></DataLoader>
+            if (loanStats != undefined) {
+              return (
+                <Tr borderTopColor={"gray.500"} borderTopWidth={"1.5px"}>
+                  <Th isNumeric>{"total"}</Th>
+                  <Th isNumeric>
+                    {ethers.utils.formatUnits(
+                      loanStats.amount,
+                      tableData[0][0].token.decimals // what if empty array?
+                    )}
+                  </Th>
+                  <Th isNumeric>{loanStats.rate.toNumber() / 100 + " %"}</Th>
+                  <Th isNumeric>todo</Th>
+                </Tr>
+              );
+            } else {
+              return <Box> no loans</Box>;
+            }
+          }}
+        ></TableLoader>
+      ) : (
+        <Box></Box>
+      )}
     </VStack>
   );
 }

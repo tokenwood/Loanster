@@ -48,7 +48,7 @@ async function main() {
 
   // open 1 troves
   console.log("opening trove");
-  const troveId = await depositCollateral(
+  await depositCollateral(
     owner,
     WETH_TOKEN.address,
     ethers.utils.parseEther("1"),

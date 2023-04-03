@@ -9,7 +9,7 @@ import ListLoader, { MakeListItemProps } from "components/DataLoaders";
 import {
   FullLoanInfo,
   getFullLoanInfo,
-  getLoanIds,
+  getLenderLoanIds,
   getSupplyABI,
   getSupplyAddress,
   getSupplyTokenAddresses,
@@ -101,7 +101,7 @@ export default function SupplyPage() {
             {"Your Loans"}
           </Heading>
           <ListLoader
-            fetchData={() => getLoanIds(provider, account!)}
+            fetchData={() => getLenderLoanIds(provider, account!)}
             makeListItem={(props) => {
               return (
                 <BaseView

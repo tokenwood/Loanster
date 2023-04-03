@@ -127,7 +127,7 @@ describe("TroveManager", function () {
     );
 
     // account1 opens trove with WETH as collateral
-    const troveId = await depositCollateral(
+    await depositCollateral(
       account1,
       WETH_TOKEN.address,
       ethers.utils.parseEther("1"),

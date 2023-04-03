@@ -1,218 +1,221 @@
-import { Box, HStack } from "@chakra-ui/layout";
+import { VStack, Heading, Box } from "@chakra-ui/layout";
+import { Address, useAccount, useProvider } from "wagmi";
 import {
-  Heading,
-  Select,
-  Table,
-  TableContainer,
-  Tbody,
-  Th,
-  Tr,
-  VStack,
-} from "@chakra-ui/react";
-import { BasePage, ContractCallButton } from "components/BaseComponents";
-import { ChildProps, DataLoader, TableLoader } from "components/DataLoaders";
-import { BorrowInputs, LoanTroveInput } from "components/InputViews";
-import { BigNumber, ethers } from "ethers";
-import { ADDRESS_TO_TOKEN } from "libs/constants";
-import { getOffers } from "libs/backend";
+  BasePage,
+  BaseView,
+  ContractCallButton,
+} from "components/BaseComponents";
+import ListLoader from "components/DataLoaders";
 import {
-  getLoanStats,
-  getNewTroveStats,
-  LoanParameters,
-  LoanStats,
-  TroveStats,
+  FullLoanInfo,
+  getBorrowerLoanIds,
+  getCollateralDeposits,
+  getCollateralTokens,
+  getFullLoanInfo,
+  getSupplyTokens,
+  getTokenBalance,
+  getTroveManagerAddress,
+  TokenBalanceInfo,
 } from "libs/unilend_utils";
-import { Price } from "@uniswap/sdk-core";
-
-import { useEffect, useState } from "react";
-import { useAccount, useProvider } from "wagmi";
-import { getTroveManagerABI, getTroveManagerAddress } from "libs/unilend_utils";
+import { Provider } from "@wagmi/core";
+import {
+  BorrowInputs,
+  CollateralDepositInputs,
+  RepayLoanInputs,
+} from "components/InputViews";
+import { LoanView, TokenBalanceView } from "components/DataViews";
 import { eventEmitter, EventType } from "libs/eventEmitter";
+import { BigNumber } from "ethers";
 
-export default function BorrowPage() {
+export default function LoansPage() {
   const { address: account, isConnecting, isDisconnected } = useAccount();
   const provider = useProvider();
-  const [loanParams, setLoanParams] = useState<LoanParameters>();
-  const [loanStats, setLoanStats] = useState<LoanStats>();
-  const [troveId, setTroveId] = useState<number>();
-
-  function isValidLoanParams(loanParams: LoanParameters | undefined) {
-    if (loanParams == undefined) {
-      return false;
-    }
-    return loanParams.amount > 0 && loanParams.tokenAddress != undefined;
-  }
-
-  useEffect(() => {
-    eventEmitter.dispatch({
-      eventType: EventType.NEW_LOAN_PARAMS_CHANGED,
-    });
-  }, [loanParams]);
-
-  function showTroveStats(
-    loanStats: LoanStats | undefined,
-    troveId: number | undefined
-  ) {
-    return troveId != undefined && loanStats != undefined;
-  }
-
   return (
     <BasePage
       account={account}
       isConnecting={isConnecting}
       isDisconnected={isDisconnected}
     >
-      <VStack>
-        <HStack w="100%" alignItems="start" spacing="5">
-          <VStack align="left" spacing="4" w="50%">
-            <Box>
-              <Heading as="h6" size="sm" mb="3">
-                Borrow
-              </Heading>
-              <BorrowInputs
-                account={account!}
-                callback={(params) => {
-                  // console.log("setting loan params");
-                  setLoanParams(params);
-                }}
-              ></BorrowInputs>
-            </Box>
-
-            {isValidLoanParams(loanParams) ? (
-              <TableLoader
-                key={loanParams?.amount! + loanParams?.tokenAddress!} //todo hash loanParms
-                fetchData={() => getOffers(provider, loanParams!)}
-                dataLoaded={(tableData) => {
-                  setLoanStats(getLoanStats(tableData));
-                }}
-                makeTableHead={() => {
-                  return (
-                    <Tr>
-                      <Th isNumeric>Loan #</Th>
-                      <Th isNumeric>
-                        {ADDRESS_TO_TOKEN[loanParams!.tokenAddress].symbol}
-                      </Th>
-                      <Th isNumeric>Rate</Th>
-                      <Th isNumeric>Min Duration</Th>
-                    </Tr>
-                  );
-                }}
-                makeTableRow={(props) => {
-                  return (
-                    <Tr
-                      key={props.id[0].offer.owner + props.id[0].offer.offerId}
-                    >
-                      <Th isNumeric>{props.index}</Th>
-                      <Th isNumeric>
-                        {ethers.utils.formatUnits(
-                          props.id[1],
-                          props.id[0].token.decimals
-                        )}
-                      </Th>
-                      <Th isNumeric>
-                        {props.id[0].offer.interestRateBPS / 100 + " %"}
-                      </Th>
-                      <Th isNumeric>{props.id[0].offer.minLoanDuration}</Th>
-                    </Tr>
-                  );
-                }}
-                makeTableFooter={(tableData) => {
-                  const loanStats = getLoanStats(tableData);
-                  return (
-                    <Tr borderTopColor={"gray.500"} borderTopWidth={"1.5px"}>
-                      <Th isNumeric>{"total"}</Th>
-                      <Th isNumeric>
-                        {ethers.utils.formatUnits(
-                          loanStats.amount,
-                          tableData[0][0].token.decimals // what if empty array?
-                        )}
-                      </Th>
-                      <Th isNumeric>
-                        {loanStats.rate.toNumber() / 100 + " %"}
-                      </Th>
-                      <Th isNumeric>todo</Th>
-                    </Tr>
-                  );
-                }}
-              ></TableLoader>
-            ) : (
-              <></>
-            )}
-          </VStack>
-          <VStack w="50%" spacing={0}>
-            <Box w="100%">
-              <Heading textAlign={"right"} size="sm" mb="3" w="100%">
-                In Trove
-              </Heading>
-            </Box>
-            <LoanTroveInput
-              account={account!}
-              callback={(troveId: number) => {
-                setTroveId(troveId);
-              }}
-            ></LoanTroveInput>
-
-            {showTroveStats(loanStats, troveId) ? (
-              <DataLoader
-                key={loanParams?.amount! + loanParams?.tokenAddress! + troveId}
-                fetcher={() => {
-                  return getNewTroveStats(provider, loanStats!, troveId!); //todo FIX, this doesn't contain the latest loanStats
-                }}
-                reloadEvents={[
-                  { eventType: EventType.NEW_LOAN_PARAMS_CHANGED },
-                ]}
-                makeChildren={(childProps) => {
-                  return (
-                    <TableContainer w="100%">
-                      <Table variant="simple">
-                        <Tbody>
-                          <Tr>
-                            <Th>Collateral value ETH</Th>
-                            <Th isNumeric>
-                              {childProps.data.collateralValueEth.toSignificant(
-                                4
-                              )}
-                            </Th>
-                          </Tr>
-                          <Tr>
-                            <Th>Total Loan value eth</Th>
-                            <Th isNumeric>
-                              {childProps.data.loanValueEth.toSignificant(4)}
-                            </Th>
-                          </Tr>
-                          <Tr>
-                            <Th>New Health factor</Th>
-                            <Th isNumeric>{childProps.data.healthFactor}</Th>
-                          </Tr>
-                          <Tr>
-                            <Th>Liquidation price</Th>
-                            <Th isNumeric>todo</Th>
-                          </Tr>
-                        </Tbody>
-                      </Table>
-                    </TableContainer>
-                  );
-                }}
-              ></DataLoader>
-            ) : (
-              <></>
-            )}
-          </VStack>
-        </HStack>
-
-        <ContractCallButton
-          contractAddress={getTroveManagerAddress()}
-          abi={getTroveManagerABI()}
-          functionName={"openLoan"}
-          enabled={isValidLoanParams(loanParams)}
-          args={[
-            troveId,
-            //todo
-          ]}
-          callback={function () {
-            throw new Error("Function not implemented.");
-          }}
-        ></ContractCallButton>
+      <VStack align="left" spacing="4">
+        <Box>
+          <Heading as="h6" layerStyle={"onbg"} size="sm" mb="3">
+            {"Your Account"}
+          </Heading>
+          <Box>
+            todo: health factor, total collateral, total loans, net worth{" "}
+          </Box>
+        </Box>
+        <Box>
+          <Heading as="h6" layerStyle={"onbg"} size="sm" mb="3">
+            {"Collateral Deposits"}
+          </Heading>
+          <ListLoader
+            fetchData={() => getCollateralDeposits(provider, account!)}
+            makeListItem={(listItemProps) => {
+              return (
+                <BaseView
+                  level={2}
+                  key={"collateral_deposit_" + listItemProps.id.toString()}
+                  fetcher={() => Promise.resolve(listItemProps.id)}
+                  dataView={(data) => {
+                    return (
+                      <TokenBalanceView
+                        amount={data.amount}
+                        token={data.token}
+                      />
+                    );
+                  }}
+                  actions={[
+                    {
+                      action: "Withdraw",
+                      onClickView: (
+                        data: FullLoanInfo,
+                        actionFinished: () => any
+                      ) => {
+                        return <Box> todo </Box>;
+                      },
+                    },
+                  ]}
+                ></BaseView>
+              );
+            }}
+          ></ListLoader>
+        </Box>
+        <Box>
+          <Heading as="h6" layerStyle={"onbg"} size="sm" mb="3">
+            {"Your Loans"}
+          </Heading>
+          <ListLoader
+            fetchData={() => getBorrowerLoanIds(provider, account!)}
+            makeListItem={(listItemProps) => {
+              return (
+                <BaseView
+                  level={2}
+                  key={"loan_" + listItemProps.id.toString()}
+                  fetcher={() => getFullLoanInfo(provider, listItemProps.id)}
+                  dataView={(data) => {
+                    return <LoanView data={data} />;
+                  }}
+                  actions={[
+                    {
+                      action: "Repay",
+                      onClickView: (
+                        data: FullLoanInfo,
+                        actionFinished: () => any
+                      ) => {
+                        return (
+                          <RepayLoanInputs
+                            account={account!}
+                            loanInfo={data}
+                            callback={() => {
+                              actionFinished();
+                            }}
+                          />
+                        );
+                      },
+                    },
+                  ]}
+                ></BaseView>
+              );
+            }}
+          ></ListLoader>
+        </Box>
+        <Box>
+          <Heading as="h6" layerStyle={"onbg"} size="sm" mb="3">
+            {"Assets To Borrow"}
+          </Heading>
+          <ListLoader
+            fetchData={() => getSupplyTokens(provider)}
+            makeListItem={(listItemProps) => {
+              return (
+                <BaseView
+                  level={2}
+                  key={"asset_to_borrow" + listItemProps.id.address}
+                  fetcher={() => Promise.resolve(listItemProps.id)} //todo get token info from server
+                  dataView={(data) => {
+                    return (
+                      <TokenBalanceView
+                        amount={BigNumber.from(0)}
+                        token={data}
+                      />
+                    );
+                  }}
+                  actions={[
+                    {
+                      action: "Borrow",
+                      onClickView: (data, actionFinished: () => any) => {
+                        return (
+                          <BorrowInputs
+                            account={account!}
+                            callback={(params) => {
+                              // setLoanParams(params);
+                            }}
+                            token={listItemProps.id}
+                          ></BorrowInputs>
+                        );
+                      },
+                    },
+                  ]}
+                ></BaseView>
+              );
+            }}
+          ></ListLoader>
+        </Box>
+        <Box>
+          <Heading as="h6" size="sm" mb="3" layerStyle={"onbg"}>
+            {"Collateral Assets"}
+          </Heading>
+          <ListLoader
+            fetchData={() => getCollateralTokens(provider)}
+            makeListItem={(props) => {
+              return (
+                <BaseView
+                  key={"wallet_collateral_token_balance_" + props.id}
+                  level={2}
+                  fetcher={() => getTokenBalance(provider, props.id, account!)}
+                  reloadEvents={[
+                    {
+                      eventType: EventType.COLLATERAL_TOKEN_WITHDRAWN,
+                      suffix: props.id,
+                    },
+                  ]}
+                  dataView={(data: TokenBalanceInfo) => {
+                    return (
+                      <TokenBalanceView
+                        amount={data.amount}
+                        token={data.token}
+                      />
+                    );
+                  }}
+                  actions={[
+                    {
+                      action: "Deposit",
+                      onClickView: (
+                        data: TokenBalanceInfo,
+                        actionFinished: () => any
+                      ) => {
+                        return (
+                          <CollateralDepositInputs
+                            account={account!}
+                            balanceData={data}
+                            approvalAddress={getTroveManagerAddress()}
+                            callback={() => {
+                              actionFinished();
+                              // props.callback();
+                              eventEmitter.dispatch({
+                                eventType: EventType.COLLATERAL_TOKEN_DEPOSITED,
+                              });
+                            }}
+                          ></CollateralDepositInputs>
+                        );
+                      },
+                    },
+                  ]}
+                ></BaseView>
+              );
+            }}
+          />
+        </Box>
       </VStack>
     </BasePage>
   );

@@ -40,7 +40,7 @@ export interface LoanParameters {
   duration: number; // seconds
 }
 
-export interface TroveStats {
+export interface AccountStats {
   collateralValueEth: CurrencyAmount<Token>;
   loanValueEth: CurrencyAmount<Token>; // timestamp
   healthFactor: number;
@@ -53,11 +53,9 @@ export interface LoanStats {
   token: Token;
 }
 
-export interface FullTroveInfo {
-  collateralToken: Token;
-  collateralAmount: BigNumber;
+export interface FullAccountInfo {
+  deposits: TokenBalanceInfo[];
   loanIds: number[];
-  troveId: number;
 }
 
 export interface FullLoanInfo {
@@ -73,31 +71,25 @@ export interface TokenBalanceInfo {
   token: Token;
 }
 
-export async function getNewTroveStats(
+export async function getNewAccountStats(
   provider: Provider,
   loanStats: LoanStats,
-  troveId: number
-): Promise<TroveStats> {
-  // console.log("fetching trove stats");
-  // console.log(
-  //   ethers.utils.formatUnits(loanStats.amount, loanStats.token.decimals)
-  // );
+  account: Address
+): Promise<AccountStats> {
   const contract = getTroveManagerContract(provider);
 
   // collateral value
   const [collateralValue, collateralFactorBPS]: [BigNumber, BigNumber] =
-    await contract.getTroveCollateralValueEth(troveId);
+    await contract.getCollateralValueEth(account);
 
   // total loans value
-  const loansValue: BigNumber = await contract.getTroveLoansValueEth(
-    troveId,
-    loanStats.amount,
-    loanStats.token.address
+  const [loansValue, adjustedLoansValue] = await contract.getLoansValueEth(
+    account
   );
 
   // new health factor
   const healthFactor: BigNumber = await contract.getHealthFactorBPS(
-    troveId,
+    account,
     loanStats.amount,
     loanStats.token.address
   );
@@ -115,7 +107,12 @@ export async function getNewTroveStats(
   };
 }
 
-export function getLoanStats(loans: [FullOfferInfo, BigNumber][]): LoanStats {
+export function getLoanStats(
+  loans: [FullOfferInfo, BigNumber][]
+): LoanStats | undefined {
+  if (loans.length == 0) {
+    return undefined;
+  }
   //   let minInterest = BigNumber.from(0);
   let totalAmount = BigNumber.from(0);
   let totalInterest = BigNumber.from(0);
@@ -127,7 +124,15 @@ export function getLoanStats(loans: [FullOfferInfo, BigNumber][]): LoanStats {
     );
     // minInterest = minInterest.add(loans[i][0].depositInfo.minLoanDuration.mul(loans[i][0].depositInfo.interestRateBPS).mod())
   }
-  let averageRate = totalInterest.div(totalAmount);
+  let averageRate = BigNumber.from(0);
+  if (totalAmount.gt(BigNumber.from(0))) {
+    averageRate = totalInterest.div(totalAmount);
+  }
+
+  let token = undefined;
+  if (loans.length > 0) {
+    token = loans[0][0].token;
+  }
   return {
     loans: loans,
     amount: totalAmount,
@@ -229,23 +234,14 @@ export async function getCollateralTokens(
   return getAllowedTokensFromEvents(events);
 }
 
-export async function getFullTroveInfo(
-  id: number,
+export async function getFullAccountInfo(
+  account: Address,
   provider: Provider
-): Promise<FullTroveInfo> {
+): Promise<FullAccountInfo> {
   console.log("fetching trove info");
-  const troveManager = getTroveManagerContract(provider);
-
-  const troveInfo = await troveManager.getTrove(id);
-
   return {
-    collateralToken: await getToken(
-      provider,
-      troveInfo.collateralToken as Address
-    ),
-    collateralAmount: troveInfo.amount,
-    loanIds: await getTroveLoanIds(provider, id),
-    troveId: id,
+    deposits: await getCollateralDeposits(provider, account),
+    loanIds: await getBorrowerLoanIds(provider, account),
   };
 }
 
@@ -288,37 +284,49 @@ export function getAllowedTokensFromEvents(events: ethers.Event[]) {
   return Array.from(allowedTokens.values());
 }
 
-export async function getTroveIds(
+export async function getCollateralDeposits(
+  provider: Provider,
+  account: Address
+): Promise<TokenBalanceInfo[]> {
+  const troveManager = getTroveManagerContract(provider);
+  console.log("fetching collateral deposits");
+
+  const numLoans = await troveManager.getNumDepositsForAccount(account);
+  const deposits = [];
+  for (let i = 0; i < numLoans.toNumber(); i++) {
+    const [tokenAddress, amount] =
+      await troveManager.getDepositByIndexForAccount(account, i);
+    deposits.push({
+      token: await getToken(provider, tokenAddress),
+      amount: amount,
+    });
+  }
+  return deposits;
+}
+
+export async function getBorrowerLoanIds(
   provider: Provider,
   account: Address
 ): Promise<number[]> {
   const troveManager = getTroveManagerContract(provider);
-  return getERC721Ids(troveManager, account);
-}
-
-export async function getTroveLoanIds(
-  provider: Provider,
-  troveId: number
-): Promise<number[]> {
-  const troveManager = getTroveManagerContract(provider);
   console.log("fetching loan ids");
 
-  const numLoans = await troveManager.getNumLoansForTroveId(troveId);
+  const numLoans = await troveManager.getNumLoansForAccount(account);
   const loanIds = [];
   for (let i = 0; i < numLoans.toNumber(); i++) {
     const tokenOfOwnerByIndex: BigNumber =
-      await troveManager.getLoanIdByIndexForTroveId(troveId, i);
+      await troveManager.getLoanIdByIndexForAccount(account, i);
     loanIds.push(tokenOfOwnerByIndex.toNumber());
   }
   return loanIds;
 }
 
-export async function getLoanIds(
+export async function getLenderLoanIds(
   provider: Provider,
   account: Address
 ): Promise<number[]> {
   const supplyContract = getSupplyContract(provider);
-  console.log("fetching supply deposit ids" + supplyContract.address);
+  console.log("fetching loans for lender " + account);
   return getERC721Ids(supplyContract, account);
 }
 
