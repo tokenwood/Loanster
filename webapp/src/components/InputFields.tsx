@@ -15,25 +15,22 @@ import { FetchBalanceResult } from "@wagmi/core";
 import { ethers } from "ethers";
 import { defaultBorderRadius, DEFAULT_SIZE } from "components/Theme";
 import { SingleDatepicker } from "chakra-dayzed-datepicker";
+import { Token } from "@uniswap/sdk-core";
 
 // https://github.com/vercel/next.js/discussions/19166
 // import DatePicker from "react-date-picker";
 
 interface TokenAmountInputProps {
-  balanceData: TokenBalanceInfo;
+  token: Token;
+  balance: BigNumber;
   callback: (amount: BigNumber) => any;
 }
 
 export function TokenAmountInput(props: TokenAmountInputProps) {
   const [value, setValue] = useState<string>("");
   const onMaxClicked = () => {
-    props.callback(props.balanceData.amount);
-    setValue(
-      ethers.utils.formatUnits(
-        props.balanceData.amount,
-        props.balanceData.token.decimals
-      )
-    );
+    props.callback(props.balance);
+    setValue(ethers.utils.formatUnits(props.balance, props.token.decimals));
   };
   const numberChanged = (valueAsString: string, valueAsNumber: number) => {
     valueAsString = valueAsString.replace("e", "");
@@ -45,10 +42,7 @@ export function TokenAmountInput(props: TokenAmountInputProps) {
       props.callback(BigNumber.from(0));
     } else {
       props.callback(
-        floatToBigNumber(
-          valueAsNumber.toString(),
-          props.balanceData.token.decimals
-        )
+        floatToBigNumber(valueAsNumber.toString(), props.token.decimals)
       );
     }
     setValue(valueAsString);
@@ -57,7 +51,7 @@ export function TokenAmountInput(props: TokenAmountInputProps) {
   return (
     <Flex w="100%">
       <Text alignSelf={"center"} ml="0">
-        {props.balanceData.token.symbol} amount
+        {props.token.symbol} amount
       </Text>
       <Button
         ml="10px"

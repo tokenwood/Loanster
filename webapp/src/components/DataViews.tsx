@@ -1,6 +1,8 @@
 import {
+  Box,
   Flex,
   Grid,
+  HStack,
   Spacer,
   Stat,
   StatHelpText,
@@ -31,7 +33,7 @@ export function TokenBalanceView(props: TokenBalanceViewProps) {
       <Text>
         {parseFloat(
           ethers.utils.formatUnits(props.amount, props.token.decimals)
-        ).toFixed(2) +
+        ).toPrecision(3) +
           " " +
           props.token.symbol}
       </Text>
@@ -152,4 +154,68 @@ export function LoanView(props: LoanViewProps) {
       </Stat>
     </Flex>
   );
+}
+interface TableHeaderViewProps {
+  colDims: { [key: string]: number };
+}
+
+export function TableHeaderView(props: TableHeaderViewProps) {
+  return (
+    <Flex w={"100%"} layerStyle={"level2"}>
+      <HStack
+        w={"90%"}
+        // paddingRight={"58px"}
+
+        paddingLeft="3"
+        paddingRight="3"
+        // padding="3"
+      >
+        {Object.keys(props.colDims).map((key) => {
+          return (
+            <Box
+              key={key}
+              w={getWidth(key, props.colDims)}
+              textAlign="left"
+              textStyle={"tableHeader"}
+            >
+              {key}
+            </Box>
+          );
+        })}
+      </HStack>
+      <Spacer />
+    </Flex>
+  );
+}
+
+interface TableRowViewProps {
+  colDims: { [key: string]: number };
+  colData: { [key: string]: string };
+}
+
+export function TableRowView(props: TableRowViewProps) {
+  return (
+    <HStack w={"100%"} layerStyle={"level2"} padding="3">
+      {Object.keys(props.colDims).map((key) => {
+        return (
+          <Box
+            key={key}
+            w={getWidth(key, props.colDims)}
+            textAlign="left"
+            textStyle={"tableRow"}
+          >
+            {props.colData[key]}
+          </Box>
+        );
+      })}
+    </HStack>
+  );
+}
+
+function getWidth(key: string, colDims: { [key: string]: number }) {
+  let totalWidth = 0;
+  for (const key in colDims) {
+    totalWidth += colDims[key];
+  }
+  return (colDims[key] * 100) / totalWidth + "%";
 }

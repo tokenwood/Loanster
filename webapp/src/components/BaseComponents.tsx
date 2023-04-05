@@ -1,4 +1,4 @@
-import { VStack, Heading, Box, Flex, HStack } from "@chakra-ui/layout";
+import { VStack, Heading, Box, Flex, HStack, Spacer } from "@chakra-ui/layout";
 import {
   Address,
   useContractWrite,
@@ -7,17 +7,21 @@ import {
   useSignMessage,
 } from "wagmi";
 import ClientOnly from "components/clientOnly";
-import { Button } from "@chakra-ui/react";
+import { background, Button, IconButton, useBoolean } from "@chakra-ui/react";
 import {
   actionInitColorScheme,
   cancelColorScheme,
   DEFAULT_SIZE,
+  headerButtonHoverStyle,
+  tableRowHoverStyle,
 } from "components/Theme";
 import { PropsWithChildren, ReactNode, useState } from "react";
 import { defaultBorderRadius } from "./Theme";
 import { DataLoader } from "./DataLoaders";
 import { EventId } from "libs/eventEmitter";
 import { verifyMessage } from "ethers/lib/utils.js";
+import { ethers } from "ethers";
+import { ChevronDownIcon, ChevronUpIcon } from "@chakra-ui/icons";
 
 interface BasePageProps {
   account: Address | undefined;
@@ -69,9 +73,9 @@ export function ContractCallButton(props: ContractCallButtonProps) {
     functionName: props.functionName,
     enabled: props.enabled,
     args: props.args,
-    onError(error) {
-      console.log(error);
-    },
+    // onError(error) {
+    //   console.log(error);
+    // },
   });
 
   const { writeAsync } = useContractWrite(config);
@@ -136,7 +140,7 @@ export function SignButton(props: SignButtonProps) {
 
   async function onClick() {
     try {
-      signMessage({ message: props.message });
+      signMessage({ message: ethers.utils.arrayify(props.message) });
     } catch (error) {
       console.log(error);
     }
@@ -164,7 +168,7 @@ export interface ActionProp {
 
 export interface DataViewProps<T> {
   fetcher: () => Promise<T>;
-  dataView: (data: T) => ReactNode;
+  dataView: (data: T, toggleExpand?: () => void) => ReactNode;
   actions: ActionProp[];
   level?: number;
   reloadEvents?: EventId[];
@@ -172,6 +176,8 @@ export interface DataViewProps<T> {
 
 export function BaseView<T>(props: DataViewProps<T>) {
   const [currentAction, setCurrentAction] = useState<ActionProp>();
+  const [expanded, setExpanded] = useBoolean();
+
   return (
     <DataLoader
       // defaultValue={}
@@ -182,26 +188,32 @@ export function BaseView<T>(props: DataViewProps<T>) {
           <VStack
             w="100%"
             layerStyle={props.level ? "level" + props.level : "level3"}
-            padding="3"
+            // paddingRight={3}
+            // padding="3"
+            // _hover={expanded ? undefined : tableRowHoverStyle}
           >
-            {props.actions.length == 1 ? (
-              <HStack w="100%">
-                {props.dataView(childProps.data)}
-                {actionButton(
-                  props.actions[0],
-                  () => {
-                    currentAction == props.actions[0]
-                      ? setCurrentAction(undefined)
-                      : setCurrentAction(props.actions[0]);
-                  },
-                  currentAction == props.actions[0]
-                )}
+            <Flex w="100%">
+              <HStack w="90%">
+                {props.dataView(childProps.data, setExpanded.toggle)}
               </HStack>
-            ) : (
-              props.dataView(childProps.data)
-            )}
-            {props.actions.length > 1 ? (
-              <HStack w="100%">
+              <Spacer />
+              <IconButton
+                aria-label="expand"
+                alignSelf={"center"}
+                marginRight={3}
+                onClick={setExpanded.toggle}
+                icon={
+                  expanded ? (
+                    <ChevronUpIcon boxSize={6} />
+                  ) : (
+                    <ChevronDownIcon boxSize={6} />
+                  )
+                }
+              />
+            </Flex>
+
+            {expanded ? (
+              <HStack w="100%" paddingLeft={3} paddingBottom={3}>
                 {props.actions.map((actionProp: ActionProp) =>
                   actionButton(
                     actionProp,
@@ -217,7 +229,7 @@ export function BaseView<T>(props: DataViewProps<T>) {
             ) : (
               <></>
             )}
-            {currentAction !== undefined ? (
+            {currentAction !== undefined && expanded ? (
               currentAction!.onClickView(childProps.data, () => {
                 setCurrentAction(undefined);
                 childProps.refetchData();
@@ -239,6 +251,7 @@ function actionButton(
 ) {
   return (
     <Button
+      key={actionProp.action}
       colorScheme={isCurrentAction ? cancelColorScheme : actionInitColorScheme}
       borderRadius={defaultBorderRadius}
       size={DEFAULT_SIZE}

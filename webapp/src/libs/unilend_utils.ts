@@ -11,6 +11,7 @@ import { ADDRESS_TO_TOKEN, WETH_TOKEN } from "./constants";
 import { SupportedChainId, Token } from "@uniswap/sdk-core";
 import { CurrencyAmount } from "@uniswap/sdk-core";
 import { FullOfferInfo, getOffersFrom } from "./backend";
+import { ADDRESS_ZERO } from "@uniswap/v3-sdk";
 
 export type LoanOfferType = {
   owner: string;
@@ -35,7 +36,7 @@ export type LoanType = {
 };
 
 export interface LoanParameters {
-  tokenAddress: Address;
+  token: Token;
   amount: number;
   duration: number; // seconds
 }
@@ -68,6 +69,12 @@ export interface FullLoanInfo {
 
 export interface TokenBalanceInfo {
   amount: BigNumber;
+  token: Token;
+}
+
+export interface TokenDepositInfo {
+  wallet_amount: BigNumber;
+  deposit_amount?: BigNumber;
   token: Token;
 }
 
@@ -105,6 +112,17 @@ export async function getNewAccountStats(
     ),
     healthFactor: healthFactor.toNumber() / 10000,
   };
+}
+
+export async function getHealthFactor(provider: Provider, account: Address) {
+  const contract = getTroveManagerContract(provider);
+  const healthFactor: BigNumber = await contract.getHealthFactorBPS(
+    account,
+    BigNumber.from(0),
+    ADDRESS_ZERO
+  );
+
+  return healthFactor.toNumber() / 10000;
 }
 
 export function getLoanStats(
@@ -234,17 +252,6 @@ export async function getCollateralTokens(
   return getAllowedTokensFromEvents(events);
 }
 
-export async function getFullAccountInfo(
-  account: Address,
-  provider: Provider
-): Promise<FullAccountInfo> {
-  console.log("fetching trove info");
-  return {
-    deposits: await getCollateralDeposits(provider, account),
-    loanIds: await getBorrowerLoanIds(provider, account),
-  };
-}
-
 export async function getFullLoanInfo(
   provider: Provider,
   loanId: number
@@ -261,6 +268,16 @@ export async function getFullLoanInfo(
     claimable: BigNumber.from(0),
     token: await getToken(provider, loan.token),
   };
+}
+
+export function BNToPrecision(
+  number: BigNumber,
+  decimals: number,
+  precision: number
+) {
+  return parseFloat(ethers.utils.formatUnits(number, decimals)).toPrecision(
+    precision
+  );
 }
 
 export function getAllowedTokensFromEvents(events: ethers.Event[]) {
@@ -287,21 +304,33 @@ export function getAllowedTokensFromEvents(events: ethers.Event[]) {
 export async function getCollateralDeposits(
   provider: Provider,
   account: Address
-): Promise<TokenBalanceInfo[]> {
+): Promise<TokenDepositInfo[]> {
+  const tokenAddresses = await getCollateralTokens(provider);
+  const tokenBalances = await Promise.all(
+    tokenAddresses.map((address) => getTokenBalance(provider, address, account))
+  );
+  let infoDict: { [key: string]: TokenDepositInfo } = Object.fromEntries(
+    tokenBalances.map((balanceInfo) => {
+      return [
+        balanceInfo.token.address,
+        {
+          token: balanceInfo.token,
+          wallet_amount: balanceInfo.amount,
+        },
+      ];
+    })
+  );
   const troveManager = getTroveManagerContract(provider);
-  console.log("fetching collateral deposits");
-
-  const numLoans = await troveManager.getNumDepositsForAccount(account);
-  const deposits = [];
-  for (let i = 0; i < numLoans.toNumber(); i++) {
+  const numDeposits = await troveManager.getNumDepositsForAccount(account);
+  for (let i = 0; i < numDeposits.toNumber(); i++) {
     const [tokenAddress, amount] =
       await troveManager.getDepositByIndexForAccount(account, i);
-    deposits.push({
-      token: await getToken(provider, tokenAddress),
-      amount: amount,
-    });
+    infoDict[tokenAddress] = {
+      ...infoDict[tokenAddress],
+      deposit_amount: amount,
+    };
   }
-  return deposits;
+  return Object.values(infoDict);
 }
 
 export async function getBorrowerLoanIds(

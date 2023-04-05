@@ -4,6 +4,11 @@ export const headerButtonHoverStyle = {
   color: "blackAlpha",
   bg: "blackAlpha.100",
 };
+
+export const tableRowHoverStyle = {
+  // color: "blackAlpha",
+  bg: "blackAlpha.200",
+};
 export const DEFAULT_SIZE = "sm";
 export const headerButtonBorderRadius = "20px";
 export const defaultBorderRadius = "20px";
@@ -78,6 +83,20 @@ const theme = extendTheme({
       fontWeight: "semibold",
       lineHeight: "110%",
       letterSpacing: "-1%",
+    },
+    tableHeader: {
+      fontSize: ["14px"],
+      fontWeight: "semibold",
+      lineHeight: "200%",
+      letterSpacing: "-1%",
+      color: "gray.600",
+    },
+    tableRow: {
+      fontSize: ["16px"],
+      fontWeight: "semibold",
+      // lineHeight: "200%",
+      // letterSpacing: "-1%",
+      // color: "gray.600",
     },
     numberInput: {
       // fontSize: ["36px", "48px"],

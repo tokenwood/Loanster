@@ -268,7 +268,7 @@ contract TroveManager is Ownable {
     function getNumDepositsForAccount(
         address account
     ) public view returns (uint256) {
-        return (_accountLoansLength[account]);
+        return _depositTokens[account].length();
     }
 
     function getDepositByIndexForAccount(

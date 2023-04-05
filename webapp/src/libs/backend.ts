@@ -112,13 +112,17 @@ async function callBackend(
 
 export async function getOffers(provider: Provider, params: LoanParameters) {
   const loans: [FullOfferInfo, BigNumber][] = [];
-  const token = await getToken(provider, params.tokenAddress);
+  const token = await getToken(provider, params.token.address);
+  console.log("getting offers for loan amount " + params.amount);
 
-  const sortedOffers = await getSortedOffers(provider, params.tokenAddress);
+  const sortedOffers = await getSortedOffers(
+    provider,
+    params.token.address as Address
+  );
 
   sortedOffers.filter((value) => {
     return (
-      params.tokenAddress == value.offer.token &&
+      params.token.address == value.offer.token &&
       params.duration <= value.offer.maxLoanDuration &&
       params.duration >= value.offer.minLoanDuration
     );

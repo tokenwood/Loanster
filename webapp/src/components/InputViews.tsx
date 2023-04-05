@@ -31,6 +31,7 @@ import {
   getUnusedOfferId,
   getLoanStats,
   LoanStats,
+  TokenDepositInfo,
 } from "libs/unilend_utils";
 import { ethers } from "ethers";
 import { ContractCallButton, SignButton } from "./BaseComponents";
@@ -44,7 +45,7 @@ import { ADDRESS_TO_TOKEN } from "libs/constants";
 
 export interface DepositInputsProps {
   account: Address;
-  balanceData: TokenBalanceInfo;
+  balanceData: TokenDepositInfo;
   approvalAddress: Address;
   callback: () => any;
 }
@@ -70,7 +71,7 @@ export function CollateralDepositInputs(props: DepositInputsProps) {
   const canConfirm = () => {
     return (
       BigNumber.from(0).lt(amountToDeposit) &&
-      amountToDeposit.lte(props.balanceData.amount)
+      amountToDeposit.lte(props.balanceData.wallet_amount)
     );
   };
 
@@ -78,7 +79,8 @@ export function CollateralDepositInputs(props: DepositInputsProps) {
     <VStack w="100%" layerStyle={"level3"} spacing={0} padding="2">
       {/* <VStack w="100%" layerStyle={"level3"} padding="5px"> */}
       <TokenAmountInput
-        balanceData={props.balanceData}
+        balance={props.balanceData.wallet_amount}
+        token={props.balanceData.token}
         callback={(amount: BigNumber) => {
           setAmountToDeposit(amount);
         }}
@@ -201,7 +203,14 @@ export function RepayLoanInputs(props: RepayLoanInputs) {
   );
 }
 
-export function MakeOfferInputs(props: DepositInputsProps) {
+export interface MakeOfferInputProps {
+  account: Address;
+  balanceData: TokenBalanceInfo;
+  approvalAddress: Address;
+  callback: () => any;
+}
+
+export function MakeOfferInputs(props: MakeOfferInputProps) {
   const [offerMaxAmount, setOfferMaxAmount] = useState<BigNumber>(
     BigNumber.from(0)
   );
@@ -247,7 +256,9 @@ export function MakeOfferInputs(props: DepositInputsProps) {
   const updateOffer = async () => {
     setOffer(undefined); //does this work?
     const offer = makeOffer();
-    const message = await getOfferMessageToSign(provider, makeOffer());
+    const message = await getOfferMessageToSign(provider, offer);
+    console.log("offer: " + offer);
+    console.log("message: " + message);
     setOffer([offer, message]);
   };
 
@@ -296,7 +307,8 @@ export function MakeOfferInputs(props: DepositInputsProps) {
   return (
     <VStack w="65%" spacing={0} layerStyle={"level3"} padding={3}>
       <TokenAmountInput
-        balanceData={props.balanceData}
+        token={props.balanceData.token}
+        balance={props.balanceData.amount}
         callback={(amount: BigNumber) => {
           setOfferMaxAmount(amount);
         }}
@@ -337,6 +349,7 @@ export function MakeOfferInputs(props: DepositInputsProps) {
             message={offer?.[1]!}
             callbackData={offer?.[0]}
             callback={(message, signature, account, data: LoanOfferType) => {
+              console.log("signed message " + message);
               if (account != props.account) {
                 throw new Error("signed with different account");
               }
@@ -371,18 +384,14 @@ export function BorrowInputs(props: BorrowInputProps) {
   const [term, setTerm] = useState<number>();
   const [minDuration, setMinDuration] = useState<number>();
   const [loanParams, setLoanParams] = useState<LoanParameters>();
-  const [loanStats, setLoanStats] = useState<LoanStats>();
-  const provider = useProvider();
 
-  function isValidLoanParams() {
-    return loanParams !== undefined && amountToBorrow > 0;
-  }
+  const provider = useProvider();
 
   useEffect(() => {
     setLoanParams({
-      tokenAddress: props.token.address as Address,
+      token: props.token,
       amount: amountToBorrow,
-      duration: 0, //todo
+      duration: 10, //todo
     });
   }, [amountToBorrow]);
 
@@ -411,67 +420,110 @@ export function BorrowInputs(props: BorrowInputProps) {
         }}
       ></MyNumberInput> */}
 
-      {isValidLoanParams() ? (
-        <TableLoader
-          key={amountToBorrow + props.token.address} //todo hash loanParms
-          fetchData={() => getOffers(provider, loanParams!)}
-          dataLoaded={(tableData) => {
-            console.log("table data");
-            console.log(tableData);
-            setLoanStats(getLoanStats(tableData));
-          }}
-          makeTableHead={() => {
-            return (
-              <Tr>
-                <Th isNumeric>Loan #</Th>
-                <Th isNumeric>{props.token.symbol}</Th>
-                <Th isNumeric>Rate</Th>
-                <Th isNumeric>Min Duration</Th>
-              </Tr>
-            );
-          }}
-          makeTableRow={(props) => {
-            return (
-              <Tr key={props.id[0].offer.owner + props.id[0].offer.offerId}>
-                <Th isNumeric>{props.index}</Th>
-                <Th isNumeric>
-                  {ethers.utils.formatUnits(
-                    props.id[1],
-                    props.id[0].token.decimals
-                  )}
-                </Th>
-                <Th isNumeric>
-                  {props.id[0].offer.interestRateBPS / 100 + " %"}
-                </Th>
-                <Th isNumeric>{props.id[0].offer.minLoanDuration}</Th>
-              </Tr>
-            );
-          }}
-          makeTableFooter={(tableData) => {
-            const loanStats = getLoanStats(tableData);
-
-            if (loanStats != undefined) {
-              return (
-                <Tr borderTopColor={"gray.500"} borderTopWidth={"1.5px"}>
-                  <Th isNumeric>{"total"}</Th>
-                  <Th isNumeric>
-                    {ethers.utils.formatUnits(
-                      loanStats.amount,
-                      tableData[0][0].token.decimals // what if empty array?
-                    )}
-                  </Th>
-                  <Th isNumeric>{loanStats.rate.toNumber() / 100 + " %"}</Th>
-                  <Th isNumeric>todo</Th>
-                </Tr>
-              );
-            } else {
-              return <Box> no loans</Box>;
-            }
-          }}
-        ></TableLoader>
-      ) : (
-        <Box></Box>
-      )}
+      <LoanOfferView loanParams={loanParams}></LoanOfferView>
     </VStack>
   );
+}
+
+interface LoanOfferViewProps {
+  loanParams: LoanParameters | undefined;
+}
+
+export function LoanOfferView(props: LoanOfferViewProps) {
+  const provider = useProvider();
+
+  function isValidLoanParams() {
+    return props.loanParams !== undefined && props.loanParams.amount > 0;
+  }
+
+  if (isValidLoanParams()) {
+    return (
+      <DataLoader
+        key={props.loanParams?.amount + props.loanParams!.token.address}
+        fetcher={() => getOffers(provider, props.loanParams!)}
+        makeChildren={(childProps) => {
+          console.log("offer");
+          console.log(childProps.data[0][0].offer);
+          console.log("signature");
+          console.log(childProps.data[0][0].signature);
+          return (
+            <VStack>
+              <TableLoader
+                fetchData={() => Promise.resolve(childProps.data)}
+                makeTableHead={() => {
+                  return (
+                    <Tr>
+                      <Th isNumeric>Loan #</Th>
+                      <Th isNumeric>{props.loanParams!.token.symbol}</Th>
+                      <Th isNumeric>Rate</Th>
+                      <Th isNumeric>Min Duration</Th>
+                    </Tr>
+                  );
+                }}
+                makeTableRow={(props) => {
+                  return (
+                    <Tr
+                      key={props.id[0].offer.owner + props.id[0].offer.offerId}
+                    >
+                      <Th isNumeric>{props.index}</Th>
+                      <Th isNumeric>
+                        {ethers.utils.formatUnits(
+                          props.id[1],
+                          props.id[0].token.decimals
+                        )}
+                      </Th>
+                      <Th isNumeric>
+                        {props.id[0].offer.interestRateBPS / 100 + " %"}
+                      </Th>
+                      <Th isNumeric>{props.id[0].offer.minLoanDuration}</Th>
+                    </Tr>
+                  );
+                }}
+                makeTableFooter={(tableData) => {
+                  const loanStats = getLoanStats(tableData);
+                  if (loanStats != undefined) {
+                    return (
+                      <Tr borderTopColor={"gray.500"} borderTopWidth={"1.5px"}>
+                        <Th isNumeric>{"total"}</Th>
+                        <Th isNumeric>
+                          {ethers.utils.formatUnits(
+                            loanStats.amount,
+                            tableData[0][0].token.decimals // what if empty array?
+                          )}
+                        </Th>
+                        <Th isNumeric>
+                          {loanStats.rate.toNumber() / 100 + " %"}
+                        </Th>
+                        <Th isNumeric>todo</Th>
+                      </Tr>
+                    );
+                  } else {
+                    return <Box> no loans</Box>;
+                  }
+                }}
+              ></TableLoader>
+              <Box>{"health factor  OLD -> NEW"}</Box>
+              <ContractCallButton
+                contractAddress={getTroveManagerAddress()}
+                abi={getTroveManagerABI()}
+                functionName={"openLoan"}
+                args={[
+                  childProps.data[0][0].offer,
+                  childProps.data[0][0].signature,
+                  childProps.data[0][1],
+                  props.loanParams!.duration,
+                ]}
+                enabled={true}
+                callback={() => {
+                  // props.callback();
+                }}
+              ></ContractCallButton>
+            </VStack>
+          );
+        }}
+      ></DataLoader>
+    );
+  } else {
+    return <Box> invalid query</Box>;
+  }
 }

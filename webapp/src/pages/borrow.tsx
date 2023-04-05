@@ -5,13 +5,15 @@ import {
   BaseView,
   ContractCallButton,
 } from "components/BaseComponents";
-import ListLoader from "components/DataLoaders";
+import ListLoader, { ChildProps, DataLoader } from "components/DataLoaders";
 import {
+  BNToPrecision,
   FullLoanInfo,
   getBorrowerLoanIds,
   getCollateralDeposits,
   getCollateralTokens,
   getFullLoanInfo,
+  getHealthFactor,
   getSupplyTokens,
   getTokenBalance,
   getTroveManagerAddress,
@@ -23,9 +25,18 @@ import {
   CollateralDepositInputs,
   RepayLoanInputs,
 } from "components/InputViews";
-import { LoanView, TokenBalanceView } from "components/DataViews";
+import {
+  LoanView,
+  TableHeaderView,
+  TableRowView,
+  TokenBalanceView,
+} from "components/DataViews";
 import { eventEmitter, EventType } from "libs/eventEmitter";
-import { BigNumber } from "ethers";
+import { BigNumber, ethers } from "ethers";
+import { Stat, StatLabel, StatNumber } from "@chakra-ui/react";
+import { statFontSize } from "components/Theme";
+
+const depositTableColdims = { Token: 1, "In Wallet": 1, Deposited: 1 };
 
 export default function LoansPage() {
   const { address: account, isConnecting, isDisconnected } = useAccount();
@@ -41,9 +52,19 @@ export default function LoansPage() {
           <Heading as="h6" layerStyle={"onbg"} size="sm" mb="3">
             {"Your Account"}
           </Heading>
-          <Box>
-            todo: health factor, total collateral, total loans, net worth{" "}
-          </Box>
+          <DataLoader
+            fetcher={() => getHealthFactor(provider, account!)}
+            makeChildren={(childProps) => {
+              return (
+                <Stat textAlign={"left"}>
+                  <StatLabel>Health Factor</StatLabel>
+                  <StatNumber fontSize={statFontSize}>
+                    {childProps.data}
+                  </StatNumber>
+                </Stat>
+              );
+            }}
+          ></DataLoader>
         </Box>
         <Box>
           <Heading as="h6" layerStyle={"onbg"} size="sm" mb="3">
@@ -51,21 +72,57 @@ export default function LoansPage() {
           </Heading>
           <ListLoader
             fetchData={() => getCollateralDeposits(provider, account!)}
+            makeHeader={() => (
+              <TableHeaderView colDims={depositTableColdims}></TableHeaderView>
+            )}
             makeListItem={(listItemProps) => {
               return (
                 <BaseView
                   level={2}
-                  key={"collateral_deposit_" + listItemProps.id.toString()}
+                  key={"collateral_deposit_" + listItemProps.id.token.address}
                   fetcher={() => Promise.resolve(listItemProps.id)}
                   dataView={(data) => {
                     return (
-                      <TokenBalanceView
-                        amount={data.amount}
-                        token={data.token}
+                      <TableRowView
+                        colDims={depositTableColdims}
+                        colData={{
+                          Token: data.token.symbol!,
+                          "In Wallet": BNToPrecision(
+                            data.wallet_amount,
+                            data.token.decimals,
+                            4
+                          ),
+                          Deposited: ethers.utils.formatUnits(
+                            data.deposit_amount ?? BigNumber.from(0),
+                            data.token.decimals
+                          ),
+                        }}
                       />
                     );
                   }}
                   actions={[
+                    {
+                      action: "Deposit",
+                      onClickView: (
+                        data: TokenBalanceInfo,
+                        actionFinished: () => any
+                      ) => {
+                        return (
+                          <CollateralDepositInputs
+                            account={account!}
+                            balanceData={data}
+                            approvalAddress={getTroveManagerAddress()}
+                            callback={() => {
+                              actionFinished();
+                              // props.callback();
+                              eventEmitter.dispatch({
+                                eventType: EventType.COLLATERAL_TOKEN_DEPOSITED,
+                              });
+                            }}
+                          ></CollateralDepositInputs>
+                        );
+                      },
+                    },
                     {
                       action: "Withdraw",
                       onClickView: (
@@ -160,61 +217,6 @@ export default function LoansPage() {
               );
             }}
           ></ListLoader>
-        </Box>
-        <Box>
-          <Heading as="h6" size="sm" mb="3" layerStyle={"onbg"}>
-            {"Collateral Assets"}
-          </Heading>
-          <ListLoader
-            fetchData={() => getCollateralTokens(provider)}
-            makeListItem={(props) => {
-              return (
-                <BaseView
-                  key={"wallet_collateral_token_balance_" + props.id}
-                  level={2}
-                  fetcher={() => getTokenBalance(provider, props.id, account!)}
-                  reloadEvents={[
-                    {
-                      eventType: EventType.COLLATERAL_TOKEN_WITHDRAWN,
-                      suffix: props.id,
-                    },
-                  ]}
-                  dataView={(data: TokenBalanceInfo) => {
-                    return (
-                      <TokenBalanceView
-                        amount={data.amount}
-                        token={data.token}
-                      />
-                    );
-                  }}
-                  actions={[
-                    {
-                      action: "Deposit",
-                      onClickView: (
-                        data: TokenBalanceInfo,
-                        actionFinished: () => any
-                      ) => {
-                        return (
-                          <CollateralDepositInputs
-                            account={account!}
-                            balanceData={data}
-                            approvalAddress={getTroveManagerAddress()}
-                            callback={() => {
-                              actionFinished();
-                              // props.callback();
-                              eventEmitter.dispatch({
-                                eventType: EventType.COLLATERAL_TOKEN_DEPOSITED,
-                              });
-                            }}
-                          ></CollateralDepositInputs>
-                        );
-                      },
-                    },
-                  ]}
-                ></BaseView>
-              );
-            }}
-          />
         </Box>
       </VStack>
     </BasePage>

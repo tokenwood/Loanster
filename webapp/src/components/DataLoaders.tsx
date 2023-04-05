@@ -23,6 +23,7 @@ export interface MakeListItemProps<T> {
 interface ListLoaderProps<T> {
   fetchData: () => Promise<T[]>;
   makeListItem: (props: MakeListItemProps<T>) => JSX.Element;
+  makeHeader?: (data: T[]) => JSX.Element;
   reloadEvents?: EventId[];
 }
 
@@ -35,6 +36,7 @@ export default function ListLoader<T>(props: ListLoaderProps<T>) {
       makeChildren={(childProps: ChildProps<T[]>) => {
         return (
           <VStack>
+            {props.makeHeader ? props.makeHeader(childProps.data) : <></>}
             {childProps.data.map((id: T, index: number) =>
               props.makeListItem({
                 id: id,

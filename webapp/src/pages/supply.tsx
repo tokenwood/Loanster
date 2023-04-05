@@ -52,7 +52,6 @@ export default function SupplyPage() {
               { eventType: EventType.SUPPLY_OFFER_CANCELLED },
             ]}
             makeListItem={(props) => {
-              console.log("list item: " + props);
               return (
                 <BaseView
                   fetcher={() => Promise.resolve(props.id)}
@@ -186,7 +185,6 @@ export default function SupplyPage() {
                             approvalAddress={getSupplyAddress()}
                             callback={() => {
                               actionFinished();
-                              console.log("dispatching event");
                               eventEmitter.dispatch({
                                 eventType: EventType.SUPPLY_OFFER_CREATED,
                               });
