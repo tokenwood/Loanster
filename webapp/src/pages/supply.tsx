@@ -7,6 +7,7 @@ import {
 } from "components/BaseComponents";
 import ListLoader, { MakeListItemProps } from "components/DataLoaders";
 import {
+  formatDate,
   FullLoanInfo,
   getFullLoanInfo,
   getLenderLoanIds,
@@ -19,7 +20,7 @@ import {
   TokenBalanceInfo,
 } from "libs/unilend_utils";
 import { MakeOfferInputs } from "components/InputViews";
-import { LoanView, OfferView, TokenBalanceView } from "components/DataViews";
+import { TableHeaderView, TableRowView } from "components/DataViews";
 import { eventEmitter, EventType } from "libs/eventEmitter";
 import {
   FullOfferInfo,
@@ -28,8 +29,30 @@ import {
   offerRevoked,
 } from "libs/backend";
 import { Flex, Spacer } from "@chakra-ui/react";
-import { BigNumber } from "ethers";
+import { BigNumber, ethers } from "ethers";
 import { ReactNode } from "react";
+
+const offerTableColdims = {
+  Asset: 1,
+  Borrowed: 1,
+  APY: 1,
+  "Min Loan Amount": 1,
+  "Min/Max Duration": 1,
+  Expiration: 1,
+};
+const lentTableColdims = {
+  Asset: 1,
+  Debt: 1,
+  Claimable: 1,
+  APY: 1,
+  Term: 1,
+};
+
+const toSupplyColDims = {
+  Asset: 1,
+  "In Wallet": 1,
+  // " ": 1,
+};
 
 export default function SupplyPage() {
   const { address: account, isConnecting, isDisconnected } = useAccount();
@@ -47,6 +70,9 @@ export default function SupplyPage() {
           </Heading>
           <ListLoader
             fetchData={() => getOffersFrom(provider, account!)}
+            makeHeader={() => (
+              <TableHeaderView colDims={offerTableColdims}></TableHeaderView>
+            )}
             reloadEvents={[
               { eventType: EventType.SUPPLY_OFFER_CREATED },
               { eventType: EventType.SUPPLY_OFFER_CANCELLED },
@@ -58,7 +84,35 @@ export default function SupplyPage() {
                   level={2}
                   key={getOfferKey(props.id.offer)}
                   dataView={(data: FullOfferInfo) => {
-                    return <OfferView data={data}></OfferView>;
+                    return (
+                      <TableRowView
+                        colDims={offerTableColdims}
+                        colData={{
+                          Asset: data.token.symbol!,
+                          Borrowed:
+                            ethers.utils.formatUnits(
+                              data.amountBorrowed,
+                              data.token.decimals
+                            ) +
+                            " / " +
+                            ethers.utils.formatUnits(
+                              data.offer.amount,
+                              data.token.decimals
+                            ),
+                          APY: data.offer.interestRateBPS / 100 + " %",
+                          "Min Loan Amount": ethers.utils.formatUnits(
+                            data.offer.minLoanAmount,
+                            data.token.decimals
+                          ),
+                          "Min/Max Duration":
+                            data.offer.minLoanDuration / 3600 / 24 +
+                            "d / " +
+                            data.offer.maxLoanDuration / 3600 / 24 +
+                            "d",
+                          Expiration: formatDate(data.offer.expiration),
+                        }}
+                      />
+                    );
                   }}
                   actions={[
                     {
@@ -97,10 +151,13 @@ export default function SupplyPage() {
 
         <Box>
           <Heading as="h6" size="sm" mb="3">
-            {"Your Loans"}
+            {"Lent Assets"}
           </Heading>
           <ListLoader
             fetchData={() => getLenderLoanIds(provider, account!)}
+            makeHeader={() => (
+              <TableHeaderView colDims={lentTableColdims}></TableHeaderView>
+            )}
             makeListItem={(props) => {
               return (
                 <BaseView
@@ -108,7 +165,24 @@ export default function SupplyPage() {
                   key={props.id}
                   fetcher={() => getFullLoanInfo(provider, props.id)}
                   dataView={(data) => {
-                    return <LoanView data={data} />;
+                    return (
+                      <TableRowView
+                        colDims={lentTableColdims}
+                        colData={{
+                          Asset: data.token.symbol!,
+                          Debt: ethers.utils.formatUnits(
+                            data.loan.amount.add(data.interest),
+                            data.token.decimals
+                          ),
+                          APY: data.loan.interestRateBPS / 100 + " %",
+                          Claimable: ethers.utils.formatUnits(
+                            data.claimable,
+                            data.token.decimals
+                          ),
+                          Term: formatDate(data.loan.expiration),
+                        }}
+                      />
+                    );
                   }}
                   actions={[
                     {
@@ -151,6 +225,9 @@ export default function SupplyPage() {
           </Heading>
           <ListLoader
             fetchData={() => getSupplyTokenAddresses(provider)}
+            makeHeader={() => (
+              <TableHeaderView colDims={toSupplyColDims}></TableHeaderView>
+            )}
             makeListItem={(props) => {
               return (
                 <BaseView
@@ -165,9 +242,17 @@ export default function SupplyPage() {
                   ]}
                   dataView={(data: TokenBalanceInfo) => {
                     return (
-                      <TokenBalanceView
-                        amount={data.amount}
-                        token={data.token}
+                      <TableRowView
+                        colDims={toSupplyColDims}
+                        colData={{
+                          Asset: data.token.symbol!,
+                          "In Wallet": parseFloat(
+                            ethers.utils.formatUnits(
+                              data.amount,
+                              data.token.decimals
+                            )
+                          ).toFixed(2),
+                        }}
                       />
                     );
                   }}

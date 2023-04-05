@@ -16,7 +16,6 @@ import {
   TokenBalanceInfo,
 } from "libs/unilend_utils";
 import { MakeOfferInputs } from "components/InputViews";
-import { OfferView, TokenBalanceView } from "components/DataViews";
 import { eventEmitter, EventType } from "libs/eventEmitter";
 import {
   FullOfferInfo,

@@ -8,6 +8,7 @@ import {
 import ListLoader, { ChildProps, DataLoader } from "components/DataLoaders";
 import {
   BNToPrecision,
+  formatDate,
   FullLoanInfo,
   getBorrowerLoanIds,
   getCollateralDeposits,
@@ -18,6 +19,7 @@ import {
   getTokenBalance,
   getTroveManagerAddress,
   TokenBalanceInfo,
+  TokenDepositInfo,
 } from "libs/unilend_utils";
 import { Provider } from "@wagmi/core";
 import {
@@ -25,18 +27,20 @@ import {
   CollateralDepositInputs,
   RepayLoanInputs,
 } from "components/InputViews";
-import {
-  LoanView,
-  TableHeaderView,
-  TableRowView,
-  TokenBalanceView,
-} from "components/DataViews";
+import { TableHeaderView, TableRowView } from "components/DataViews";
 import { eventEmitter, EventType } from "libs/eventEmitter";
 import { BigNumber, ethers } from "ethers";
 import { Stat, StatLabel, StatNumber } from "@chakra-ui/react";
 import { statFontSize } from "components/Theme";
 
-const depositTableColdims = { Token: 1, "In Wallet": 1, Deposited: 1 };
+const depositTableColdims = { Asset: 1, "In Wallet": 1, Deposited: 1, " ": 1 };
+const borrowedTableColdims = { Asset: 1, Debt: 1, APY: 1, Term: 1 };
+const toBorrowTableColdims = {
+  Asset: 1,
+  "Lowest APY": 1,
+  Available: 1,
+  " ": 1,
+};
 
 export default function LoansPage() {
   const { address: account, isConnecting, isDisconnected } = useAccount();
@@ -50,7 +54,7 @@ export default function LoansPage() {
       <VStack align="left" spacing="4">
         <Box>
           <Heading as="h6" layerStyle={"onbg"} size="sm" mb="3">
-            {"Your Account"}
+            {"Account"}
           </Heading>
           <DataLoader
             fetcher={() => getHealthFactor(provider, account!)}
@@ -81,12 +85,12 @@ export default function LoansPage() {
                   level={2}
                   key={"collateral_deposit_" + listItemProps.id.token.address}
                   fetcher={() => Promise.resolve(listItemProps.id)}
-                  dataView={(data) => {
+                  dataView={(data, toggleExpand) => {
                     return (
                       <TableRowView
                         colDims={depositTableColdims}
                         colData={{
-                          Token: data.token.symbol!,
+                          Asset: data.token.symbol!,
                           "In Wallet": BNToPrecision(
                             data.wallet_amount,
                             data.token.decimals,
@@ -104,7 +108,7 @@ export default function LoansPage() {
                     {
                       action: "Deposit",
                       onClickView: (
-                        data: TokenBalanceInfo,
+                        data: TokenDepositInfo,
                         actionFinished: () => any
                       ) => {
                         return (
@@ -140,10 +144,13 @@ export default function LoansPage() {
         </Box>
         <Box>
           <Heading as="h6" layerStyle={"onbg"} size="sm" mb="3">
-            {"Your Loans"}
+            {"Borrowed Assets"}
           </Heading>
           <ListLoader
             fetchData={() => getBorrowerLoanIds(provider, account!)}
+            makeHeader={() => (
+              <TableHeaderView colDims={borrowedTableColdims}></TableHeaderView>
+            )}
             makeListItem={(listItemProps) => {
               return (
                 <BaseView
@@ -151,7 +158,21 @@ export default function LoansPage() {
                   key={"loan_" + listItemProps.id.toString()}
                   fetcher={() => getFullLoanInfo(provider, listItemProps.id)}
                   dataView={(data) => {
-                    return <LoanView data={data} />;
+                    return (
+                      <TableRowView
+                        colDims={borrowedTableColdims}
+                        colData={{
+                          Asset: data.token.symbol!,
+                          Debt: ethers.utils.formatUnits(
+                            data.loan.amount.add(data.interest),
+                            data.token.decimals
+                          ),
+                          APY:
+                            (data.loan.interestRateBPS / 100).toFixed(2) + " %",
+                          Term: formatDate(data.loan.expiration),
+                        }}
+                      />
+                    );
                   }}
                   actions={[
                     {
@@ -183,6 +204,9 @@ export default function LoansPage() {
           </Heading>
           <ListLoader
             fetchData={() => getSupplyTokens(provider)}
+            makeHeader={() => (
+              <TableHeaderView colDims={toBorrowTableColdims}></TableHeaderView>
+            )}
             makeListItem={(listItemProps) => {
               return (
                 <BaseView
@@ -191,9 +215,13 @@ export default function LoansPage() {
                   fetcher={() => Promise.resolve(listItemProps.id)} //todo get token info from server
                   dataView={(data) => {
                     return (
-                      <TokenBalanceView
-                        amount={BigNumber.from(0)}
-                        token={data}
+                      <TableRowView
+                        colDims={toBorrowTableColdims}
+                        colData={{
+                          Asset: data.symbol!,
+                          "Lowest APY": "todo",
+                          Available: "todo",
+                        }}
                       />
                     );
                   }}
