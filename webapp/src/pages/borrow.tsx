@@ -90,7 +90,7 @@ export default function LoansPage() {
                       <TableRowView
                         colDims={depositTableColdims}
                         colData={{
-                          Asset: data.token.symbol!,
+                          Asset: data.token,
                           "In Wallet": BNToPrecision(
                             data.wallet_amount,
                             data.token.decimals,
@@ -162,7 +162,7 @@ export default function LoansPage() {
                       <TableRowView
                         colDims={borrowedTableColdims}
                         colData={{
-                          Asset: data.token.symbol!,
+                          Asset: data.token,
                           Debt: ethers.utils.formatUnits(
                             data.loan.amount.add(data.interest),
                             data.token.decimals
@@ -218,7 +218,7 @@ export default function LoansPage() {
                       <TableRowView
                         colDims={toBorrowTableColdims}
                         colData={{
-                          Asset: data.symbol!,
+                          Asset: data,
                           "Lowest APY": "todo",
                           Available: "todo",
                         }}

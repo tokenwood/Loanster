@@ -88,7 +88,7 @@ export default function SupplyPage() {
                       <TableRowView
                         colDims={offerTableColdims}
                         colData={{
-                          Asset: data.token.symbol!,
+                          Asset: data.token,
                           Borrowed:
                             ethers.utils.formatUnits(
                               data.amountBorrowed,
@@ -169,7 +169,7 @@ export default function SupplyPage() {
                       <TableRowView
                         colDims={lentTableColdims}
                         colData={{
-                          Asset: data.token.symbol!,
+                          Asset: data.token,
                           Debt: ethers.utils.formatUnits(
                             data.loan.amount.add(data.interest),
                             data.token.decimals
@@ -245,7 +245,7 @@ export default function SupplyPage() {
                       <TableRowView
                         colDims={toSupplyColDims}
                         colData={{
-                          Asset: data.token.symbol!,
+                          Asset: data.token,
                           "In Wallet": parseFloat(
                             ethers.utils.formatUnits(
                               data.amount,
