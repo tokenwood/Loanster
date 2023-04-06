@@ -39,6 +39,7 @@ const theme = extendTheme({
       bgColor: "gray.100",
       borderColor: level2BorderColor,
     },
+
     level3: {
       border: "0px solid",
       borderRadius: "20px",
@@ -86,7 +87,7 @@ const theme = extendTheme({
     },
     tableHeader: {
       fontSize: ["14px"],
-      fontWeight: "semibold",
+      // fontWeight: "semibold"
       lineHeight: "200%",
       letterSpacing: "-1%",
       color: "gray.600",

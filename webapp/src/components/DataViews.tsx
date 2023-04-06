@@ -78,6 +78,9 @@ export function TableRowView(props: TableRowViewProps) {
     <Flex
       w="100%"
       layerStyle={"level2"}
+      borderBottom={expanded ? "2px" : undefined}
+      borderBottomColor={expanded ? "white" : undefined}
+      borderBottomRadius={expanded ? 0 : undefined}
       // bg="red"
       onClick={setExpanded.toggle}
       cursor={"pointer"}
