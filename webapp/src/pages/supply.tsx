@@ -83,9 +83,10 @@ export default function SupplyPage() {
                   fetcher={() => Promise.resolve(props.id)}
                   level={2}
                   key={getOfferKey(props.id.offer)}
-                  dataView={(data: FullOfferInfo) => {
+                  dataView={(data: FullOfferInfo, setExpanded) => {
                     return (
                       <TableRowView
+                        expandedCallback={setExpanded}
                         colDims={offerTableColdims}
                         colData={{
                           Asset: data.token,
@@ -164,9 +165,10 @@ export default function SupplyPage() {
                   level={2}
                   key={props.id}
                   fetcher={() => getFullLoanInfo(provider, props.id)}
-                  dataView={(data) => {
+                  dataView={(data, setExpanded) => {
                     return (
                       <TableRowView
+                        expandedCallback={setExpanded}
                         colDims={lentTableColdims}
                         colData={{
                           Asset: data.token,
@@ -240,9 +242,10 @@ export default function SupplyPage() {
                       suffix: props.id,
                     },
                   ]}
-                  dataView={(data: TokenBalanceInfo) => {
+                  dataView={(data: TokenBalanceInfo, setExpanded) => {
                     return (
                       <TableRowView
+                        expandedCallback={setExpanded}
                         colDims={toSupplyColDims}
                         colData={{
                           Asset: data.token,

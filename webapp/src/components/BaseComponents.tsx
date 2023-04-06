@@ -15,7 +15,7 @@ import {
   headerButtonHoverStyle,
   tableRowHoverStyle,
 } from "components/Theme";
-import { PropsWithChildren, ReactNode, useState } from "react";
+import { PropsWithChildren, ReactNode, useEffect, useState } from "react";
 import { defaultBorderRadius } from "./Theme";
 import { DataLoader } from "./DataLoaders";
 import { EventId } from "libs/eventEmitter";
@@ -168,7 +168,7 @@ export interface ActionProp {
 
 export interface DataViewProps<T> {
   fetcher: () => Promise<T>;
-  dataView: (data: T, toggleExpand?: () => void) => ReactNode;
+  dataView: (data: T, setExpanded?: (expanded: boolean) => void) => ReactNode;
   actions: ActionProp[];
   level?: number;
   reloadEvents?: EventId[];
@@ -176,7 +176,11 @@ export interface DataViewProps<T> {
 
 export function BaseView<T>(props: DataViewProps<T>) {
   const [currentAction, setCurrentAction] = useState<ActionProp>();
-  const [expanded, setExpanded] = useBoolean();
+  const [expanded, setExpanded] = useState<boolean>(false);
+
+  const setExpandedCallback = (expanded: boolean) => {
+    setExpanded(expanded);
+  };
 
   return (
     <DataLoader
@@ -188,29 +192,8 @@ export function BaseView<T>(props: DataViewProps<T>) {
           <VStack
             w="100%"
             layerStyle={props.level ? "level" + props.level : "level3"}
-            // paddingRight={3}
-            // padding="3"
-            // _hover={expanded ? undefined : tableRowHoverStyle}
           >
-            <Flex w="100%">
-              <HStack w="90%">
-                {props.dataView(childProps.data, setExpanded.toggle)}
-              </HStack>
-              <Spacer />
-              <IconButton
-                aria-label="expand"
-                alignSelf={"center"}
-                marginRight={3}
-                onClick={setExpanded.toggle}
-                icon={
-                  expanded ? (
-                    <ChevronUpIcon boxSize={6} />
-                  ) : (
-                    <ChevronDownIcon boxSize={6} />
-                  )
-                }
-              />
-            </Flex>
+            {props.dataView(childProps.data, setExpandedCallback)}
 
             {expanded ? (
               <HStack w="100%" paddingLeft={3} paddingBottom={3}>

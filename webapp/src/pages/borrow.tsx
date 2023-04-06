@@ -85,9 +85,10 @@ export default function LoansPage() {
                   level={2}
                   key={"collateral_deposit_" + listItemProps.id.token.address}
                   fetcher={() => Promise.resolve(listItemProps.id)}
-                  dataView={(data, toggleExpand) => {
+                  dataView={(data, setExpanded) => {
                     return (
                       <TableRowView
+                        expandedCallback={setExpanded}
                         colDims={depositTableColdims}
                         colData={{
                           Asset: data.token,
@@ -157,9 +158,10 @@ export default function LoansPage() {
                   level={2}
                   key={"loan_" + listItemProps.id.toString()}
                   fetcher={() => getFullLoanInfo(provider, listItemProps.id)}
-                  dataView={(data) => {
+                  dataView={(data, setExpanded) => {
                     return (
                       <TableRowView
+                        expandedCallback={setExpanded}
                         colDims={borrowedTableColdims}
                         colData={{
                           Asset: data.token,
@@ -213,9 +215,10 @@ export default function LoansPage() {
                   level={2}
                   key={"asset_to_borrow" + listItemProps.id.address}
                   fetcher={() => Promise.resolve(listItemProps.id)} //todo get token info from server
-                  dataView={(data) => {
+                  dataView={(data, setExpanded) => {
                     return (
                       <TableRowView
+                        expandedCallback={setExpanded}
                         colDims={toBorrowTableColdims}
                         colData={{
                           Asset: data,
