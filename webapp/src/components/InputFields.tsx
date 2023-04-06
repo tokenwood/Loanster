@@ -49,7 +49,7 @@ export function TokenAmountInput(props: TokenAmountInputProps) {
   };
 
   return (
-    <Flex w="100%">
+    <Flex w="100%" layerStyle={"level3"}>
       <Text alignSelf={"center"} ml="0">
         {props.token.symbol} amount
       </Text>

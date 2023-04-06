@@ -5,6 +5,8 @@ import "./Supply.sol";
 import "./interfaces/IUniUtils.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
+import "hardhat/console.sol";
+
 contract TroveManager is Ownable {
     using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -30,8 +32,6 @@ contract TroveManager is Ownable {
     uint32 private _twapInterval = 300;
     uint256 private constant HUNDRED_PERCENT_BPS = 10000;
 
-    event Debug(string message);
-    event DebugAddress(address message);
     event SupplyTokenChanged(address token, bool isAllowed);
     event CollateralTokenChange(address token, bool isAllowed);
     event NewLoan(
@@ -189,6 +189,7 @@ contract TroveManager is Ownable {
             "supply token not allowed"
         );
 
+        //reentrancy attack: must change state before sending tokens.
         uint256 loanId = Supply(_supply).openLoan(
             loanOffer,
             signature,
@@ -306,7 +307,7 @@ contract TroveManager is Ownable {
     }
 
     // could there be so many loans that health becomes impossible to calculate without running out of gas?
-    function getLoansValueEth(
+    function getAccountLoansValueEth(
         address account
     ) public view returns (uint256, uint256) {
         uint256 numLoans = getNumLoansForAccount(account);
@@ -330,26 +331,35 @@ contract TroveManager is Ownable {
         return (totalDebt, adjustedTotalDebt);
     }
 
-    function getCollateralValueEth(
+    function getAccountCollateralValueEth(
         address account
     ) public view returns (uint256, uint256) {
         uint256 collateralValue;
         uint256 adjustedCollateralValue;
         for (uint i = 0; i < _depositTokens[account].length(); i++) {
             address token = _depositTokens[account].at(i);
-            uint256 value = IUniUtils(_uniUtils).getTWAPValueEth(
-                _depositAmounts[account][token],
+            (uint value, uint adjustedValue) = getCollateralValueEth(
                 token,
-                _oraclePoolFees[token],
-                _twapInterval
+                _depositAmounts[account][token]
             );
             collateralValue += value;
-            adjustedCollateralValue +=
-                (value * _collateralFactorsBPS[token]) /
-                10000; // openzeppelin safemath instead?
+            adjustedCollateralValue += adjustedValue;
         }
 
         return (collateralValue, adjustedCollateralValue);
+    }
+
+    function getCollateralValueEth(
+        address token,
+        uint256 amount
+    ) public view returns (uint256, uint256) {
+        uint256 value = IUniUtils(_uniUtils).getTWAPValueEth(
+            amount,
+            token,
+            _oraclePoolFees[token],
+            _twapInterval
+        );
+        return (value, (value * _collateralFactorsBPS[token]) / 10000);
     }
 
     function getHealthFactorBPS(
@@ -357,8 +367,10 @@ contract TroveManager is Ownable {
         uint256 extraAmount,
         address token
     ) public view returns (uint256) {
-        (, uint256 adjustedCollateralValueEth) = getCollateralValueEth(account);
-        (, uint256 adjustedLoanValueEth) = getLoansValueEth(account);
+        (, uint256 adjustedCollateralValueEth) = getAccountCollateralValueEth(
+            account
+        );
+        (, uint256 adjustedLoanValueEth) = getAccountLoansValueEth(account);
 
         if (extraAmount > 0) {
             (, uint256 adjustedNewLoanValue) = getLoanValueEth(

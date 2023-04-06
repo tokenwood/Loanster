@@ -9,8 +9,9 @@ import {
   Th,
   Tr,
 } from "@chakra-ui/react";
-import { VStack } from "@chakra-ui/layout";
+import { HStack, VStack } from "@chakra-ui/layout";
 import { Address, erc20ABI, useContractRead, useProvider } from "wagmi";
+import { Provider } from "@wagmi/core";
 import { BigNumber } from "ethers";
 import {
   getSupplyAddress,
@@ -32,6 +33,8 @@ import {
   getLoanStats,
   LoanStats,
   TokenDepositInfo,
+  getHealthFactor,
+  getNewHealthFactor,
 } from "libs/unilend_utils";
 import { ethers } from "ethers";
 import { ContractCallButton, SignButton } from "./BaseComponents";
@@ -46,11 +49,13 @@ import { ADDRESS_TO_TOKEN } from "libs/constants";
 export interface DepositInputsProps {
   account: Address;
   balanceData: TokenDepositInfo;
-  approvalAddress: Address;
   callback: () => any;
 }
 
 export function CollateralDepositInputs(props: DepositInputsProps) {
+  const provider = useProvider();
+  const [healthFactor, setHealthFactor] = useState<number>();
+  const [newHealthFactor, setNewHealthFactor] = useState<number>();
   const [amountToDeposit, setAmountToDeposit] = useState<BigNumber>(
     BigNumber.from(0)
   );
@@ -58,8 +63,30 @@ export function CollateralDepositInputs(props: DepositInputsProps) {
     address: props.balanceData.token.address as Address,
     abi: erc20ABI,
     functionName: "allowance",
-    args: [props.account, props.approvalAddress],
+    args: [props.account, getTroveManagerAddress()],
   });
+
+  const updateHealthFactor = async () => {
+    const healthFactor = await getHealthFactor(provider, props.account);
+    setHealthFactor(healthFactor);
+  };
+
+  const updateNewHealthFactor = async () => {
+    const healthFactor = await getNewHealthFactor(
+      provider,
+      props.account,
+      props.balanceData.token.address as Address,
+      amountToDeposit
+    );
+    setNewHealthFactor(healthFactor);
+  };
+
+  useEffect(() => {
+    if (healthFactor == undefined) {
+      updateHealthFactor();
+    }
+    updateNewHealthFactor();
+  }, [amountToDeposit]);
 
   const hasEnoughAllowance = (
     allowance: BigNumber | undefined,
@@ -76,17 +103,39 @@ export function CollateralDepositInputs(props: DepositInputsProps) {
   };
 
   return (
-    <VStack w="100%" layerStyle={"level3"} spacing={0} padding="2">
+    <VStack w="60%">
       {/* <VStack w="100%" layerStyle={"level3"} padding="5px"> */}
-      <TokenAmountInput
-        balance={props.balanceData.wallet_amount}
-        token={props.balanceData.token}
-        callback={(amount: BigNumber) => {
-          setAmountToDeposit(amount);
-        }}
-      />
-      {/* </VStack> */}
-      <Flex w="100%">
+      <Box layerStyle={"level3"} paddingX="3" paddingY="1" w="100%">
+        <TokenAmountInput
+          balance={props.balanceData.wallet_amount}
+          token={props.balanceData.token}
+          callback={(amount: BigNumber) => {
+            setAmountToDeposit(amount);
+          }}
+        />
+      </Box>
+
+      <Flex w="100%" paddingLeft={3} paddingRight={3}>
+        <Text>Health Factor</Text>
+        <Spacer></Spacer>
+        <HStack>
+          <Text>
+            {healthFactor == Number.POSITIVE_INFINITY ? "∞" : healthFactor}
+          </Text>
+          {newHealthFactor != undefined ? (
+            <Text>
+              {"-> " +
+                (newHealthFactor == Number.POSITIVE_INFINITY
+                  ? "∞"
+                  : newHealthFactor)}
+            </Text>
+          ) : (
+            <></>
+          )}
+        </HStack>
+      </Flex>
+
+      <Flex w="100%" paddingBottom={3}>
         <Spacer></Spacer>
         {hasEnoughAllowance(allowance, amountToDeposit) ? (
           <ContractCallButton
@@ -104,7 +153,7 @@ export function CollateralDepositInputs(props: DepositInputsProps) {
             contractAddress={props.balanceData.token.address as Address}
             abi={erc20ABI}
             functionName={"approve"}
-            args={[props.approvalAddress, ethers.constants.MaxUint256]}
+            args={[getTroveManagerAddress(), ethers.constants.MaxUint256]}
             enabled={canConfirm()}
             callback={allowanceRefetch}
             buttonText="Approve"

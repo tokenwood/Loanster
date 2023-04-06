@@ -58,6 +58,7 @@ export default function LoansPage() {
           </Heading>
           <DataLoader
             fetcher={() => getHealthFactor(provider, account!)}
+            reloadEvents={[{ eventType: EventType.COLLATERAL_TOKEN_DEPOSITED }]}
             makeChildren={(childProps) => {
               return (
                 <Stat textAlign={"left"}>
@@ -79,11 +80,21 @@ export default function LoansPage() {
             makeHeader={() => (
               <TableHeaderView colDims={depositTableColdims}></TableHeaderView>
             )}
+            reloadEvents={[
+              {
+                eventType: EventType.COLLATERAL_TOKEN_DEPOSITED,
+              },
+            ]}
             makeListItem={(listItemProps) => {
               return (
                 <BaseView
                   level={2}
-                  key={"collateral_deposit_" + listItemProps.id.token.address}
+                  key={
+                    "collateral_deposit_" +
+                    listItemProps.id.token.address +
+                    listItemProps.id.deposit_amount +
+                    listItemProps.id.wallet_amount
+                  }
                   fetcher={() => Promise.resolve(listItemProps.id)}
                   dataView={(data, setExpanded) => {
                     return (
@@ -116,10 +127,8 @@ export default function LoansPage() {
                           <CollateralDepositInputs
                             account={account!}
                             balanceData={data}
-                            approvalAddress={getTroveManagerAddress()}
                             callback={() => {
                               actionFinished();
-                              // props.callback();
                               eventEmitter.dispatch({
                                 eventType: EventType.COLLATERAL_TOKEN_DEPOSITED,
                               });

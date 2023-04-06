@@ -87,12 +87,11 @@ export async function getNewAccountStats(
 
   // collateral value
   const [collateralValue, collateralFactorBPS]: [BigNumber, BigNumber] =
-    await contract.getCollateralValueEth(account);
+    await contract.getAccountCollateralValueEth(account);
 
   // total loans value
-  const [loansValue, adjustedLoansValue] = await contract.getLoansValueEth(
-    account
-  );
+  const [loansValue, adjustedLoansValue] =
+    await contract.getAccountLoansValueEth(account);
 
   // new health factor
   const healthFactor: BigNumber = await contract.getHealthFactorBPS(
@@ -114,15 +113,73 @@ export async function getNewAccountStats(
   };
 }
 
-export async function getHealthFactor(provider: Provider, account: Address) {
+export async function getHealthFactor(
+  provider: Provider,
+  account: Address,
+  token?: Address,
+  amount?: BigNumber
+) {
   const contract = getTroveManagerContract(provider);
   const healthFactor: BigNumber = await contract.getHealthFactorBPS(
     account,
-    BigNumber.from(0),
-    ADDRESS_ZERO
+    amount ?? BigNumber.from(0),
+    token ?? ADDRESS_ZERO
   );
 
-  return healthFactor.toNumber() / 10000;
+  if (ethers.constants.MaxUint256.eq(healthFactor)) {
+    return Number.POSITIVE_INFINITY;
+  } else {
+    return healthFactor.toNumber() / 10000;
+  }
+}
+
+export async function getNewHealthFactor(
+  provider: Provider,
+  account: Address,
+  token: Address,
+  addCollateral?: BigNumber,
+  removeCollateral?: BigNumber,
+  addLoan?: BigNumber,
+  removeLoan?: BigNumber
+) {
+  const contract = getTroveManagerContract(provider);
+  let [, adjustedCollateralValue] = await contract.getAccountCollateralValueEth(
+    account
+  );
+  let [, adjustedLoanValue] = await contract.getAccountLoansValueEth(account);
+  if (addCollateral) {
+    const [, adjustedValue] = await contract.getCollateralValueEth(
+      token,
+      addCollateral
+    );
+    adjustedCollateralValue = adjustedCollateralValue.add(adjustedValue);
+  }
+  if (removeCollateral) {
+    const [, adjustedValue] = await contract.getCollateralValueEth(
+      token,
+      removeCollateral
+    );
+    adjustedCollateralValue = adjustedCollateralValue.sub(adjustedValue);
+  }
+  if (addLoan) {
+    const [, adjustedValue] = await contract.getLoanValueEth(token, addLoan);
+    adjustedLoanValue = adjustedLoanValue.add(adjustedValue);
+  }
+  if (removeLoan) {
+    const [_, adjustedValue] = await contract.getLoanValueEth(
+      token,
+      removeLoan
+    );
+    adjustedLoanValue = adjustedLoanValue.sub(adjustedValue);
+  }
+  if (adjustedLoanValue.gt(0)) {
+    return (
+      adjustedCollateralValue.mul(10000).div(adjustedLoanValue).toNumber() /
+      10000
+    );
+  } else {
+    return Number.POSITIVE_INFINITY;
+  }
 }
 
 export function getLoanStats(

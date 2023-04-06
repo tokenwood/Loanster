@@ -175,7 +175,9 @@ export interface DataViewProps<T> {
 }
 
 export function BaseView<T>(props: DataViewProps<T>) {
-  const [currentAction, setCurrentAction] = useState<ActionProp>();
+  const [currentAction, setCurrentAction] = useState<ActionProp>(
+    props.actions[0]
+  );
   const [expanded, setExpanded] = useState<boolean>(false);
 
   const setExpandedCallback = (expanded: boolean) => {
@@ -184,7 +186,6 @@ export function BaseView<T>(props: DataViewProps<T>) {
 
   return (
     <DataLoader
-      // defaultValue={}
       fetcher={() => props.fetcher()}
       reloadEvents={props.reloadEvents}
       makeChildren={(childProps) => {
@@ -201,20 +202,17 @@ export function BaseView<T>(props: DataViewProps<T>) {
                   actionButton(
                     actionProp,
                     () => {
-                      currentAction == actionProp
-                        ? setCurrentAction(undefined)
-                        : setCurrentAction(actionProp);
+                      setCurrentAction(actionProp);
                     },
-                    currentAction == actionProp
+                    currentAction.action == actionProp.action
                   )
                 )}
               </HStack>
             ) : (
               <></>
             )}
-            {currentAction !== undefined && expanded ? (
+            {expanded ? (
               currentAction!.onClickView(childProps.data, () => {
-                setCurrentAction(undefined);
                 childProps.refetchData();
               })
             ) : (
@@ -235,13 +233,13 @@ function actionButton(
   return (
     <Button
       key={actionProp.action}
-      colorScheme={isCurrentAction ? cancelColorScheme : actionInitColorScheme}
+      colorScheme={isCurrentAction ? actionInitColorScheme : cancelColorScheme}
       borderRadius={defaultBorderRadius}
       size={DEFAULT_SIZE}
       onClick={() => onClick()}
       alignSelf="center"
     >
-      {isCurrentAction ? "Cancel" : actionProp.action}
+      {actionProp.action}
     </Button>
   );
 }
