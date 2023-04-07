@@ -50,18 +50,19 @@ export interface DepositInputsProps {
   account: Address;
   balanceData: TokenDepositInfo;
   callback: () => any;
+  type: "deposit" | "withdraw";
 }
 
-export function CollateralDepositInputs(props: DepositInputsProps) {
+export function CollateralInputs(props: DepositInputsProps) {
   const provider = useProvider();
   const [healthFactor, setHealthFactor] = useState<number>();
   const [newHealthFactor, setNewHealthFactor] = useState<number>();
-  const [amountToDeposit, setAmountToDeposit] = useState<BigNumber>(
-    BigNumber.from(0)
-  );
+  const [amount, setAmount] = useState<BigNumber>(BigNumber.from(0));
+
   const { data: allowance, refetch: allowanceRefetch } = useContractRead({
     address: props.balanceData.token.address as Address,
     abi: erc20ABI,
+    enabled: props.type == "deposit",
     functionName: "allowance",
     args: [props.account, getTroveManagerAddress()],
   });
@@ -76,7 +77,8 @@ export function CollateralDepositInputs(props: DepositInputsProps) {
       provider,
       props.account,
       props.balanceData.token.address as Address,
-      amountToDeposit
+      props.type == "deposit" ? amount : undefined,
+      props.type == "withdraw" ? amount : undefined
     );
     setNewHealthFactor(healthFactor);
   };
@@ -86,7 +88,7 @@ export function CollateralDepositInputs(props: DepositInputsProps) {
       updateHealthFactor();
     }
     updateNewHealthFactor();
-  }, [amountToDeposit]);
+  }, [amount]);
 
   const hasEnoughAllowance = (
     allowance: BigNumber | undefined,
@@ -97,8 +99,8 @@ export function CollateralDepositInputs(props: DepositInputsProps) {
 
   const canConfirm = () => {
     return (
-      BigNumber.from(0).lt(amountToDeposit) &&
-      amountToDeposit.lte(props.balanceData.wallet_amount)
+      BigNumber.from(0).lt(amount) &&
+      amount.lte(props.balanceData.wallet_amount)
     );
   };
 
@@ -107,10 +109,14 @@ export function CollateralDepositInputs(props: DepositInputsProps) {
       {/* <VStack w="100%" layerStyle={"level3"} padding="5px"> */}
       <Box layerStyle={"level3"} paddingX="3" paddingY="1" w="100%">
         <TokenAmountInput
-          balance={props.balanceData.wallet_amount}
+          balance={
+            props.type == "deposit"
+              ? props.balanceData.wallet_amount
+              : props.balanceData.deposit_amount!
+          }
           token={props.balanceData.token}
           callback={(amount: BigNumber) => {
-            setAmountToDeposit(amount);
+            setAmount(amount);
           }}
         />
       </Box>
@@ -120,14 +126,16 @@ export function CollateralDepositInputs(props: DepositInputsProps) {
         <Spacer></Spacer>
         <HStack>
           <Text>
-            {healthFactor == Number.POSITIVE_INFINITY ? "∞" : healthFactor}
+            {healthFactor == Number.POSITIVE_INFINITY
+              ? "∞"
+              : healthFactor?.toFixed(2)}
           </Text>
           {newHealthFactor != undefined ? (
             <Text>
               {"-> " +
                 (newHealthFactor == Number.POSITIVE_INFINITY
                   ? "∞"
-                  : newHealthFactor)}
+                  : newHealthFactor.toFixed(2))}
             </Text>
           ) : (
             <></>
@@ -137,26 +145,49 @@ export function CollateralDepositInputs(props: DepositInputsProps) {
 
       <Flex w="100%" paddingBottom={3}>
         <Spacer></Spacer>
-        {hasEnoughAllowance(allowance, amountToDeposit) ? (
+
+        {props.type == "deposit" ? (
+          hasEnoughAllowance(allowance, amount) ? (
+            <ContractCallButton
+              contractAddress={getTroveManagerAddress()}
+              abi={getTroveManagerABI()}
+              functionName={"deposit"}
+              args={[props.balanceData.token.address, amount]}
+              enabled={canConfirm()}
+              callback={() => {
+                props.callback();
+                eventEmitter.dispatch({
+                  eventType: EventType.COLLATERAL_TOKEN_DEPOSITED,
+                });
+              }}
+            ></ContractCallButton>
+          ) : (
+            <ContractCallButton
+              contractAddress={props.balanceData.token.address as Address}
+              abi={erc20ABI}
+              functionName={"approve"}
+              args={[getTroveManagerAddress(), ethers.constants.MaxUint256]}
+              enabled={canConfirm()}
+              callback={allowanceRefetch}
+              buttonText="Approve"
+            ></ContractCallButton>
+          )
+        ) : (
           <ContractCallButton
             contractAddress={getTroveManagerAddress()}
             abi={getTroveManagerABI()}
-            functionName={"deposit"}
-            args={[props.balanceData.token.address, amountToDeposit]}
+            functionName={"withdraw"}
+            args={[
+              props.balanceData.token.address,
+              props.balanceData.deposit_amount?.sub(amount),
+            ]}
             enabled={canConfirm()}
             callback={() => {
               props.callback();
+              eventEmitter.dispatch({
+                eventType: EventType.COLLATERAL_TOKEN_WITHDRAWN,
+              });
             }}
-          ></ContractCallButton>
-        ) : (
-          <ContractCallButton
-            contractAddress={props.balanceData.token.address as Address}
-            abi={erc20ABI}
-            functionName={"approve"}
-            args={[getTroveManagerAddress(), ethers.constants.MaxUint256]}
-            enabled={canConfirm()}
-            callback={allowanceRefetch}
-            buttonText="Approve"
           ></ContractCallButton>
         )}
       </Flex>

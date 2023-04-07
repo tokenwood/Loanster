@@ -40,8 +40,9 @@ export const eventEmitter: {
   subscribe(eventId, callback) {
     const eventName = this.getEventKey(eventId);
     if (!this.events[eventName]) this.events[eventName] = [];
-    if (!this.events[eventName]?.includes(this.events[eventName][0]))
+    if (!this.events[eventName]?.includes(callback)) {
       this.events[eventName]?.push(callback);
+    }
   },
   //This will unsubscribe the event to avoid unnecessary event calls
   unsubscribe(eventId) {

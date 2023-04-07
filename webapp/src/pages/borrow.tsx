@@ -24,7 +24,7 @@ import {
 import { Provider } from "@wagmi/core";
 import {
   BorrowInputs,
-  CollateralDepositInputs,
+  CollateralInputs,
   RepayLoanInputs,
 } from "components/InputViews";
 import { TableHeaderView, TableRowView } from "components/DataViews";
@@ -58,7 +58,10 @@ export default function LoansPage() {
           </Heading>
           <DataLoader
             fetcher={() => getHealthFactor(provider, account!)}
-            reloadEvents={[{ eventType: EventType.COLLATERAL_TOKEN_DEPOSITED }]}
+            reloadEvents={[
+              { eventType: EventType.COLLATERAL_TOKEN_DEPOSITED },
+              { eventType: EventType.COLLATERAL_TOKEN_WITHDRAWN },
+            ]}
             makeChildren={(childProps) => {
               return (
                 <Stat textAlign={"left"}>
@@ -81,9 +84,8 @@ export default function LoansPage() {
               <TableHeaderView colDims={depositTableColdims}></TableHeaderView>
             )}
             reloadEvents={[
-              {
-                eventType: EventType.COLLATERAL_TOKEN_DEPOSITED,
-              },
+              { eventType: EventType.COLLATERAL_TOKEN_DEPOSITED },
+              { eventType: EventType.COLLATERAL_TOKEN_WITHDRAWN },
             ]}
             makeListItem={(listItemProps) => {
               return (
@@ -124,26 +126,35 @@ export default function LoansPage() {
                         actionFinished: () => any
                       ) => {
                         return (
-                          <CollateralDepositInputs
+                          <CollateralInputs
+                            key={"deposit" + data.token}
                             account={account!}
                             balanceData={data}
+                            type="deposit"
                             callback={() => {
                               actionFinished();
-                              eventEmitter.dispatch({
-                                eventType: EventType.COLLATERAL_TOKEN_DEPOSITED,
-                              });
                             }}
-                          ></CollateralDepositInputs>
+                          ></CollateralInputs>
                         );
                       },
                     },
                     {
                       action: "Withdraw",
                       onClickView: (
-                        data: FullLoanInfo,
+                        data: TokenDepositInfo,
                         actionFinished: () => any
                       ) => {
-                        return <Box> todo </Box>;
+                        return (
+                          <CollateralInputs
+                            key={"withdraw" + data.token}
+                            account={account!}
+                            balanceData={data}
+                            type="withdraw"
+                            callback={() => {
+                              actionFinished();
+                            }}
+                          ></CollateralInputs>
+                        );
                       },
                     },
                   ]}
