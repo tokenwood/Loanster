@@ -1,4 +1,4 @@
-import { VStack, Heading, Box } from "@chakra-ui/layout";
+import { VStack, Heading, Box, HStack } from "@chakra-ui/layout";
 import { Address, useAccount, useProvider } from "wagmi";
 import {
   BasePage,
@@ -27,10 +27,14 @@ import {
   CollateralInputs,
   RepayLoanInputs,
 } from "components/InputViews";
-import { TableHeaderView, TableRowView } from "components/DataViews";
+import {
+  LoanInfoView,
+  TableHeaderView,
+  TableRowView,
+} from "components/DataViews";
 import { eventEmitter, EventType } from "libs/eventEmitter";
 import { BigNumber, ethers } from "ethers";
-import { Stat, StatLabel, StatNumber } from "@chakra-ui/react";
+import { Stat, StatHelpText, StatLabel, StatNumber } from "@chakra-ui/react";
 import { statFontSize } from "components/Theme";
 
 const depositTableColdims = { Asset: 1, "In Wallet": 1, Deposited: 1, " ": 1 };
@@ -185,10 +189,12 @@ export default function LoansPage() {
                         colDims={borrowedTableColdims}
                         colData={{
                           Asset: data.token,
-                          Debt: ethers.utils.formatUnits(
-                            data.loan.amount.add(data.interest),
-                            data.token.decimals
-                          ),
+                          Debt: Number(
+                            ethers.utils.formatUnits(
+                              data.loan.amount.add(data.interest),
+                              data.token.decimals
+                            )
+                          ).toFixed(2),
                           APY:
                             (data.loan.interestRateBPS / 100).toFixed(2) + " %",
                           Term: formatDate(data.loan.expiration),
@@ -212,6 +218,12 @@ export default function LoansPage() {
                             }}
                           />
                         );
+                      },
+                    },
+                    {
+                      action: "Info",
+                      onClickView: (data: FullLoanInfo) => {
+                        return <LoanInfoView loanInfo={data}></LoanInfoView>;
                       },
                     },
                   ]}

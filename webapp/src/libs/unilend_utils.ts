@@ -315,7 +315,7 @@ export async function getFullLoanInfo(
 ): Promise<FullLoanInfo> {
   const supply = getSupplyContract(provider);
   const loan = await supply.getLoan(loanId);
-  const [amount, minInterest] = await supply.getLoanAmountAndMinInterest(
+  const [token, amount, minInterest] = await supply.getLoanAmountAndMinInterest(
     loanId
   );
   return {

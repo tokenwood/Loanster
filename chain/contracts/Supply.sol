@@ -131,6 +131,8 @@ contract Supply is ERC721, Ownable, SignUtils {
         return loanId;
     }
 
+    function getAmountToTransfer() public view {}
+
     function repayLoan(
         address borrower,
         uint256 loanId,
@@ -142,35 +144,29 @@ contract Supply is ERC721, Ownable, SignUtils {
         );
 
         Loan storage l = _loans[loanId]; //should the whole thing be loaded?
-        require(
-            newAmount < l.amount,
-            "new amount larger or equal to current loan amount"
+
+        uint256 interest = getInterest(
+            l.amount,
+            l.interestRateBPS,
+            block.timestamp - l.startTime
         );
 
-        uint256 interest;
-        if (block.timestamp >= l.minRepayTime) {
-            interest = getInterest(
-                l.amount,
+        if (block.timestamp < l.minRepayTime) {
+            //early repayment fee
+            interest += getInterest(
+                l.amount - newAmount,
                 l.interestRateBPS,
-                max(l.minRepayTime, l.minRepayTime) - l.startTime
+                l.minRepayTime - block.timestamp
             );
-        } else {
-            interest =
-                getInterest(
-                    l.amount,
-                    l.interestRateBPS,
-                    l.minRepayTime - l.startTime
-                ) -
-                getInterest(
-                    newAmount,
-                    l.interestRateBPS,
-                    l.minRepayTime - block.timestamp
-                );
         }
+        require(
+            newAmount < l.amount + interest,
+            "new amount larger or equal to current debt"
+        );
 
-        uint256 amountToTransfer = l.amount - newAmount;
+        uint256 amountToTransfer = l.amount + interest - newAmount;
 
-        _claimable[loanId] += interest + amountToTransfer;
+        _claimable[loanId] += amountToTransfer;
 
         l.amount = newAmount;
         l.startTime = uint32(block.timestamp);
@@ -179,7 +175,7 @@ contract Supply is ERC721, Ownable, SignUtils {
             ERC20(l.token).transferFrom(
                 borrower,
                 address(this),
-                interest + amountToTransfer
+                amountToTransfer
             ),
             "interest payment failed"
         );

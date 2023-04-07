@@ -23,11 +23,13 @@ import { Token } from "@uniswap/sdk-core";
 interface TokenAmountInputProps {
   token: Token;
   balance: BigNumber;
+  text?: string;
+  defaultValue?: string;
   callback: (amount: BigNumber) => any;
 }
 
 export function TokenAmountInput(props: TokenAmountInputProps) {
-  const [value, setValue] = useState<string>("");
+  const [value, setValue] = useState<string>(props.defaultValue ?? "");
   const onMaxClicked = () => {
     props.callback(props.balance);
     setValue(ethers.utils.formatUnits(props.balance, props.token.decimals));
@@ -51,7 +53,7 @@ export function TokenAmountInput(props: TokenAmountInputProps) {
   return (
     <Flex w="100%">
       <Text alignSelf={"center"} ml="0">
-        {props.token.symbol} Amount
+        {props.text ? props.text : props.token.symbol + " Amount"}
       </Text>
       <Button
         ml="10px"

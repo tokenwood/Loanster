@@ -129,6 +129,56 @@ export function TableRowView(props: TableRowViewProps) {
   );
 }
 
+interface LoanInfoViewProps {
+  loanInfo: FullLoanInfo;
+}
+
+export function LoanInfoView(props: LoanInfoViewProps) {
+  return (
+    <HStack
+      spacing={10}
+      alignSelf="start"
+      paddingTop={0}
+      margin={-3}
+      paddingLeft={5}
+      paddingBottom={2}
+    >
+      <Stat textAlign={"left"}>
+        <StatLabel>Principal</StatLabel>
+        <StatNumber fontSize={statFontSize}>
+          {ethers.utils.formatUnits(
+            props.loanInfo.loan.amount,
+            props.loanInfo.token.decimals
+          )}
+        </StatNumber>
+      </Stat>
+      <Stat textAlign={"left"}>
+        <StatLabel>Interest</StatLabel>
+        <StatNumber fontSize={statFontSize}>
+          {Number(
+            ethers.utils.formatUnits(
+              props.loanInfo.interest,
+              props.loanInfo.token.decimals
+            )
+          ).toFixed(4)}
+        </StatNumber>
+      </Stat>
+      <Stat textAlign={"left"} w="300px">
+        <StatLabel>Loan Start Date</StatLabel>
+        <StatNumber fontSize={statFontSize}>
+          {formatDate(props.loanInfo.loan.startTime)}
+        </StatNumber>
+      </Stat>
+      <Stat textAlign={"left"} w="300px">
+        <StatLabel>Min Loan Term</StatLabel>
+        <StatNumber fontSize={statFontSize}>
+          {formatDate(props.loanInfo.loan.minRepayTime)}
+        </StatNumber>
+      </Stat>
+    </HStack>
+  );
+}
+
 function getWidth(key: string, colDims: { [key: string]: number }) {
   let totalWidth = 0;
   for (const key in colDims) {
