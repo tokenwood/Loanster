@@ -19,6 +19,7 @@ install_deps:
 start_chain:
 	cd ${PROJECT_FOLDER}/unilib && \
 	yarn hardhat node --fork https://mainnet.infura.io/v3/${MY_INFURA_KEY} &
+	sleep 40
 
 start_front:
 	cd ${PROJECT_FOLDER}/webapp && \
@@ -27,6 +28,7 @@ start_front:
 start_db:
 	cd ${PROJECT_FOLDER} && \
 	docker-compose up -d
+	sleep 30
 
 start_backend:
 	cd ${PROJECT_FOLDER}/backend && \
