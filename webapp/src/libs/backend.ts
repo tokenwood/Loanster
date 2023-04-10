@@ -14,6 +14,10 @@ import { concat } from "ethers/lib/utils.js";
 // todo: update offer state (amountBorrowed, cancelled) by listening to events
 // todo: make sure offers are valid by verifying owner balance and allowance
 
+const backendUrl = process.env.BACKEND_URL;
+const backendPort = process.env.BACKEND_PORT;
+const fullBackendUrl = `${backendUrl}:${backendPort}`;
+
 export interface FullOfferInfo {
   offer: LoanOfferType;
   signature: string;
@@ -45,7 +49,7 @@ export async function submitOffer(offer: LoanOfferType, signature: string) {
   };
 
   try {
-    const response = await fetch("http://localhost:3030/offer/", {
+    const response = await fetch(`${fullBackendUrl}/offer/`, {
       method: "POST",
       body: JSON.stringify(offerWithSignature),
       headers: { "Content-Type": "application/json; charset=UTF-8" },
@@ -61,7 +65,7 @@ export async function getOffersFrom(provider: Provider, account: Address) {
 
   console.log("getting offers from owner");
   try {
-    const url = new URL("http://localhost:3030/offer/from_owner");
+    const url = new URL(`${fullBackendUrl}/offer/from_owner`);
     url.searchParams.append("owner", account);
     const response = await fetch(url, {
       method: "GET",
@@ -98,7 +102,7 @@ async function callBackend(
   method: string,
   params?: { [key: string]: string }
 ): Promise<any> {
-  const url = new URL("http://localhost:3030/" + path);
+  const url = new URL(`${fullBackendUrl}/${path}`);
   for (let key in params) {
     url.searchParams.append(key, params[key]);
   }
