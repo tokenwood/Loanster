@@ -19,30 +19,7 @@ import { HStack, VStack } from "@chakra-ui/layout";
 import { Address, erc20ABI, useContractRead, useProvider } from "wagmi";
 import { Provider } from "@wagmi/core";
 import { BigNumber } from "ethers";
-import {
-  getSupplyAddress,
-  TokenBalanceInfo,
-  getTroveManagerABI,
-  getTroveManagerAddress,
-  getSupplyABI,
-  getSupplyTokenAddresses,
-  getSupplyTokens,
-  floatToBigNumber,
-  getBorrowerLoanIds,
-  LoanParameters,
-  LoanOfferType,
-  getOfferMessageToSign,
-  FullLoanInfo,
-  FullAccountInfo,
-  getERC20BalanceAndAllowance,
-  getUnusedOfferId,
-  getLoanStats,
-  LoanStats,
-  TokenDepositInfo,
-  getHealthFactor,
-  getNewHealthFactor,
-  LoanType,
-} from "libs/unilend_utils";
+
 import { ethers } from "ethers";
 import { ContractCallButton, SignButton } from "./BaseComponents";
 import { DateInput, MyNumberInput, TokenAmountInput } from "./InputFields";
@@ -51,7 +28,27 @@ import { ChildProps, DataLoader, TableLoader } from "./DataLoaders";
 import { defaultBorderRadius, DEFAULT_SIZE } from "./Theme";
 import { getOffers, submitOffer } from "libs/backend";
 import { Token } from "@uniswap/sdk-core";
-import { ADDRESS_TO_TOKEN } from "libs/constants";
+import {
+  getSupplyAddress,
+  getTroveManagerABI,
+  getTroveManagerAddress,
+} from "libs/constants";
+import {
+  getHealthFactor,
+  getNewHealthFactor,
+  getERC20BalanceAndAllowance,
+  getUnusedOfferId,
+  getOfferMessageToSign,
+} from "libs/dataLoaders";
+import { getLoanStats } from "libs/helperFunctions";
+import {
+  TokenDepositInfo,
+  FullLoanInfo,
+  LoanType,
+  TokenBalanceInfo,
+  LoanOfferType,
+  LoanParameters,
+} from "libs/types";
 
 export interface HealthFactorProps {
   healthFactor?: number;

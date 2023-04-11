@@ -6,15 +6,7 @@ import {
   ContractCallButton,
 } from "components/BaseComponents";
 import ListLoader, { ChildProps, DataLoader } from "components/DataLoaders";
-import {
-  getSupplyABI,
-  getSupplyAddress,
-  getSupplyTokenAddresses,
-  getTokenBalance,
-  getTroveManagerABI,
-  getTroveManagerAddress,
-  TokenBalanceInfo,
-} from "libs/unilend_utils";
+
 import { MakeOfferInputs } from "components/InputViews";
 import { eventEmitter, EventType } from "libs/eventEmitter";
 import {

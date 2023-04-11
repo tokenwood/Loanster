@@ -1,4 +1,12 @@
 import { SupportedChainId, Token } from "@uniswap/sdk-core";
+import supplyContractJSON from "../../../chain/artifacts/contracts/Supply.sol/Supply.json";
+import troveManagerJSON from "../../../chain/artifacts/contracts/TroveManager.sol/TroveManager.json";
+import { TroveManager } from "../../../chain/typechain-types/contracts/TroveManager";
+import { Supply } from "../../../chain/typechain-types/contracts/Supply";
+import { Provider } from "@wagmi/core";
+import { ethers } from "ethers";
+import { Address } from "wagmi";
+import deployments from "../../../chain/cache/deployments.json";
 
 export const POOL_FACTORY_CONTRACT_ADDRESS =
   "0x1F98431c8aD98523631AE4a59f267346ea31F984";
@@ -80,3 +88,35 @@ export const ADDRESS_TO_TOKEN: { [key: string]: Token } = {
   "0x6B175474E89094C44Da98b954EedeAC495271d0F": DAI_TOKEN,
   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2": WETH_TOKEN,
 };
+
+export function getTroveManagerContract(provider: Provider) {
+  return new ethers.Contract(
+    getTroveManagerAddress(),
+    getTroveManagerABI(),
+    provider
+  ) as TroveManager;
+}
+
+export function getSupplyContract(provider: Provider) {
+  return new ethers.Contract(
+    getSupplyAddress(),
+    getSupplyABI(),
+    provider
+  ) as Supply;
+}
+
+export function getSupplyAddress(): Address {
+  return deployments.supply as Address;
+}
+
+export function getSupplyABI(): any {
+  return supplyContractJSON.abi;
+}
+
+export function getTroveManagerAddress(): Address {
+  return deployments.troveManager as Address;
+}
+
+export function getTroveManagerABI(): any {
+  return troveManagerJSON.abi;
+}

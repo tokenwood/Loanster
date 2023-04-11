@@ -10,8 +10,7 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { BigNumber } from "ethers";
-import { floatToBigNumber, TokenBalanceInfo } from "libs/unilend_utils";
-import { FetchBalanceResult } from "@wagmi/core";
+import { floatToBigNumber } from "libs/helperFunctions";
 import { ethers } from "ethers";
 import { defaultBorderRadius, DEFAULT_SIZE } from "components/Theme";
 import { SingleDatepicker } from "chakra-dayzed-datepicker";

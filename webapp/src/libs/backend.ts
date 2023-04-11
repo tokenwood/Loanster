@@ -1,15 +1,11 @@
-import {
-  floatToBigNumber,
-  getToken,
-  LoanParameters,
-  LoanType,
-  LoanOfferType,
-  getTroveManagerContract,
-} from "./unilend_utils";
 import { Address, Provider } from "@wagmi/core";
 import { BigNumber, ethers, utils } from "ethers";
 import { Token } from "@uniswap/sdk-core";
 import { concat } from "ethers/lib/utils.js";
+import { TokenOfferStatsResponse } from "./sharedUtils";
+import { floatToBigNumber } from "./helperFunctions";
+import { LoanOfferType, LoanParameters } from "./types";
+import { getToken } from "./dataLoaders";
 
 // todo: update offer state (amountBorrowed, cancelled) by listening to events
 // todo: make sure offers are valid by verifying owner balance and allowance
@@ -78,6 +74,18 @@ export async function getOffersFrom(provider: Provider, account: Address) {
   return output;
 }
 
+export async function getTokenOfferStats(token: Token) {
+  const response: TokenOfferStatsResponse = await callBackend(
+    "offer/stats",
+    "GET",
+    {
+      token: token.address,
+    }
+  );
+
+  return { ...response, token: token };
+}
+
 async function offerResponseToFullOfferInfo(
   provider: Provider,
   response: OfferResponse
@@ -107,7 +115,10 @@ async function callBackend(
     headers: { "Content-Type": "application/json; charset=UTF-8" },
   });
 
-  return await response.json();
+  const responseJSON = await response.json();
+  parseBigNumberInResponse(responseJSON);
+
+  return responseJSON;
 }
 
 export async function getOffers(provider: Provider, params: LoanParameters) {
@@ -192,4 +203,14 @@ export async function getDiego(): Promise<string> {
     console.error("Error fetching data:", error);
     return "";
   }
+}
+
+export function parseBigNumberInResponse(response: [key: any]): any {
+  for (const key in response) {
+    const value = response[key];
+    if (value.type === "BigNumber") {
+      response[key] = BigNumber.from(value.hex);
+    }
+  }
+  return response;
 }
