@@ -193,11 +193,12 @@ export function BaseView<T>(props: DataViewProps<T>) {
           <VStack
             w="100%"
             layerStyle={props.level ? "level" + props.level : "level3"}
+            paddingBottom={expanded ? 3 : undefined}
           >
             {props.dataView(childProps.data, setExpandedCallback)}
 
             {expanded ? (
-              <HStack w="100%" paddingLeft={3} paddingBottom={3}>
+              <HStack w="100%" paddingLeft={3}>
                 {props.actions.map((actionProp: ActionProp) =>
                   actionButton(
                     actionProp,

@@ -65,6 +65,7 @@ export default function LoansPage() {
             reloadEvents={[
               { eventType: EventType.COLLATERAL_TOKEN_DEPOSITED },
               { eventType: EventType.COLLATERAL_TOKEN_WITHDRAWN },
+              { eventType: EventType.LOAN_CREATED },
             ]}
             makeChildren={(childProps) => {
               return (
@@ -178,6 +179,7 @@ export default function LoansPage() {
             makeHeader={() => (
               <TableHeaderView colDims={borrowedTableColdims}></TableHeaderView>
             )}
+            reloadEvents={[{ eventType: EventType.LOAN_CREATED }]}
             makeListItem={(listItemProps) => {
               return (
                 <BaseView
@@ -272,8 +274,8 @@ export default function LoansPage() {
                         return (
                           <BorrowInputs
                             account={account!}
-                            callback={(params) => {
-                              // setLoanParams(params);
+                            callback={() => {
+                              actionFinished();
                             }}
                             token={listItemProps.id}
                           ></BorrowInputs>

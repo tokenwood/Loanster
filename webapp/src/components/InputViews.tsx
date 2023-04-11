@@ -26,7 +26,7 @@ import { DateInput, MyNumberInput, TokenAmountInput } from "./InputFields";
 import { eventEmitter, EventType } from "libs/eventEmitter";
 import { ChildProps, DataLoader, TableLoader } from "./DataLoaders";
 import { defaultBorderRadius, DEFAULT_SIZE } from "./Theme";
-import { getOffers, submitOffer } from "libs/backend";
+import { FullOfferInfo, getOffers, submitOffer } from "libs/backend";
 import { Token } from "@uniswap/sdk-core";
 import {
   getSupplyAddress,
@@ -61,9 +61,11 @@ export function HealthFactor(props: HealthFactorProps) {
       <Spacer></Spacer>
       <HStack>
         <Text>
-          {props.healthFactor == Number.POSITIVE_INFINITY
-            ? "∞"
-            : props.healthFactor?.toFixed(2)}
+          {props.healthFactor != undefined
+            ? props.healthFactor == Number.POSITIVE_INFINITY
+              ? "∞"
+              : props.healthFactor.toFixed(2)
+            : "undefined"}
         </Text>
         {props.newHealthFactor != undefined ? (
           <Text>
@@ -73,7 +75,7 @@ export function HealthFactor(props: HealthFactorProps) {
                 : props.newHealthFactor.toFixed(2))}
           </Text>
         ) : (
-          <></>
+          <>{"-> undefined"}</>
         )}
       </HStack>
     </Flex>
@@ -159,7 +161,7 @@ export function CollateralInputs(props: DepositInputsProps) {
         newHealthFactor={newHealthFactor}
       ></HealthFactor>
 
-      <Flex w="100%" paddingBottom={3}>
+      <Flex w="100%">
         <Spacer></Spacer>
 
         {props.type == "deposit" ? (
@@ -431,6 +433,63 @@ export function RepayLoanInputs(props: RepayLoanInputs) {
   );
 }
 
+interface BorrowInputProps {
+  account: Address;
+  token: Token;
+  callback: () => void;
+}
+
+export function BorrowInputs(props: BorrowInputProps) {
+  const [amountToBorrow, setAmountToBorrow] = useState<number>(0);
+  const [term, setTerm] = useState<number>();
+  const [minDuration, setMinDuration] = useState<number>();
+  const [loanParams, setLoanParams] = useState<LoanParameters>();
+  const provider = useProvider();
+
+  useEffect(() => {
+    setLoanParams({
+      token: props.token,
+      amount: amountToBorrow,
+      duration: 10, //todo
+    });
+  }, [amountToBorrow]);
+
+  return (
+    <VStack w="60%">
+      <Box layerStyle={"level3"} paddingX="3" paddingY="1" w="100%">
+        <MyNumberInput
+          name="Amount"
+          // precision={0}
+          placeHolder="0"
+          callback={(value: number) => {
+            setAmountToBorrow(value);
+          }}
+        ></MyNumberInput>
+      </Box>
+      {/* <DateInput
+        name="Loan Term"
+        callback={(value: number) => {
+          setTerm(value);
+        }}
+      ></DateInput> */}
+      {/* <MyNumberInput
+        name="Min duration (days)"
+        precision={0}
+        placeHolder="0"
+        callback={(value: number) => {
+          setMinDuration(value);
+        }}
+      ></MyNumberInput> */}
+
+      <LoanOfferView
+        loanParams={loanParams}
+        account={props.account}
+        callback={props.callback}
+      ></LoanOfferView>
+    </VStack>
+  );
+}
+
 export interface MakeOfferInputProps {
   account: Address;
   balanceData: TokenBalanceInfo;
@@ -601,63 +660,39 @@ export function MakeOfferInputs(props: MakeOfferInputProps) {
   );
 }
 
-interface BorrowInputProps {
-  account: Address;
-  token: Token;
-  callback: (params: LoanParameters) => any;
-}
-
-export function BorrowInputs(props: BorrowInputProps) {
-  const [amountToBorrow, setAmountToBorrow] = useState<number>(0);
-  const [term, setTerm] = useState<number>();
-  const [minDuration, setMinDuration] = useState<number>();
-  const [loanParams, setLoanParams] = useState<LoanParameters>();
-
-  const provider = useProvider();
-
-  useEffect(() => {
-    setLoanParams({
-      token: props.token,
-      amount: amountToBorrow,
-      duration: 10, //todo
-    });
-  }, [amountToBorrow]);
-
-  return (
-    <VStack w="100%" spacing={0} layerStyle={"level2"} padding={3}>
-      <MyNumberInput
-        name="Amount"
-        // precision={0}
-        placeHolder="0"
-        callback={(value: number) => {
-          setAmountToBorrow(value);
-        }}
-      ></MyNumberInput>
-      {/* <DateInput
-        name="Loan Term"
-        callback={(value: number) => {
-          setTerm(value);
-        }}
-      ></DateInput> */}
-      {/* <MyNumberInput
-        name="Min duration (days)"
-        precision={0}
-        placeHolder="0"
-        callback={(value: number) => {
-          setMinDuration(value);
-        }}
-      ></MyNumberInput> */}
-
-      <LoanOfferView loanParams={loanParams}></LoanOfferView>
-    </VStack>
-  );
-}
-
 interface LoanOfferViewProps {
+  account: Address;
   loanParams: LoanParameters | undefined;
+  callback?: () => void;
 }
 
 export function LoanOfferView(props: LoanOfferViewProps) {
+  const [healthFactor, setHealthFactor] = useState<number>();
+  const [newHealthFactor, setNewHealthFactor] = useState<number>();
+
+  const updateHealthFactor = async () => {
+    const healthFactor = await getHealthFactor(provider, props.account);
+    setHealthFactor(healthFactor);
+  };
+
+  const updateNewHealthFactor = async (offer: [FullOfferInfo, BigNumber]) => {
+    const healthFactor = await getNewHealthFactor(
+      provider,
+      props.account,
+      offer[0].token.address as Address,
+      undefined,
+      undefined,
+      offer[1]
+    );
+    setNewHealthFactor(healthFactor);
+  };
+
+  useEffect(() => {
+    if (healthFactor == undefined) {
+      updateHealthFactor();
+    }
+  });
+
   const provider = useProvider();
 
   function isValidLoanParams() {
@@ -670,10 +705,7 @@ export function LoanOfferView(props: LoanOfferViewProps) {
         key={props.loanParams?.amount + props.loanParams!.token.address}
         fetcher={() => getOffers(provider, props.loanParams!)}
         makeChildren={(childProps) => {
-          console.log("offer");
-          console.log(childProps.data[0][0].offer);
-          console.log("signature");
-          console.log(childProps.data[0][0].signature);
+          updateNewHealthFactor(childProps.data[0]);
           return (
             <VStack>
               <TableLoader
@@ -683,7 +715,7 @@ export function LoanOfferView(props: LoanOfferViewProps) {
                     <Tr>
                       <Th isNumeric>Loan #</Th>
                       <Th isNumeric>{props.loanParams!.token.symbol}</Th>
-                      <Th isNumeric>Rate</Th>
+                      <Th isNumeric>APY</Th>
                       <Th isNumeric>Min Duration</Th>
                     </Tr>
                   );
@@ -730,28 +762,40 @@ export function LoanOfferView(props: LoanOfferViewProps) {
                   }
                 }}
               ></TableLoader>
-              <Box>{"health factor  OLD -> NEW"}</Box>
-              <ContractCallButton
-                contractAddress={getTroveManagerAddress()}
-                abi={getTroveManagerABI()}
-                functionName={"openLoan"}
-                args={[
-                  childProps.data[0][0].offer,
-                  childProps.data[0][0].signature,
-                  childProps.data[0][1],
-                  props.loanParams!.duration,
-                ]}
-                enabled={true}
-                callback={() => {
-                  // props.callback();
-                }}
-              ></ContractCallButton>
+              <HealthFactor
+                healthFactor={healthFactor}
+                newHealthFactor={newHealthFactor}
+              />
+
+              <Flex w="100%">
+                <Spacer></Spacer>
+                <ContractCallButton
+                  contractAddress={getTroveManagerAddress()}
+                  abi={getTroveManagerABI()}
+                  functionName={"openLoan"}
+                  args={[
+                    childProps.data[0][0].offer,
+                    childProps.data[0][0].signature,
+                    childProps.data[0][1],
+                    props.loanParams!.duration,
+                  ]}
+                  enabled={true}
+                  callback={() => {
+                    eventEmitter.dispatch({
+                      eventType: EventType.LOAN_CREATED,
+                    });
+                    if (props.callback != undefined) {
+                      props.callback();
+                    }
+                  }}
+                ></ContractCallButton>
+              </Flex>
             </VStack>
           );
         }}
       ></DataLoader>
     );
   } else {
-    return <Box> invalid query</Box>;
+    return <></>;
   }
 }
