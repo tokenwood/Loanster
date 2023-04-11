@@ -1,82 +1,28 @@
 import { Address } from "wagmi";
-import deployments from "../../../chain/cache/deployments.json";
+
 import { erc20ABI, erc721ABI, Provider } from "@wagmi/core";
 import { ethers, utils } from "ethers";
-import supplyContractJSON from "../../../chain/artifacts/contracts/Supply.sol/Supply.json";
-import troveManagerJSON from "../../../chain/artifacts/contracts/TroveManager.sol/TroveManager.json";
-import { TroveManager } from "../../../chain/typechain-types/contracts/TroveManager";
-import { Supply } from "../../../chain/typechain-types/contracts/Supply";
+
 import { BigNumber } from "ethers";
-import { ADDRESS_TO_TOKEN, WETH_TOKEN } from "./constants";
+import {
+  ADDRESS_TO_TOKEN,
+  getSupplyContract,
+  getTroveManagerContract,
+  WETH_TOKEN,
+} from "./constants";
 import { SupportedChainId, Token } from "@uniswap/sdk-core";
 import { CurrencyAmount } from "@uniswap/sdk-core";
 import { FullOfferInfo, getOffersFrom } from "./backend";
 import { ADDRESS_ZERO } from "@uniswap/v3-sdk";
-
-export type LoanOfferType = {
-  owner: string;
-  token: string;
-  offerId: number;
-  nonce: number;
-  minLoanAmount: BigNumber;
-  amount: BigNumber;
-  interestRateBPS: number;
-  expiration: number;
-  minLoanDuration: number;
-  maxLoanDuration: number;
-};
-
-export type LoanType = {
-  token: string;
-  amount: BigNumber;
-  startTime: number;
-  minRepayTime: number;
-  expiration: number;
-  interestRateBPS: number;
-};
-
-export interface LoanParameters {
-  token: Token;
-  amount: number;
-  duration: number; // seconds
-}
-
-export interface AccountStats {
-  collateralValueEth: CurrencyAmount<Token>;
-  loanValueEth: CurrencyAmount<Token>; // timestamp
-  healthFactor: number;
-}
-
-export interface LoanStats {
-  loans: [FullOfferInfo, BigNumber][];
-  amount: BigNumber;
-  rate: BigNumber; // timestamp
-  token: Token;
-}
-
-export interface FullAccountInfo {
-  deposits: TokenBalanceInfo[];
-  loanIds: number[];
-}
-
-export interface FullLoanInfo {
-  loan: LoanType;
-  loanId: number;
-  interest: BigNumber;
-  claimable: BigNumber;
-  token: Token;
-}
-
-export interface TokenBalanceInfo {
-  amount: BigNumber;
-  token: Token;
-}
-
-export interface TokenDepositInfo {
-  wallet_amount: BigNumber;
-  deposit_amount?: BigNumber;
-  token: Token;
-}
+import {
+  LoanStats,
+  AccountStats,
+  TokenBalanceInfo,
+  FullLoanInfo,
+  TokenDepositInfo,
+  LoanOfferType,
+} from "./types";
+import { getAllowedTokensFromEvents } from "./helperFunctions";
 
 export async function getNewAccountStats(
   provider: Provider,
@@ -182,40 +128,6 @@ export async function getNewHealthFactor(
   }
 }
 
-export function getLoanStats(
-  loans: [FullOfferInfo, BigNumber][]
-): LoanStats | undefined {
-  if (loans.length == 0) {
-    return undefined;
-  }
-  //   let minInterest = BigNumber.from(0);
-  let totalAmount = BigNumber.from(0);
-  let totalInterest = BigNumber.from(0);
-
-  for (let i = 0; i < loans.length; i++) {
-    totalAmount = totalAmount.add(loans[i][1]);
-    totalInterest = totalInterest.add(
-      BigNumber.from(loans[i][0].offer.interestRateBPS).mul(loans[i][1])
-    );
-    // minInterest = minInterest.add(loans[i][0].depositInfo.minLoanDuration.mul(loans[i][0].depositInfo.interestRateBPS).mod())
-  }
-  let averageRate = BigNumber.from(0);
-  if (totalAmount.gt(BigNumber.from(0))) {
-    averageRate = totalInterest.div(totalAmount);
-  }
-
-  let token = undefined;
-  if (loans.length > 0) {
-    token = loans[0][0].token;
-  }
-  return {
-    loans: loans,
-    amount: totalAmount,
-    rate: averageRate,
-    token: loans[0][0].token,
-  };
-}
-
 export async function getToken(provider: Provider, tokenAddress: string) {
   if (ADDRESS_TO_TOKEN[tokenAddress] !== undefined) {
     return ADDRESS_TO_TOKEN[tokenAddress];
@@ -250,38 +162,6 @@ export async function getTokenBalance(
     token: token,
     amount: balance,
   };
-}
-
-export function getTroveManagerContract(provider: Provider) {
-  return new ethers.Contract(
-    getTroveManagerAddress(),
-    getTroveManagerABI(),
-    provider
-  ) as TroveManager;
-}
-
-export function getSupplyContract(provider: Provider) {
-  return new ethers.Contract(
-    getSupplyAddress(),
-    getSupplyABI(),
-    provider
-  ) as Supply;
-}
-
-export function getSupplyAddress(): Address {
-  return deployments.supply as Address;
-}
-
-export function getSupplyABI(): any {
-  return supplyContractJSON.abi;
-}
-
-export function getTroveManagerAddress(): Address {
-  return deployments.troveManager as Address;
-}
-
-export function getTroveManagerABI(): any {
-  return troveManagerJSON.abi;
 }
 
 export async function getSupplyTokenAddresses(
@@ -325,37 +205,6 @@ export async function getFullLoanInfo(
     claimable: BigNumber.from(0),
     token: await getToken(provider, loan.token),
   };
-}
-
-export function BNToPrecision(
-  number: BigNumber,
-  decimals: number,
-  precision: number
-) {
-  return parseFloat(ethers.utils.formatUnits(number, decimals)).toPrecision(
-    precision
-  );
-}
-
-export function getAllowedTokensFromEvents(events: ethers.Event[]) {
-  let allowedTokens = new Set<Address>();
-
-  events.forEach((event) => {
-    let address = event.args!.token;
-    let isAllowed = event.args!.isAllowed;
-
-    if (isAllowed) {
-      allowedTokens.add(address);
-    } else {
-      if (allowedTokens.has(address)) {
-        allowedTokens.delete(address);
-      } else {
-        console.log("removing unadded token");
-      }
-    }
-  });
-
-  return Array.from(allowedTokens.values());
 }
 
 export async function getCollateralDeposits(
@@ -476,30 +325,6 @@ export async function getERC20BalanceAndAllowance(
   const allowance: BigNumber = await tokenContract.allowance(account, spender);
 
   return [balance, allowance];
-}
-
-export function floatToBigNumber(floatString: string, decimals: number) {
-  let i = floatString.indexOf(".");
-  if (i == -1) {
-    i = floatString.length;
-  }
-  let numberString = floatString.replace(".", "");
-  numberString = numberString + "0".repeat(decimals);
-  numberString = numberString.substring(0, i + decimals);
-  return BigNumber.from(numberString);
-}
-
-export function formatDate(timestamp: number) {
-  const date = new Date(timestamp * 1000);
-  return (
-    date.getUTCFullYear() +
-    "-" +
-    (date.getUTCMonth() + 1).toLocaleString("en-US", {
-      minimumIntegerDigits: 2,
-    }) +
-    "-" +
-    date.getUTCDate().toLocaleString("en-US", { minimumIntegerDigits: 2 })
-  );
 }
 
 export async function getOfferMessageToSign(

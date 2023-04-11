@@ -6,19 +6,6 @@ import {
   ContractCallButton,
 } from "components/BaseComponents";
 import ListLoader, { MakeListItemProps } from "components/DataLoaders";
-import {
-  formatDate,
-  FullLoanInfo,
-  getFullLoanInfo,
-  getLenderLoanIds,
-  getSupplyABI,
-  getSupplyAddress,
-  getSupplyTokenAddresses,
-  getTokenBalance,
-  getTroveManagerABI,
-  getTroveManagerAddress,
-  TokenBalanceInfo,
-} from "libs/unilend_utils";
 import { MakeOfferInputs } from "components/InputViews";
 import { TableHeaderView, TableRowView } from "components/DataViews";
 import { eventEmitter, EventType } from "libs/eventEmitter";
@@ -31,6 +18,15 @@ import {
 import { Flex, Spacer } from "@chakra-ui/react";
 import { BigNumber, ethers } from "ethers";
 import { ReactNode } from "react";
+import { formatDate } from "libs/helperFunctions";
+import { getSupplyAddress, getSupplyABI } from "libs/constants";
+import {
+  getLenderLoanIds,
+  getFullLoanInfo,
+  getSupplyTokenAddresses,
+  getTokenBalance,
+} from "libs/dataLoaders";
+import { FullLoanInfo, TokenBalanceInfo } from "libs/types";
 
 const offerTableColdims = {
   Asset: 1,

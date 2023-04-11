@@ -18,12 +18,8 @@ import {
 import { Token } from "@uniswap/sdk-core";
 import { BigNumber, ethers } from "ethers";
 import { FullOfferInfo } from "libs/backend";
-import {
-  formatDate,
-  FullLoanInfo,
-  // FullDepositInfo,
-  // getAmountLoanedForDepositInfo,
-} from "libs/unilend_utils";
+import { formatDate } from "libs/helperFunctions";
+import { FullLoanInfo } from "libs/types";
 import { useEffect } from "react";
 import { statFontSize, tableRowHoverStyle } from "./Theme";
 

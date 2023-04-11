@@ -34,6 +34,11 @@ export class OfferController {
     return this.offerService.findAllByToken(token);
   }
 
+  @Get('stats')
+  getTokenOfferStats(@Query('token') token: string) {
+    return this.offerService.getTokenOfferStats(token);
+  }
+
   // @Get(':id')
   // findOne(@Param('id') id: number) {
   //   return this.offerService.findOne(+id);

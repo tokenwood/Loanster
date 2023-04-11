@@ -5,7 +5,7 @@ import { TableLoader } from "components/DataLoaders";
 import {
   formatDate,
   // getAmountAvailableForDepositInfo,
-} from "libs/unilend_utils";
+} from "libs/helperFunctions";
 import { EventType } from "libs/eventEmitter";
 import { Th, Tr } from "@chakra-ui/react";
 import { getSortedOffers } from "libs/backend";

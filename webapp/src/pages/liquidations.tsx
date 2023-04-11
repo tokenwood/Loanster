@@ -5,15 +5,9 @@ import {
   BaseView,
   ContractCallButton,
 } from "components/BaseComponents";
-import ListLoader from "components/DataLoaders";
-import {
-  FullLoanInfo,
-  getAccounts,
-  getFullAccountInfo,
-  getSupplyABI,
-  getSupplyAddress,
-} from "libs/unilend_utils";
-import { LoanView } from "components/DataViews";
+import ListLoader, { ChildProps, DataLoader } from "components/DataLoaders";
+
+import { MakeOfferInputs } from "components/InputViews";
 import { eventEmitter, EventType } from "libs/eventEmitter";
 import { Flex, Spacer } from "@chakra-ui/react";
 import { BigNumber } from "ethers";

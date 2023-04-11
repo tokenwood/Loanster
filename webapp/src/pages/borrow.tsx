@@ -6,21 +6,7 @@ import {
   ContractCallButton,
 } from "components/BaseComponents";
 import ListLoader, { ChildProps, DataLoader } from "components/DataLoaders";
-import {
-  BNToPrecision,
-  formatDate,
-  FullLoanInfo,
-  getBorrowerLoanIds,
-  getCollateralDeposits,
-  getCollateralTokens,
-  getFullLoanInfo,
-  getHealthFactor,
-  getSupplyTokens,
-  getTokenBalance,
-  getTroveManagerAddress,
-  TokenBalanceInfo,
-  TokenDepositInfo,
-} from "libs/unilend_utils";
+
 import { Provider } from "@wagmi/core";
 import {
   BorrowInputs,
@@ -36,6 +22,20 @@ import { eventEmitter, EventType } from "libs/eventEmitter";
 import { BigNumber, ethers } from "ethers";
 import { Stat, StatHelpText, StatLabel, StatNumber } from "@chakra-ui/react";
 import { statFontSize } from "components/Theme";
+import { getTokenOfferStats } from "libs/backend";
+import {
+  getHealthFactor,
+  getCollateralDeposits,
+  getBorrowerLoanIds,
+  getFullLoanInfo,
+  getSupplyTokens,
+} from "libs/dataLoaders";
+import {
+  BNToPrecision,
+  formatDate,
+  bigNumberString,
+} from "libs/helperFunctions";
+import { TokenDepositInfo, FullLoanInfo } from "libs/types";
 
 const depositTableColdims = { Asset: 1, "In Wallet": 1, Deposited: 1, " ": 1 };
 const borrowedTableColdims = { Asset: 1, Debt: 1, APY: 1, Term: 1 };
@@ -65,13 +65,16 @@ export default function LoansPage() {
             reloadEvents={[
               { eventType: EventType.COLLATERAL_TOKEN_DEPOSITED },
               { eventType: EventType.COLLATERAL_TOKEN_WITHDRAWN },
+              { eventType: EventType.LOAN_CREATED },
             ]}
             makeChildren={(childProps) => {
               return (
                 <Stat textAlign={"left"}>
                   <StatLabel>Health Factor</StatLabel>
                   <StatNumber fontSize={statFontSize}>
-                    {childProps.data}
+                    {childProps.data == Number.POSITIVE_INFINITY
+                      ? "∞"
+                      : childProps.data.toFixed(2)}
                   </StatNumber>
                 </Stat>
               );
@@ -176,6 +179,7 @@ export default function LoansPage() {
             makeHeader={() => (
               <TableHeaderView colDims={borrowedTableColdims}></TableHeaderView>
             )}
+            reloadEvents={[{ eventType: EventType.LOAN_CREATED }]}
             makeListItem={(listItemProps) => {
               return (
                 <BaseView
@@ -246,16 +250,19 @@ export default function LoansPage() {
                 <BaseView
                   level={2}
                   key={"asset_to_borrow" + listItemProps.id.address}
-                  fetcher={() => Promise.resolve(listItemProps.id)} //todo get token info from server
+                  fetcher={() => getTokenOfferStats(listItemProps.id)} //todo get token info from server
                   dataView={(data, setExpanded) => {
                     return (
                       <TableRowView
                         expandedCallback={setExpanded}
                         colDims={toBorrowTableColdims}
                         colData={{
-                          Asset: data,
-                          "Lowest APY": "todo",
-                          Available: "todo",
+                          Asset: data.token,
+                          "Lowest APY":
+                            data.minAPY != undefined
+                              ? (data.minAPY / 100).toFixed(2) + " %"
+                              : "-",
+                          Available: bigNumberString(data.total, data.token),
                         }}
                       />
                     );
@@ -267,8 +274,8 @@ export default function LoansPage() {
                         return (
                           <BorrowInputs
                             account={account!}
-                            callback={(params) => {
-                              // setLoanParams(params);
+                            callback={() => {
+                              actionFinished();
                             }}
                             token={listItemProps.id}
                           ></BorrowInputs>

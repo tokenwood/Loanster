@@ -6,6 +6,7 @@ import { CreateOfferDto } from './dto/create-offer.dto';
 import { UpdateOfferDto } from './dto/update-offer.dto';
 import { BigNumber, ethers } from 'ethers';
 import { concat } from 'ethers/lib/utils';
+import { TokenOfferStatsResponse } from 'src/shared_utils';
 
 @Injectable()
 export class OfferService {
@@ -47,6 +48,21 @@ export class OfferService {
     console.log('token output: ');
     console.log(output);
     return output;
+  }
+
+  async getTokenOfferStats(token: string): Promise<TokenOfferStatsResponse> {
+    const tokenOffers = await this.findAllByToken(token);
+
+    const minAPY =
+      tokenOffers.length > 0 ? tokenOffers[0].interestRateBPS : undefined;
+    const total = tokenOffers
+      .map((x) => BigNumber.from(x.amount)) // should be available amount
+      .reduce((a, b) => a.add(b), BigNumber.from(0));
+
+    return {
+      minAPY: minAPY,
+      total: total,
+    };
   }
 
   // findOne(id: number): Promise<Offer> {
