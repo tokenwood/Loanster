@@ -24,15 +24,22 @@ interface TokenAmountInputProps {
   balance: BigNumber;
   text?: string;
   defaultValue?: string;
+  buttonText?: string;
+  buttonValue?: string;
   callback: (amount: BigNumber) => any;
 }
 
 export function TokenAmountInput(props: TokenAmountInputProps) {
   const [value, setValue] = useState<string>(props.defaultValue ?? "");
   const onMaxClicked = () => {
-    props.callback(props.balance);
-    setValue(ethers.utils.formatUnits(props.balance, props.token.decimals));
+    const newValueString =
+      props.buttonValue ??
+      ethers.utils.formatUnits(props.balance, props.token.decimals);
+
+    setValue(newValueString);
+    props.callback(BigNumber.from(newValueString));
   };
+
   const numberChanged = (valueAsString: string, valueAsNumber: number) => {
     valueAsString = valueAsString.replace("e", "");
     valueAsString = valueAsString.replace("E", "");
@@ -61,7 +68,7 @@ export function TokenAmountInput(props: TokenAmountInputProps) {
         onClick={onMaxClicked}
         alignSelf="center"
       >
-        Max
+        {props.buttonText ?? "Max"}
       </Button>
       <Spacer />
 
@@ -89,6 +96,7 @@ export function TokenAmountInput(props: TokenAmountInputProps) {
 interface MyNumberInputProps {
   name: string;
   callback: (amount: number) => any;
+  buttons?: [string, string][];
   precision?: number;
   placeHolder?: string;
 }
@@ -108,7 +116,7 @@ export function MyNumberInput(props: MyNumberInputProps) {
     if (valueAsString == "") {
       props.callback(0);
     } else {
-      props.callback(valueAsNumber);
+      props.callback(parseFloat(valueAsString));
     }
     setValue(valueAsString);
   };
@@ -118,6 +126,21 @@ export function MyNumberInput(props: MyNumberInputProps) {
       <Text alignSelf={"center"} ml="0">
         {props.name}
       </Text>
+      {props.buttons?.map(([name, value]) => {
+        return (
+          <Button
+            ml="10px"
+            size={"xs"}
+            colorScheme={"blue"}
+            onClick={() => {
+              numberChanged(value, 0);
+            }}
+            alignSelf="center"
+          >
+            {name}
+          </Button>
+        );
+      })}
       <Spacer />
 
       <NumberInput

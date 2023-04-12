@@ -40,7 +40,12 @@ import {
   getUnusedOfferId,
   getOfferMessageToSign,
 } from "libs/dataLoaders";
-import { getLoanStats } from "libs/helperFunctions";
+import {
+  bigNumberString,
+  floatToBigNumber,
+  getLoanStats,
+  healthFactorColor,
+} from "libs/helperFunctions";
 import {
   TokenDepositInfo,
   FullLoanInfo,
@@ -56,23 +61,26 @@ export interface HealthFactorProps {
 }
 export function HealthFactor(props: HealthFactorProps) {
   return (
-    <Flex w="100%" paddingLeft={3} paddingRight={3}>
+    <Flex w="100%">
       <Text>Health Factor</Text>
       <Spacer></Spacer>
       <HStack>
-        <Text>
+        <Text color={healthFactorColor(props.healthFactor)} fontWeight="bold">
           {props.healthFactor != undefined
             ? props.healthFactor == Number.POSITIVE_INFINITY
               ? "∞"
               : props.healthFactor.toFixed(2)
             : "undefined"}
         </Text>
+        <Text>{"->"}</Text>
         {props.newHealthFactor != undefined ? (
-          <Text>
-            {"-> " +
-              (props.newHealthFactor == Number.POSITIVE_INFINITY
-                ? "∞"
-                : props.newHealthFactor.toFixed(2))}
+          <Text
+            color={healthFactorColor(props.newHealthFactor)}
+            fontWeight="bold"
+          >
+            {props.newHealthFactor == Number.POSITIVE_INFINITY
+              ? "∞"
+              : props.newHealthFactor.toFixed(2)}
           </Text>
         ) : (
           <>{"-> undefined"}</>
@@ -220,7 +228,9 @@ export interface RepayLoanInputs {
 }
 
 export function RepayLoanInputs(props: RepayLoanInputs) {
-  const [debtAmount, setDebtAmount] = useState<BigNumber>(BigNumber.from(0));
+  const [debtAmount, setDebtAmount] = useState<BigNumber>(
+    props.loanInfo.loan.amount
+  );
   const [healthFactor, setHealthFactor] = useState<number>();
   const [newHealthFactor, setNewHealthFactor] = useState<number>();
   const [paymentInfo, setPaymentInfo] = useState<BigNumber[]>();
@@ -231,7 +241,7 @@ export function RepayLoanInputs(props: RepayLoanInputs) {
     setHealthFactor(healthFactor);
   };
 
-  const updateNewHealthFactor = async () => {
+  const updateNewHealthFactor = async (paymentInfo: BigNumber[]) => {
     const newHealthFactor = await getNewHealthFactor(
       provider,
       props.account,
@@ -239,7 +249,7 @@ export function RepayLoanInputs(props: RepayLoanInputs) {
       undefined,
       undefined,
       undefined,
-      debtAmount
+      getTotalPayment(paymentInfo)
     );
     setNewHealthFactor(newHealthFactor);
   };
@@ -248,7 +258,6 @@ export function RepayLoanInputs(props: RepayLoanInputs) {
     if (healthFactor == undefined) {
       updateHealthFactor();
     }
-    updateNewHealthFactor();
     updatePaymentAmount(debtAmount, props.loanInfo.loan);
   }, [debtAmount]);
 
@@ -274,7 +283,7 @@ export function RepayLoanInputs(props: RepayLoanInputs) {
       .div(10000 * 365 * 24 * 60 * 60);
   }
 
-  const getTotalPayment = () => {
+  const getTotalPayment = (paymentInfo: BigNumber[]) => {
     return (paymentInfo ?? []).reduce(
       (acc: BigNumber, val: BigNumber) => acc.add(val),
       BigNumber.from(0)
@@ -301,6 +310,7 @@ export function RepayLoanInputs(props: RepayLoanInputs) {
       ? loan.amount.sub(debtAmount)
       : BigNumber.from(0);
     setPaymentInfo([principal, interest, earlyRepaymentFee]);
+    updateNewHealthFactor([principal, interest, earlyRepaymentFee]);
   }
 
   return (
@@ -325,7 +335,13 @@ export function RepayLoanInputs(props: RepayLoanInputs) {
                 defaultValue={ethers.utils
                   .formatUnits(debtAmount, props.loanInfo.token.decimals)
                   .toString()}
-                text={"Set " + props.loanInfo.token.symbol + " Debt"}
+                text={"Set Remaining Debt"}
+                buttonText={"Min"}
+                buttonValue={
+                  debtAmount.sub(balance).gt(0)
+                    ? debtAmount.sub(balance).toString()
+                    : "0"
+                }
                 token={props.loanInfo.token}
                 callback={(amount: BigNumber) => {
                   setDebtAmount(amount);
@@ -334,98 +350,76 @@ export function RepayLoanInputs(props: RepayLoanInputs) {
             </Box>
 
             {paymentInfo !== undefined ? (
-              <TableContainer>
-                <Table variant="simple">
-                  <Tbody>
-                    <Tr key={Math.random()}>
-                      <Th>{"Principal"}</Th>
-                      <Th isNumeric>
+              <VStack w="100%" paddingX="3" paddingY="1">
+                {paymentInfo[2].gt(0) ? (
+                  <Flex w="100%">
+                    <Text>Early Repayment Fee</Text>
+                    <Spacer></Spacer>
+                    <HStack>
+                      <Text>
+                        {" "}
                         {ethers.utils.formatUnits(
-                          paymentInfo[0],
+                          paymentInfo[2],
                           props.loanInfo.token.decimals
                         ) +
                           " " +
                           props.loanInfo.token.symbol}
-                      </Th>
-                    </Tr>
-                    <Tr key={Math.random()}>
-                      <Th>{"Interest"}</Th>
-                      <Th isNumeric>
-                        {Number(
-                          ethers.utils.formatUnits(
-                            paymentInfo[1],
-                            props.loanInfo.token.decimals
-                          )
-                        ).toFixed(4) +
-                          " " +
-                          props.loanInfo.token.symbol}
-                      </Th>
-                    </Tr>
-                    <Tr key={Math.random()}>
-                      <Th>{"Early Repayment Fee"}</Th>
-                      <Th isNumeric>
-                        {Number(
-                          ethers.utils.formatUnits(
-                            paymentInfo[2],
-                            props.loanInfo.token.decimals
-                          )
-                        ).toFixed(4) +
-                          " " +
-                          props.loanInfo.token.symbol}
-                      </Th>
-                    </Tr>
-                  </Tbody>
-                  <Tfoot>
-                    <Tr borderTopColor={"gray.500"} borderTopWidth={"1.5px"}>
-                      <Th>{"total repayment"}</Th>
-                      <Th isNumeric>
-                        {Number(
-                          ethers.utils.formatUnits(
-                            getTotalPayment(),
-                            props.loanInfo.token.decimals
-                          )
-                        ).toFixed(4) +
-                          " " +
-                          props.loanInfo.token.symbol}
-                      </Th>
-                    </Tr>
-                  </Tfoot>
-                </Table>
-              </TableContainer>
+                      </Text>
+                    </HStack>
+                  </Flex>
+                ) : (
+                  <></>
+                )}
+                <Flex w="100%">
+                  <Text>Amount to pay</Text>
+                  <Spacer></Spacer>
+                  <HStack>
+                    <Text>
+                      {bigNumberString(
+                        paymentInfo[0].add(paymentInfo[1]),
+                        props.loanInfo.token
+                      ) +
+                        " " +
+                        props.loanInfo.token.symbol}
+                    </Text>
+                  </HStack>
+                </Flex>
+                <HealthFactor
+                  healthFactor={healthFactor}
+                  newHealthFactor={newHealthFactor}
+                />
+                <Flex w="100%">
+                  <Spacer></Spacer>
+                  {hasEnoughAllowance(
+                    allowance,
+                    getTotalPayment(paymentInfo)
+                  ) ? (
+                    <ContractCallButton
+                      contractAddress={getTroveManagerAddress()}
+                      abi={getTroveManagerABI()}
+                      functionName={"repayLoan"}
+                      args={[props.loanInfo.loanId, debtAmount]}
+                      enabled={true}
+                      callback={() => {
+                        props.callback();
+                      }}
+                    ></ContractCallButton>
+                  ) : (
+                    <ContractCallButton
+                      contractAddress={props.loanInfo.token.address as Address}
+                      abi={erc20ABI}
+                      functionName={"approve"}
+                      args={[getSupplyAddress(), ethers.constants.MaxUint256]}
+                      enabled={true}
+                      callback={childProps.refetchData}
+                      buttonText="Approve"
+                    ></ContractCallButton>
+                  )}
+                </Flex>
+              </VStack>
             ) : (
               <></>
             )}
-
-            <HealthFactor
-              healthFactor={healthFactor}
-              newHealthFactor={newHealthFactor}
-            />
-
-            <Flex w="100%">
-              <Spacer></Spacer>
-              {hasEnoughAllowance(allowance, getTotalPayment()) ? (
-                <ContractCallButton
-                  contractAddress={getTroveManagerAddress()}
-                  abi={getTroveManagerABI()}
-                  functionName={"repayLoan"}
-                  args={[props.loanInfo.loanId, debtAmount]}
-                  enabled={true}
-                  callback={() => {
-                    props.callback();
-                  }}
-                ></ContractCallButton>
-              ) : (
-                <ContractCallButton
-                  contractAddress={props.loanInfo.token.address as Address}
-                  abi={erc20ABI}
-                  functionName={"approve"}
-                  args={[getSupplyAddress(), ethers.constants.MaxUint256]}
-                  enabled={true}
-                  callback={childProps.refetchData}
-                  buttonText="Approve"
-                ></ContractCallButton>
-              )}
-            </Flex>
           </VStack>
         );
       }}
@@ -442,21 +436,21 @@ interface BorrowInputProps {
 export function BorrowInputs(props: BorrowInputProps) {
   const [amountToBorrow, setAmountToBorrow] = useState<number>(0);
   const [term, setTerm] = useState<number>();
-  const [minDuration, setMinDuration] = useState<number>();
+  const [duration, setDuration] = useState<number>(0);
   const [loanParams, setLoanParams] = useState<LoanParameters>();
   const provider = useProvider();
 
   useEffect(() => {
     setLoanParams({
       token: props.token,
-      amount: amountToBorrow,
-      duration: 10, //todo
+      amount: floatToBigNumber(amountToBorrow.toString(), props.token.decimals),
+      duration: duration * 24 * 60 * 60, //todo
     });
-  }, [amountToBorrow]);
+  }, [amountToBorrow, duration]);
 
   return (
     <VStack w="60%">
-      <Box layerStyle={"level3"} paddingX="3" paddingY="1" w="100%">
+      <VStack layerStyle={"level3"} paddingX="3" paddingY="1" w="100%">
         <MyNumberInput
           name="Amount"
           // precision={0}
@@ -465,21 +459,27 @@ export function BorrowInputs(props: BorrowInputProps) {
             setAmountToBorrow(value);
           }}
         ></MyNumberInput>
-      </Box>
-      {/* <DateInput
+
+        {/* <DateInput
         name="Loan Term"
         callback={(value: number) => {
           setTerm(value);
         }}
       ></DateInput> */}
-      {/* <MyNumberInput
-        name="Min duration (days)"
-        precision={0}
-        placeHolder="0"
-        callback={(value: number) => {
-          setMinDuration(value);
-        }}
-      ></MyNumberInput> */}
+        <MyNumberInput
+          name="Duration (days)"
+          precision={0}
+          placeHolder="0"
+          buttons={[
+            ["1w", "7"],
+            ["1m", "30"],
+            ["1y", "365"],
+          ]}
+          callback={(value: number) => {
+            setDuration(value);
+          }}
+        ></MyNumberInput>
+      </VStack>
 
       <LoanOfferView
         loanParams={loanParams}
@@ -696,7 +696,7 @@ export function LoanOfferView(props: LoanOfferViewProps) {
   const provider = useProvider();
 
   function isValidLoanParams() {
-    return props.loanParams !== undefined && props.loanParams.amount > 0;
+    return props.loanParams !== undefined && props.loanParams.amount.gt(0);
   }
 
   if (isValidLoanParams()) {
@@ -707,61 +707,33 @@ export function LoanOfferView(props: LoanOfferViewProps) {
         makeChildren={(childProps) => {
           updateNewHealthFactor(childProps.data[0]);
           return (
-            <VStack>
-              <TableLoader
-                fetchData={() => Promise.resolve(childProps.data)}
-                makeTableHead={() => {
-                  return (
-                    <Tr>
-                      <Th isNumeric>Loan #</Th>
-                      <Th isNumeric>{props.loanParams!.token.symbol}</Th>
-                      <Th isNumeric>APY</Th>
-                      <Th isNumeric>Min Duration</Th>
-                    </Tr>
-                  );
-                }}
-                makeTableRow={(props) => {
-                  return (
-                    <Tr
-                      key={props.id[0].offer.owner + props.id[0].offer.offerId}
-                    >
-                      <Th isNumeric>{props.index}</Th>
-                      <Th isNumeric>
-                        {ethers.utils.formatUnits(
-                          props.id[1],
-                          props.id[0].token.decimals
-                        )}
-                      </Th>
-                      <Th isNumeric>
-                        {props.id[0].offer.interestRateBPS / 100 + " %"}
-                      </Th>
-                      <Th isNumeric>{props.id[0].offer.minLoanDuration}</Th>
-                    </Tr>
-                  );
-                }}
-                makeTableFooter={(tableData) => {
-                  const loanStats = getLoanStats(tableData);
-                  if (loanStats != undefined) {
-                    return (
-                      <Tr borderTopColor={"gray.500"} borderTopWidth={"1.5px"}>
-                        <Th isNumeric>{"total"}</Th>
-                        <Th isNumeric>
-                          {ethers.utils.formatUnits(
-                            loanStats.amount,
-                            tableData[0][0].token.decimals // what if empty array?
-                          )}
-                        </Th>
-                        <Th isNumeric>
-                          {loanStats.rate.toNumber() / 100 + " %"}
-                        </Th>
-                        <Th isNumeric>todo</Th>
-                      </Tr>
-                    );
-                  } else {
-                    return <Box> no loans</Box>;
-                  }
-                }}
-              ></TableLoader>
+            <VStack w="100%" paddingLeft={3} paddingRight={3}>
+              <Flex w="100%">
+                <Text>Borrow APY Rate</Text>
+                <Spacer></Spacer>
+                <Text>
+                  {childProps.data[0][0].offer.interestRateBPS / 100 + " %"}
+                </Text>
+              </Flex>
+
+              <Flex w="100%">
+                <Text>Min Loan Duration</Text>
+                <Spacer></Spacer>
+                <Text>
+                  {childProps.data[0][0].offer.minLoanDuration + " days"}
+                </Text>
+              </Flex>
+
+              <Flex w="100%">
+                <Text>Max Loan Duration</Text>
+                <Spacer></Spacer>
+                <Text>
+                  {childProps.data[0][0].offer.maxLoanDuration /
+                    (60 * 60 * 24) +
+                    " days"}
+                </Text>
+              </Flex>
+
               <HealthFactor
                 healthFactor={healthFactor}
                 newHealthFactor={newHealthFactor}

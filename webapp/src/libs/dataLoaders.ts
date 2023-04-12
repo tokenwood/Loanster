@@ -79,6 +79,27 @@ export async function getHealthFactor(
   }
 }
 
+export async function getDetailedHealthFactor(
+  provider: Provider,
+  account: Address
+) {
+  const contract = getTroveManagerContract(provider);
+  let [collateralValue] = await contract.getAccountCollateralValueEth(account);
+  let [loanValue] = await contract.getAccountLoansValueEth(account);
+  const healthFactor = await getHealthFactor(provider, account);
+
+  console.log({
+    healthFactor: healthFactor,
+    collateralValueEth: collateralValue,
+    loanValueEth: loanValue,
+  });
+  return {
+    healthFactor: healthFactor,
+    collateralValueEth: collateralValue,
+    loanValueEth: loanValue,
+  };
+}
+
 export async function getNewHealthFactor(
   provider: Provider,
   account: Address,

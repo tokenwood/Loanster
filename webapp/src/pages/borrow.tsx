@@ -20,7 +20,15 @@ import {
 } from "components/DataViews";
 import { eventEmitter, EventType } from "libs/eventEmitter";
 import { BigNumber, ethers } from "ethers";
-import { Stat, StatHelpText, StatLabel, StatNumber } from "@chakra-ui/react";
+import {
+  Flex,
+  Spacer,
+  Stat,
+  StatHelpText,
+  StatLabel,
+  StatNumber,
+} from "@chakra-ui/react";
+import { healthFactorColor } from "libs/helperFunctions";
 import { statFontSize } from "components/Theme";
 import { getTokenOfferStats } from "libs/backend";
 import {
@@ -29,6 +37,7 @@ import {
   getBorrowerLoanIds,
   getFullLoanInfo,
   getSupplyTokens,
+  getDetailedHealthFactor,
 } from "libs/dataLoaders";
 import {
   BNToPrecision,
@@ -36,6 +45,7 @@ import {
   bigNumberString,
 } from "libs/helperFunctions";
 import { TokenDepositInfo, FullLoanInfo } from "libs/types";
+import { WETH_TOKEN } from "libs/constants";
 
 const depositTableColdims = { Asset: 1, "In Wallet": 1, Deposited: 1, " ": 1 };
 const borrowedTableColdims = { Asset: 1, Debt: 1, APY: 1, Term: 1 };
@@ -61,7 +71,7 @@ export default function LoansPage() {
             {"Account"}
           </Heading>
           <DataLoader
-            fetcher={() => getHealthFactor(provider, account!)}
+            fetcher={() => getDetailedHealthFactor(provider, account!)}
             reloadEvents={[
               { eventType: EventType.COLLATERAL_TOKEN_DEPOSITED },
               { eventType: EventType.COLLATERAL_TOKEN_WITHDRAWN },
@@ -69,14 +79,39 @@ export default function LoansPage() {
             ]}
             makeChildren={(childProps) => {
               return (
-                <Stat textAlign={"left"}>
-                  <StatLabel>Health Factor</StatLabel>
-                  <StatNumber fontSize={statFontSize}>
-                    {childProps.data == Number.POSITIVE_INFINITY
-                      ? "∞"
-                      : childProps.data.toFixed(2)}
-                  </StatNumber>
-                </Stat>
+                <HStack w="100%">
+                  <Stat textAlign={"center"}>
+                    <StatLabel>Health Factor</StatLabel>
+                    <StatNumber
+                      fontSize={statFontSize}
+                      color={healthFactorColor(childProps.data.healthFactor)}
+                    >
+                      {childProps.data.healthFactor == Number.POSITIVE_INFINITY
+                        ? "∞"
+                        : childProps.data.healthFactor.toFixed(2)}
+                    </StatNumber>
+                  </Stat>
+                  <Stat textAlign={"center"}>
+                    <StatLabel>Total Collateral</StatLabel>
+                    <StatNumber fontSize={statFontSize}>
+                      {"Ξ " +
+                        bigNumberString(
+                          childProps.data.collateralValueEth,
+                          WETH_TOKEN
+                        )}
+                    </StatNumber>
+                  </Stat>
+                  <Stat textAlign={"center"}>
+                    <StatLabel>Total Debt</StatLabel>
+                    <StatNumber fontSize={statFontSize}>
+                      {"Ξ " +
+                        bigNumberString(
+                          childProps.data.loanValueEth,
+                          WETH_TOKEN
+                        )}
+                    </StatNumber>
+                  </Stat>
+                </HStack>
               );
             }}
           ></DataLoader>

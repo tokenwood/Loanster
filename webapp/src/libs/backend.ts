@@ -143,13 +143,9 @@ export async function getOffers(provider: Provider, params: LoanParameters) {
     );
   });
 
-  let toLoan = floatToBigNumber(params.amount.toString(), token.decimals);
+  let toLoan = params.amount;
 
-  for (
-    let i = 0;
-    i < sortedOffers.length && toLoan.gt(BigNumber.from(0));
-    i++
-  ) {
+  for (let i = 0; i < sortedOffers.length && toLoan.gt(0); i++) {
     const offerInfo = sortedOffers[i];
 
     if (offerInfo.offer.minLoanAmount.lte(toLoan)) {

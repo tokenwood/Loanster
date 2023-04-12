@@ -2,13 +2,18 @@ import { Token } from "@uniswap/sdk-core";
 import { BigNumber, ethers } from "ethers";
 import { Address } from "wagmi";
 import { FullOfferInfo } from "./backend";
+import { WETH_TOKEN } from "./constants";
 import { LoanStats } from "./types";
 
 export function bigNumberString(amount: BigNumber, token: Token) {
   let number = Number(ethers.utils.formatUnits(amount, token.decimals));
 
-  // number = number.toFixed(2); // Round to 2 decimal places
-  const parts = number.toString().split("."); // Split into integer and decimal parts
+  let decimals = 2;
+  if (token == WETH_TOKEN) {
+    decimals = 3;
+  }
+  //   number = number.toFixed(2); // Round to 2 decimal places
+  const parts = number.toFixed(decimals).split("."); // Split into integer and decimal parts
   parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, " "); // Add space between thousands
   return parts.join(".");
 }
@@ -21,6 +26,18 @@ export function BNToPrecision(
   return parseFloat(ethers.utils.formatUnits(number, decimals)).toPrecision(
     precision
   );
+}
+
+export function healthFactorColor(number?: number) {
+  if (number == undefined) {
+    return "black";
+  } else if (number < 1.1) {
+    return "red";
+  } else if (number < 2.0) {
+    return "orange";
+  } else {
+    return "green";
+  }
 }
 
 export function floatToBigNumber(floatString: string, decimals: number) {

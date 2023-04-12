@@ -26,7 +26,7 @@ export type LoanType = {
 
 export interface LoanParameters {
   token: Token;
-  amount: number;
+  amount: BigNumber;
   duration: number; // seconds
 }
 
