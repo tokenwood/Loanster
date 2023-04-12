@@ -186,3 +186,13 @@ function bigNumberMin(a: BigNumber, b: BigNumber) {
 export async function getUnhealthyTroves(amount: number) {
   // todo return trove
 }
+
+export function parseBigNumberInResponse(response: [key: any]): any {
+  for (const key in response) {
+    const value = response[key];
+    if (value.type === "BigNumber") {
+      response[key] = BigNumber.from(value.hex);
+    }
+  }
+  return response;
+}
