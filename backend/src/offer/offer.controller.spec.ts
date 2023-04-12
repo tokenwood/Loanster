@@ -20,7 +20,6 @@ describe('OfferController', () => {
     }).compile();
 
     controller = module.get<OfferController>(OfferController);
-
   });
 
   it('should be defined', () => {

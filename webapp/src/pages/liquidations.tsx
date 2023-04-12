@@ -38,7 +38,7 @@ export default function LiquidationsPage() {
                 key={props.id}
                 fetcher={() => getFullAccountInfo(props.id, provider)}
                 dataView={(data) => {
-                  return <LoanView data={data} />;
+                  return <Box> {data.loanId} </Box>;
                 }}
                 actions={[
                   {

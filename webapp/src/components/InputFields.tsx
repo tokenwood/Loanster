@@ -126,9 +126,10 @@ export function MyNumberInput(props: MyNumberInputProps) {
       <Text alignSelf={"center"} ml="0">
         {props.name}
       </Text>
-      {props.buttons?.map(([name, value]) => {
+      {props.buttons?.map(([name, value], index) => {
         return (
           <Button
+            key={index}
             ml="10px"
             size={"xs"}
             colorScheme={"blue"}
