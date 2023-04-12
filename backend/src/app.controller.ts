@@ -11,11 +11,6 @@ export class AppController {
     return this.appService.getHello();
   }
 
-  @Get('/api/diego')
-  getDiego() {
-    return this.appService.getDiego();
-  }
-
   @Post('/api/submit_offer')
   postSubmitOffer(@Body() data: any) {
     console.log('Request data:', data);
