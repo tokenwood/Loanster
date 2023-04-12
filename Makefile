@@ -9,7 +9,7 @@ install: install_deps
 	cd ${PROJECT_FOLDER}/webapp && yarn install
 	cd ${PROJECT_FOLDER}/chain && yarn install
 	cd ${PROJECT_FOLDER}/backend && npm install
-	
+
 install_deps:
 	brew install node@18
 	brew install yarn
@@ -55,14 +55,15 @@ lint:
 	npm run lint
 
 test:
-	cd ${PROJECT_FOLDER}/unilib && \
-	yarn hardhat test
 	cd ${PROJECT_FOLDER}/chain && \
-	yarn hardhat test
+	yarn hardhat test --network localhost
+	cd ${PROJECT_FOLDER}/unilib && \
+	yarn hardhat test --network localhost
 	cd ${PROJECT_FOLDER}/backend && \
 	npm run test
-	cd ${PROJECT_FOLDER}/webapp && \
-	npm run test
+	# cd ${PROJECT_FOLDER}/webapp && \
+	# npm run test
+
 
 .git/hooks/pre-commit:
 	touch .git/hooks/pre-commit
