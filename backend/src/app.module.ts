@@ -16,18 +16,16 @@ import { OfferModule } from './offer/offer.module';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
-        host: configService.get("DB_HOST"),
-        port: parseInt(configService.get("DB_PORT") as string, 10),
-        username: configService.get("DB_USERNAME"),
-        password: configService.get("DB_PASSWORD"),
-        database: configService.get("DB_DATABASE"),
-        entities: [
-            __dirname + '/**/*.entity{.ts,.js}',
-        ],
+        host: configService.get('DB_HOST'),
+        port: parseInt(configService.get('DB_PORT') as string, 10),
+        username: configService.get('DB_USERNAME'),
+        password: configService.get('DB_PASSWORD'),
+        database: configService.get('DB_DATABASE'),
+        entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: true, // Use false in production: this creates tables and columns automatically
       }),
     }),
-    OfferModule
+    OfferModule,
   ],
   controllers: [AppController],
   providers: [AppService],

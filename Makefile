@@ -43,3 +43,29 @@ deploy_all:
 	yarn hardhat run scripts/mock.ts --network localhost
 
 start_all: start_chain start_db start_backend start_front deploy_all
+
+lint:
+	cd ${PROJECT_FOLDER}/unilib && \
+	yarn hardhat check
+	cd ${PROJECT_FOLDER}/chain && \
+	yarn hardhat check
+	cd ${PROJECT_FOLDER}/backend && \
+	npm run lint
+	cd ${PROJECT_FOLDER}/webapp && \
+	npm run lint
+
+test:
+	cd ${PROJECT_FOLDER}/unilib && \
+	yarn hardhat test
+	cd ${PROJECT_FOLDER}/chain && \
+	yarn hardhat test
+	cd ${PROJECT_FOLDER}/backend && \
+	npm run test
+	cd ${PROJECT_FOLDER}/webapp && \
+	npm run test
+
+.git/hooks/pre-commit:
+	touch .git/hooks/pre-commit
+	echo "#!/bin/sh" >> .git/hooks/pre-commit
+	echo "make lint test" >> .git/hooks/pre-commit
+	chmod +x .git/hooks/pre-commit
