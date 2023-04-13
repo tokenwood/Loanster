@@ -10,9 +10,13 @@ import { getToken } from "./dataLoaders";
 // todo: update offer state (amountBorrowed, cancelled) by listening to events
 // todo: make sure offers are valid by verifying owner balance and allowance
 
-const backendUrl = process.env.BACKEND_URL;
-const backendPort = process.env.BACKEND_PORT;
+const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+const backendPort = process.env.NEXT_PUBLIC_BACKEND_PORT;
 const fullBackendUrl = `${backendUrl}:${backendPort}`;
+
+function getBackendUrl() {
+  return process.env.NEXT_PUBLIC_BACKEND_URL;
+}
 
 export interface FullOfferInfo {
   offer: LoanOfferType;

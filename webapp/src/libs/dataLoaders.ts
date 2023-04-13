@@ -88,11 +88,6 @@ export async function getDetailedHealthFactor(
   let [loanValue] = await contract.getAccountLoansValueEth(account);
   const healthFactor = await getHealthFactor(provider, account);
 
-  console.log({
-    healthFactor: healthFactor,
-    collateralValueEth: collateralValue,
-    loanValueEth: loanValue,
-  });
   return {
     healthFactor: healthFactor,
     collateralValueEth: collateralValue,
@@ -287,19 +282,18 @@ export async function getLenderLoanIds(
 }
 
 export async function getAccounts(provider: Provider) {
-
   const troveManager = getTroveManagerContract(provider);
-  const topics = [utils.id("NewLoan(address,uint256,uint256, address)")]
-  
+  const topics = [utils.id("NewLoan(address,uint256,uint256, address)")];
+
   const events = await troveManager.queryFilter({ topics });
 
   const accounts = events.reduce((acc: Set<Address>, event) => {
     const account: Address = event.args![3];
-      acc.add(account);
+    acc.add(account);
     return acc;
   }, new Set<Address>());
 
-  return Array.from(accounts)
+  return Array.from(accounts);
 }
 
 export async function getERC721Ids(
