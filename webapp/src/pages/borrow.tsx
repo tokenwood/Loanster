@@ -5,7 +5,11 @@ import {
   BaseView,
   ContractCallButton,
 } from "components/BaseComponents";
-import ListLoader, { ChildProps, DataLoader } from "components/DataLoaders";
+import ListLoader, {
+  ChildProps,
+  DataLoader,
+  TableLoader,
+} from "components/DataLoaders";
 
 import { Provider } from "@wagmi/core";
 import {
@@ -21,16 +25,24 @@ import {
 import { eventEmitter, EventType } from "libs/eventEmitter";
 import { BigNumber, ethers } from "ethers";
 import {
+  Button,
   Flex,
   Spacer,
   Stat,
   StatHelpText,
   StatLabel,
   StatNumber,
+  Th,
+  Tr,
 } from "@chakra-ui/react";
 import { healthFactorColor } from "libs/helperFunctions";
-import { statFontSize } from "components/Theme";
-import { getTokenOfferStats } from "libs/backend";
+import {
+  actionInitColorScheme,
+  defaultBorderRadius,
+  DEFAULT_SIZE,
+  statFontSize,
+} from "components/Theme";
+import { getSortedOffers, getTokenOfferStats } from "libs/backend";
 import {
   getHealthFactor,
   getCollateralDeposits,
@@ -46,6 +58,7 @@ import {
 } from "libs/helperFunctions";
 import { TokenDepositInfo, FullLoanInfo } from "libs/types";
 import { WETH_TOKEN } from "libs/constants";
+import OfferBrowser from "components/OfferBrowser";
 
 const depositTableColdims = { Asset: 1, "In Wallet": 1, Deposited: 1, " ": 1 };
 const borrowedTableColdims = { Asset: 1, Debt: 1, APY: 1, Term: 1 };
@@ -304,19 +317,30 @@ export default function LoansPage() {
                   }}
                   actions={[
                     {
-                      action: "Borrow",
+                      action: "Offers",
                       onClickView: (data, actionFinished: () => any) => {
                         return (
-                          <BorrowInputs
-                            account={account!}
-                            callback={() => {
-                              actionFinished();
-                            }}
+                          <OfferBrowser
                             token={listItemProps.id}
-                          ></BorrowInputs>
+                            account={account!}
+                          ></OfferBrowser>
                         );
                       },
                     },
+                    // {
+                    //   action: "Borrow",
+                    //   onClickView: (data, actionFinished: () => any) => {
+                    //     return (
+                    //       <BorrowInputs
+                    //         account={account!}
+                    //         callback={() => {
+                    //           actionFinished();
+                    //         }}
+                    //         token={listItemProps.id}
+                    //       ></BorrowInputs>
+                    //     );
+                    //   },
+                    // },
                   ]}
                 ></BaseView>
               );

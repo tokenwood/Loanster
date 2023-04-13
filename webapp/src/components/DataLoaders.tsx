@@ -70,8 +70,8 @@ export function TableLoader<T>(props: TableLoaderProps<T>) {
       dataLoaded={props.dataLoaded}
       makeChildren={(childProps: ChildProps<T[]>) => {
         return (
-          <TableContainer>
-            <Table variant="simple">
+          <TableContainer layerStyle={"level1"}>
+            <Table>
               {props.tableCaption ? (
                 <TableCaption>{props.tableCaption}</TableCaption>
               ) : (

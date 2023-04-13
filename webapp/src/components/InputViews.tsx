@@ -54,6 +54,7 @@ import {
   LoanOfferType,
   LoanParameters,
 } from "libs/types";
+import { SimpleRow } from "./DataViews";
 
 export interface HealthFactorProps {
   healthFactor?: number;
@@ -83,7 +84,7 @@ export function HealthFactor(props: HealthFactorProps) {
               : props.newHealthFactor.toFixed(2)}
           </Text>
         ) : (
-          <>{"-> undefined"}</>
+          <Text>{"?"}</Text>
         )}
       </HStack>
     </Flex>
@@ -708,31 +709,26 @@ export function LoanOfferView(props: LoanOfferViewProps) {
           updateNewHealthFactor(childProps.data[0]);
           return (
             <VStack w="100%" paddingLeft={3} paddingRight={3}>
-              <Flex w="100%">
-                <Text>Borrow APY Rate</Text>
-                <Spacer></Spacer>
-                <Text>
-                  {childProps.data[0][0].offer.interestRateBPS / 100 + " %"}
-                </Text>
-              </Flex>
+              <SimpleRow
+                name={"Borrow APY Rate"}
+                value={childProps.data[0][0].offer.interestRateBPS / 100 + " %"}
+              ></SimpleRow>
 
-              <Flex w="100%">
-                <Text>Min Loan Duration</Text>
-                <Spacer></Spacer>
-                <Text>
-                  {childProps.data[0][0].offer.minLoanDuration + " days"}
-                </Text>
-              </Flex>
+              <SimpleRow
+                name={"Min Loan Duration"}
+                value={
+                  childProps.data[0][0].offer.minLoanDuration / (60 * 60 * 24) +
+                  " days"
+                }
+              ></SimpleRow>
 
-              <Flex w="100%">
-                <Text>Max Loan Duration</Text>
-                <Spacer></Spacer>
-                <Text>
-                  {childProps.data[0][0].offer.maxLoanDuration /
-                    (60 * 60 * 24) +
-                    " days"}
-                </Text>
-              </Flex>
+              <SimpleRow
+                name={"Max Loan Duration"}
+                value={
+                  childProps.data[0][0].offer.maxLoanDuration / (60 * 60 * 24) +
+                  " days"
+                }
+              ></SimpleRow>
 
               <HealthFactor
                 healthFactor={healthFactor}

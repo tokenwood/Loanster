@@ -235,3 +235,18 @@ export function AccountView(props: AccountViewProps) {
     </Flex>
   );
 }
+
+export interface SimpleRowProps {
+  name: string;
+  value: string;
+}
+
+export function SimpleRow(props: SimpleRowProps) {
+  return (
+    <Flex w="100%">
+      <Text>{props.name}</Text>
+      <Spacer></Spacer>
+      <Text>{props.value}</Text>
+    </Flex>
+  );
+}

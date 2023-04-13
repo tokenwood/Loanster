@@ -101,11 +101,11 @@ contract Supply is ERC721, Ownable, SignUtils {
         );
 
         require(
-            block.timestamp < loanOffer.expiration,
+            block.timestamp <= loanOffer.expiration,
             "supply expiration reached"
         );
-        require(loanOffer.minLoanDuration < duration, "invalid duration");
-        require(duration < loanOffer.maxLoanDuration, "invalid duration");
+        require(loanOffer.minLoanDuration <= duration, "invalid duration");
+        require(duration <= loanOffer.maxLoanDuration, "invalid duration");
 
         uint256 loanId = _nextLoanId++;
         _loans[loanId] = Loan({
