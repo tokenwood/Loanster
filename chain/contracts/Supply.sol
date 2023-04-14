@@ -64,6 +64,15 @@ contract Supply is ERC721, Ownable, SignUtils {
         }
     }
 
+    function approveToken(address token) public {
+        require(
+            msg.sender == _troveManager,
+            "only trove manager can repay loan"
+        );
+
+        ERC20(token).approve(address(this), MAX_INT);
+    }
+
     // state changing functions
     function publishOffer(
         LoanOffer calldata offer,
@@ -220,8 +229,10 @@ contract Supply is ERC721, Ownable, SignUtils {
         return (_loans[loanId].token);
     }
 
-    function getLoan(uint256 loanId) public view returns (Loan memory) {
-        return _loans[loanId];
+    function getLoan(
+        uint256 loanId
+    ) public view returns (Loan memory, uint256) {
+        return (_loans[loanId], _claimable[loanId]);
     }
 
     function getLoanAmountAndMinInterest(

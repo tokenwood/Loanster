@@ -75,7 +75,8 @@ contract TroveManager is Ownable {
         _allowedSupplyTokens[token] = true;
         _borrowFactorsBPS[token] = borrowFactorBPS;
         _oraclePoolFees[token] = oraclePoolFee;
-        ERC20(token).approve(address(this), MAX_INT); // what if runs out ?
+        Supply(_supply).approveToken(token);
+
         emit SupplyTokenChanged(token, true);
     }
 

@@ -92,15 +92,6 @@ async function offerResponseToFullOfferInfo(
     provider
   ).getOfferInfo(key);
 
-  const otherkey = await getSupplyContract(provider).getOfferKey(
-    response.owner,
-    response.token,
-    response.offerId
-  );
-
-  console.log(response.amount, response.token, amountBorrowed, nonce, key);
-  console.log(key, otherkey);
-
   const [balance, allowance] = await getERC20BalanceAndAllowance(
     provider,
     response.owner as Address,

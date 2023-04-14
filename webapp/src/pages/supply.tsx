@@ -7,7 +7,12 @@ import {
 } from "components/BaseComponents";
 import ListLoader, { MakeListItemProps } from "components/DataLoaders";
 import { MakeOfferInputs } from "components/InputViews";
-import { ColSpecs, TableHeaderView, TableRowView } from "components/DataViews";
+import {
+  ColSpecs,
+  LoanInfoView,
+  TableHeaderView,
+  TableRowView,
+} from "components/DataViews";
 import { eventEmitter, EventType } from "libs/eventEmitter";
 import { FullOfferInfo, getOffersFrom, offerRevoked } from "libs/backend";
 import { Flex, HStack, Spacer } from "@chakra-ui/react";
@@ -31,19 +36,20 @@ import OfferInfo, { Check } from "components/OfferInfo";
 
 const offerTableColdims: { [key: string]: ColSpecs } = {
   Asset: { size: 0.5, align: "left" },
-  Borrowed: { size: 1.2, align: "right" },
+  Borrowed: { size: 1, align: "right" },
+  "Max Borrowed": { size: 1, align: "right" },
   APY: { size: 0.6, align: "right" },
-  "Min Loan Amount": { size: 1, align: "right" },
+  "Min Loan Amount": { size: 0.8, align: "right" },
   "Min/Max Duration": { size: 1, align: "center" },
   Expiration: { size: 1, align: "center" },
   Status: { size: 0.5, align: "center" },
 };
 const lentTableColdims: { [key: string]: ColSpecs } = {
-  Asset: { size: 1, align: "left" },
-  Debt: { size: 1, align: "left" },
-  Claimable: { size: 1, align: "left" },
-  APY: { size: 1, align: "left" },
-  Term: { size: 1, align: "left" },
+  Asset: { size: 0.3, align: "left" },
+  Debt: { size: 1, align: "right" },
+  Claimable: { size: 1, align: "right" },
+  APY: { size: 1, align: "right" },
+  Term: { size: 1, align: "center" },
 };
 
 const toSupplyColDims: { [key: string]: ColSpecs } = {
@@ -90,10 +96,14 @@ export default function SupplyPage() {
                         colSpecs={offerTableColdims}
                         colData={{
                           Asset: data.token,
-                          Borrowed:
-                            bigNumberString(data.amountBorrowed, data.token) +
-                            " / " +
-                            bigNumberString(data.offer.amount, data.token),
+                          Borrowed: bigNumberString(
+                            data.amountBorrowed,
+                            data.token
+                          ),
+                          "Max Borrowed": bigNumberString(
+                            data.offer.amount,
+                            data.token
+                          ),
                           APY: data.offer.interestRateBPS / 100 + " %",
                           "Min Loan Amount": ethers.utils.formatUnits(
                             data.offer.minLoanAmount,
@@ -133,7 +143,9 @@ export default function SupplyPage() {
                         data: FullOfferInfo,
                         actionFinished: () => any
                       ) => {
-                        return (
+                        return data.isCancelled ? (
+                          <Text alignSelf={"center"}>Offer Revoked</Text>
+                        ) : (
                           <HStack alignItems={"left"} w="100%" paddingX={"4"}>
                             <Text alignSelf={"center"}>Revoke Offer</Text>
                             <ContractCallButton
@@ -206,8 +218,13 @@ export default function SupplyPage() {
                         actionFinished: () => any
                       ) => {
                         return (
-                          <Flex w="100%">
-                            <Spacer></Spacer>
+                          <HStack alignItems={"left"} w="100%" paddingX={"4"}>
+                            <Text alignSelf={"center"}>
+                              {"Claim  " +
+                                bigNumberString(data.claimable, data.token) +
+                                " " +
+                                data.token.symbol}
+                            </Text>
                             <ContractCallButton
                               contractAddress={getSupplyAddress()}
                               abi={getSupplyABI()}
@@ -222,8 +239,14 @@ export default function SupplyPage() {
                                 });
                               }}
                             ></ContractCallButton>
-                          </Flex>
+                          </HStack>
                         );
+                      },
+                    },
+                    {
+                      action: "Info",
+                      onClickView: (data: FullLoanInfo) => {
+                        return <LoanInfoView loanInfo={data}></LoanInfoView>;
                       },
                     },
                   ]}

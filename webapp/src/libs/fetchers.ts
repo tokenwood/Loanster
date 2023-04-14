@@ -210,15 +210,16 @@ export async function getFullLoanInfo(
   loanId: number
 ): Promise<FullLoanInfo> {
   const supply = getSupplyContract(provider);
-  const loan = await supply.getLoan(loanId);
+  const [loan, claimable] = await supply.getLoan(loanId);
   const [token, amount, minInterest] = await supply.getLoanAmountAndMinInterest(
     loanId
   );
+
   return {
     loan: loan,
     loanId: loanId,
     interest: minInterest,
-    claimable: BigNumber.from(0),
+    claimable: claimable,
     token: await getToken(provider, loan.token),
   };
 }
