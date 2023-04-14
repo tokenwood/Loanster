@@ -9,9 +9,8 @@ export interface TokenOfferStatsResponse {
 }
 
 export function getOfferKey(owner: string, token: string, offerId: number) {
-  const a = ethers.utils.toUtf8Bytes(owner);
-  const b = ethers.utils.toUtf8Bytes(token);
-  const c = ethers.utils.toUtf8Bytes(BigNumber.from(offerId).toHexString());
-
-  return ethers.utils.keccak256(concat([a, b, c]));
+  return ethers.utils.solidityKeccak256(
+    ["address", "address", "uint256"],
+    [owner, token, BigNumber.from(offerId)]
+  );
 }

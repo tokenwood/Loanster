@@ -13,7 +13,11 @@ import { FullOfferInfo, getOffersFrom, offerRevoked } from "libs/backend";
 import { Flex, HStack, Spacer } from "@chakra-ui/react";
 import { BigNumber, ethers } from "ethers";
 import { ReactNode } from "react";
-import { formatDate, isValidOffer } from "libs/helperFunctions";
+import {
+  bigNumberString,
+  formatDate,
+  isValidOffer,
+} from "libs/helperFunctions";
 import { getSupplyAddress, getSupplyABI } from "libs/constants";
 import {
   getLenderLoanIds,
@@ -29,9 +33,9 @@ const offerTableColdims: { [key: string]: ColSpecs } = {
   Asset: { size: 0.5, align: "left" },
   Borrowed: { size: 1.2, align: "right" },
   APY: { size: 0.6, align: "right" },
-  "Min Loan Amount": { size: 1, align: "center" },
+  "Min Loan Amount": { size: 1, align: "right" },
   "Min/Max Duration": { size: 1, align: "center" },
-  Expiration: { size: 1, align: "right" },
+  Expiration: { size: 1, align: "center" },
   Status: { size: 0.5, align: "center" },
 };
 const lentTableColdims: { [key: string]: ColSpecs } = {
@@ -44,8 +48,8 @@ const lentTableColdims: { [key: string]: ColSpecs } = {
 
 const toSupplyColDims: { [key: string]: ColSpecs } = {
   Asset: { size: 1, align: "left" },
-  "In Wallet": { size: 1, align: "left" },
-  // " ": 1,
+  "In Wallet": { size: 1, align: "right" },
+  " ": { size: 2, align: "right" },
 };
 
 export default function SupplyPage() {
@@ -77,28 +81,19 @@ export default function SupplyPage() {
                 <BaseView
                   fetcher={() => Promise.resolve(props.id)}
                   level={2}
-                  key={getOfferKey(
-                    props.id.offer.owner,
-                    props.id.offer.token,
-                    props.id.offer.offerId
-                  )}
+                  key={"lending_offers_base" + props.index}
                   dataView={(data: FullOfferInfo, setExpanded) => {
                     return (
                       <TableRowView
+                        key={"lending_offers_" + props.index}
                         expandedCallback={setExpanded}
                         colSpecs={offerTableColdims}
                         colData={{
                           Asset: data.token,
                           Borrowed:
-                            ethers.utils.formatUnits(
-                              data.amountBorrowed,
-                              data.token.decimals
-                            ) +
+                            bigNumberString(data.amountBorrowed, data.token) +
                             " / " +
-                            ethers.utils.formatUnits(
-                              data.offer.amount,
-                              data.token.decimals
-                            ),
+                            bigNumberString(data.offer.amount, data.token),
                           APY: data.offer.interestRateBPS / 100 + " %",
                           "Min Loan Amount": ethers.utils.formatUnits(
                             data.offer.minLoanAmount,
@@ -184,18 +179,19 @@ export default function SupplyPage() {
                   dataView={(data, setExpanded) => {
                     return (
                       <TableRowView
+                        key={"lent_assets_" + props.id}
                         expandedCallback={setExpanded}
                         colSpecs={lentTableColdims}
                         colData={{
                           Asset: data.token,
-                          Debt: ethers.utils.formatUnits(
+                          Debt: bigNumberString(
                             data.loan.amount.add(data.interest),
-                            data.token.decimals
+                            data.token
                           ),
                           APY: data.loan.interestRateBPS / 100 + " %",
-                          Claimable: ethers.utils.formatUnits(
+                          Claimable: bigNumberString(
                             data.claimable,
-                            data.token.decimals
+                            data.token
                           ),
                           Term: formatDate(data.loan.expiration),
                         }}
@@ -261,16 +257,12 @@ export default function SupplyPage() {
                   dataView={(data: TokenBalanceInfo, setExpanded) => {
                     return (
                       <TableRowView
+                        key={"wallet_supply_token_ballance_" + props.id}
                         expandedCallback={setExpanded}
                         colSpecs={toSupplyColDims}
                         colData={{
                           Asset: data.token,
-                          "In Wallet": parseFloat(
-                            ethers.utils.formatUnits(
-                              data.amount,
-                              data.token.decimals
-                            )
-                          ).toFixed(2),
+                          "In Wallet": bigNumberString(data.amount, data.token),
                         }}
                       />
                     );

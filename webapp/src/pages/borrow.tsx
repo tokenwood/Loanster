@@ -62,22 +62,23 @@ import { WETH_TOKEN } from "libs/constants";
 import OfferBrowser from "components/OfferBrowser";
 
 const depositTableColdims: { [key: string]: ColSpecs } = {
-  Asset: { size: 1 },
-  "In Wallet": { size: 1 },
-  Deposited: { size: 1 },
-  " ": { size: 1 },
+  Asset: { size: 0.3 },
+  "In Wallet": { size: 1, align: "right" },
+  Deposited: { size: 1, align: "right" },
+  " ": { size: 2 },
 };
 const borrowedTableColdims: { [key: string]: ColSpecs } = {
-  Asset: { size: 1 },
-  Debt: { size: 1 },
-  APY: { size: 1 },
-  Term: { size: 1 },
+  Asset: { size: 0.3 },
+  Debt: { size: 1, align: "right" },
+  APY: { size: 1, align: "right" },
+  Term: { size: 1, align: "right" },
+  " ": { size: 1 },
 };
 const toBorrowTableColdims: { [key: string]: ColSpecs } = {
-  Asset: { size: 1 },
-  "Lowest APY": { size: 1 },
-  Available: { size: 1 },
-  " ": { size: 1 },
+  Asset: { size: 0.3 },
+  "Lowest APY": { size: 1, align: "right" },
+  Available: { size: 1, align: "right" },
+  " ": { size: 2 },
 };
 
 export default function LoansPage() {

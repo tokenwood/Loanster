@@ -142,3 +142,18 @@ export function offerHasEnoughBalance(fullOfferInfo: FullOfferInfo) {
     fullOfferInfo.offer.amount.sub(fullOfferInfo.amountBorrowed)
   );
 }
+
+export function offerAmountAvailable(fullOfferInfo: FullOfferInfo) {
+  return bigNumberMin(
+    fullOfferInfo.offer.amount.sub(fullOfferInfo.amountBorrowed),
+    fullOfferInfo.balance
+  );
+}
+
+export function bigNumberMin(a: BigNumber, b: BigNumber) {
+  return a.lt(b) ? a : b;
+}
+
+export function bigNumberMax(a: BigNumber, b: BigNumber) {
+  return a.gt(b) ? a : b;
+}

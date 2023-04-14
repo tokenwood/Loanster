@@ -3,7 +3,7 @@ import { BigNumber, ethers, utils } from "ethers";
 import { Token } from "@uniswap/sdk-core";
 import { concat } from "ethers/lib/utils.js";
 import { getOfferKey, TokenOfferStatsResponse } from "./sharedUtils";
-import { floatToBigNumber } from "./helperFunctions";
+import { bigNumberMin, floatToBigNumber } from "./helperFunctions";
 import { LoanOfferType, LoanParameters } from "./types";
 import { getERC20BalanceAndAllowance, getToken } from "./fetchers";
 import { getSupplyAddress, getSupplyContract } from "./constants";
@@ -92,6 +92,15 @@ async function offerResponseToFullOfferInfo(
     provider
   ).getOfferInfo(key);
 
+  const otherkey = await getSupplyContract(provider).getOfferKey(
+    response.owner,
+    response.token,
+    response.offerId
+  );
+
+  console.log(response.amount, response.token, amountBorrowed, nonce, key);
+  console.log(key, otherkey);
+
   const [balance, allowance] = await getERC20BalanceAndAllowance(
     provider,
     response.owner as Address,
@@ -176,16 +185,13 @@ export async function getSortedOffers(provider: Provider, token?: Address) {
       response = await callBackend("offer", "GET");
     }
     for (const item of response) {
+      //todo promise.all
       output.push(await offerResponseToFullOfferInfo(provider, item));
     }
   } catch (error) {
     console.error("Error fetching offers from owner:", error);
   }
   return output;
-}
-
-function bigNumberMin(a: BigNumber, b: BigNumber) {
-  return a.lt(b) ? a : b;
 }
 
 export async function getUnhealthyTroves(amount: number) {

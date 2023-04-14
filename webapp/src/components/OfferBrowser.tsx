@@ -17,7 +17,12 @@ import {
 import { Token } from "@uniswap/sdk-core";
 import { BigNumber, ethers } from "ethers";
 import { FullOfferInfo, getSortedOffers } from "libs/backend";
-import { floatToBigNumber, formatDate } from "libs/helperFunctions";
+import {
+  bigNumberString,
+  floatToBigNumber,
+  formatDate,
+  offerAmountAvailable,
+} from "libs/helperFunctions";
 import { Address, useProvider } from "wagmi";
 import { TableLoader } from "./DataLoaders";
 import { Popover } from "@chakra-ui/react";
@@ -67,10 +72,7 @@ export default function OfferBrowser(props: OfferBrowserProps) {
           // TODO set id as key
           <Tr key={Math.random()}>
             <Th isNumeric>
-              {ethers.utils.formatUnits(
-                0, // getAmountAvailableForDepositInfo(props.id),
-                rowProps.id.token.decimals
-              ) +
+              {bigNumberString(offerAmountAvailable(rowProps.id), props.token) +
                 " " +
                 props.token.symbol}
             </Th>

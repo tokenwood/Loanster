@@ -105,6 +105,7 @@ export function TableRowView(props: TableRowViewProps) {
             const element = props.colData[key] as () => JSX.Element;
             return (
               <Box
+                key={key}
                 w={getWidth(key, props.colSpecs)}
                 textAlign={props.colSpecs[key].align ?? "left"}
               >
