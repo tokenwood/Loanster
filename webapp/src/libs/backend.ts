@@ -2,10 +2,11 @@ import { Address, Provider } from "@wagmi/core";
 import { BigNumber, ethers, utils } from "ethers";
 import { Token } from "@uniswap/sdk-core";
 import { concat } from "ethers/lib/utils.js";
-import { TokenOfferStatsResponse } from "./sharedUtils";
+import { getOfferKey, TokenOfferStatsResponse } from "./sharedUtils";
 import { floatToBigNumber } from "./helperFunctions";
 import { LoanOfferType, LoanParameters } from "./types";
-import { getToken } from "./dataLoaders";
+import { getERC20BalanceAndAllowance, getToken } from "./fetchers";
+import { getSupplyAddress, getSupplyContract } from "./constants";
 
 // todo: update offer state (amountBorrowed, cancelled) by listening to events
 // todo: make sure offers are valid by verifying owner balance and allowance
@@ -23,22 +24,14 @@ export interface FullOfferInfo {
   signature: string;
   amountBorrowed: BigNumber;
   isCancelled: boolean;
+  balance: BigNumber;
+  allowance: BigNumber;
   token: Token;
 }
 
 export type OfferResponse = LoanOfferType & { signature: string };
 
-export function getOfferKey(offer: LoanOfferType) {
-  const a = ethers.utils.toUtf8Bytes(offer.owner);
-  const b = ethers.utils.toUtf8Bytes(
-    BigNumber.from(offer.offerId).toHexString()
-  );
-
-  return ethers.utils.keccak256(concat([a, b]));
-}
-
 export async function offerRevoked(data: FullOfferInfo) {
-  const key = getOfferKey(data.offer);
   //todo: this should be done on backend by listening for nonce update events or checking nonce on-chain because may not get called
 }
 
@@ -61,24 +54,17 @@ export async function submitOffer(offer: LoanOfferType, signature: string) {
 }
 
 export async function getOffersFrom(provider: Provider, account: Address) {
-  let output: FullOfferInfo[] = [];
-
   console.log("getting offers from owner");
-  try {
-    const url = new URL(`${fullBackendUrl}/offer/from_owner`);
-    url.searchParams.append("owner", account);
-    const response = await fetch(url, {
-      method: "GET",
-      headers: { "Content-Type": "application/json; charset=UTF-8" },
-    });
-
-    const data: OfferResponse[] = await response.json();
-    for (const item of data) {
-      output.push(await offerResponseToFullOfferInfo(provider, item));
+  const response: OfferResponse[] = await callBackend(
+    "offer/from_owner",
+    "GET",
+    {
+      owner: account,
     }
-  } catch (error) {
-    console.error("Error fetching offers from owner:", error);
-  }
+  );
+  const output = await Promise.all(
+    response.map((value) => offerResponseToFullOfferInfo(provider, value))
+  );
   return output;
 }
 
@@ -100,11 +86,26 @@ async function offerResponseToFullOfferInfo(
 ) {
   response.amount = BigNumber.from(response.amount);
   response.minLoanAmount = BigNumber.from(response.minLoanAmount);
+
+  const key = getOfferKey(response.owner, response.token, response.offerId);
+  const [nonce, amountBorrowed] = await getSupplyContract(
+    provider
+  ).getOfferInfo(key);
+
+  const [balance, allowance] = await getERC20BalanceAndAllowance(
+    provider,
+    response.owner as Address,
+    getSupplyAddress(),
+    response.token as Address
+  );
+
   return {
     offer: response,
     signature: response.signature,
-    amountBorrowed: BigNumber.from(0),
-    isCancelled: false,
+    amountBorrowed: amountBorrowed,
+    isCancelled: nonce.toNumber() > response.nonce,
+    balance: balance,
+    allowance: allowance,
     token: await getToken(provider, response.token),
   };
 }

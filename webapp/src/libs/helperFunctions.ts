@@ -6,6 +6,10 @@ import { WETH_TOKEN } from "./constants";
 import { LoanStats } from "./types";
 
 export function bigNumberString(amount: BigNumber, token: Token) {
+  if (ethers.constants.MaxUint256.eq(amount)) {
+    return "∞";
+  }
+
   let number = Number(ethers.utils.formatUnits(amount, token.decimals));
 
   let decimals = 2;
@@ -117,4 +121,24 @@ export function getLoanStats(
     rate: averageRate,
     token: loans[0][0].token,
   };
+}
+
+export function isValidOffer(fullOfferInfo: FullOfferInfo) {
+  return (
+    offerHasEnoughAllowance(fullOfferInfo) &&
+    offerHasEnoughBalance(fullOfferInfo) &&
+    fullOfferInfo.isCancelled == false
+  );
+}
+
+export function offerHasEnoughAllowance(fullOfferInfo: FullOfferInfo) {
+  return fullOfferInfo.allowance.gte(
+    fullOfferInfo.offer.amount.sub(fullOfferInfo.amountBorrowed)
+  );
+}
+
+export function offerHasEnoughBalance(fullOfferInfo: FullOfferInfo) {
+  return fullOfferInfo.balance.gte(
+    fullOfferInfo.offer.amount.sub(fullOfferInfo.amountBorrowed)
+  );
 }

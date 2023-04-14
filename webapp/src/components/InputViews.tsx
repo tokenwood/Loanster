@@ -39,7 +39,7 @@ import {
   getERC20BalanceAndAllowance,
   getUnusedOfferId,
   getOfferMessageToSign,
-} from "libs/dataLoaders";
+} from "libs/fetchers";
 import {
   bigNumberString,
   floatToBigNumber,
@@ -494,7 +494,6 @@ export function BorrowInputs(props: BorrowInputProps) {
 export interface MakeOfferInputProps {
   account: Address;
   balanceData: TokenBalanceInfo;
-  approvalAddress: Address;
   callback: () => any;
 }
 
@@ -554,7 +553,7 @@ export function MakeOfferInputs(props: MakeOfferInputProps) {
     address: props.balanceData.token.address as Address,
     abi: erc20ABI,
     functionName: "allowance",
-    args: [props.account, props.approvalAddress],
+    args: [props.account, getSupplyAddress()],
   });
 
   const hasEnoughAllowance = (
@@ -650,7 +649,7 @@ export function MakeOfferInputs(props: MakeOfferInputProps) {
             contractAddress={props.balanceData.token.address as Address}
             abi={erc20ABI}
             functionName={"approve"}
-            args={[props.approvalAddress, ethers.constants.MaxUint256]}
+            args={[getSupplyAddress(), ethers.constants.MaxUint256]}
             enabled={canConfirm()}
             callback={() => allowanceRefetch()}
             buttonText="Approve"

@@ -12,7 +12,7 @@ import { eventEmitter, EventType } from "libs/eventEmitter";
 import { Flex, Spacer } from "@chakra-ui/react";
 import { BigNumber } from "ethers";
 import { getSupplyAddress, getSupplyABI } from "libs/constants";
-import { getAccounts } from "libs/dataLoaders";
+import { getAccounts } from "libs/fetchers";
 import { FullLoanInfo } from "libs/types";
 
 export default function LiquidationsPage() {

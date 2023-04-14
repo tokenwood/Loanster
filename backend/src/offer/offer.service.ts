@@ -6,7 +6,7 @@ import { CreateOfferDto } from './dto/create-offer.dto';
 import { UpdateOfferDto } from './dto/update-offer.dto';
 import { BigNumber, ethers } from 'ethers';
 import { concat } from 'ethers/lib/utils';
-import { TokenOfferStatsResponse } from 'src/shared_utils';
+import { getOfferKey, TokenOfferStatsResponse } from 'src/shared_utils';
 
 @Injectable()
 export class OfferService {
@@ -22,7 +22,7 @@ export class OfferService {
     // verify there is no other current offer with same key (= hash(owner, id))
     // if this fails, propagate error to front-end
 
-    offer.key = getOfferKey(offer.owner, offer.offerId);
+    offer.key = getOfferKey(offer.owner, offer.token, offer.offerId);
 
     return this.offerRepository.save(offer);
   }
@@ -76,13 +76,6 @@ export class OfferService {
   // async delete(id: number): Promise<void> {
   //   await this.offerRepository.delete(id);
   // }
-}
-
-function getOfferKey(owner: string, offerId: number) {
-  const a = ethers.utils.toUtf8Bytes(owner);
-  const b = ethers.utils.toUtf8Bytes(BigNumber.from(offerId).toHexString());
-
-  return ethers.utils.keccak256(concat([a, b]));
 }
 
 function bigNumberMin(a: BigNumber, b: BigNumber) {

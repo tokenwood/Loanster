@@ -1,4 +1,4 @@
-import { VStack, Heading, Box } from "@chakra-ui/layout";
+import { VStack, Heading, Box, Text } from "@chakra-ui/layout";
 import { useAccount, useProvider } from "wagmi";
 import {
   BasePage,
@@ -7,46 +7,44 @@ import {
 } from "components/BaseComponents";
 import ListLoader, { MakeListItemProps } from "components/DataLoaders";
 import { MakeOfferInputs } from "components/InputViews";
-import { TableHeaderView, TableRowView } from "components/DataViews";
+import { ColSpecs, TableHeaderView, TableRowView } from "components/DataViews";
 import { eventEmitter, EventType } from "libs/eventEmitter";
-import {
-  FullOfferInfo,
-  getOfferKey,
-  getOffersFrom,
-  offerRevoked,
-} from "libs/backend";
-import { Flex, Spacer } from "@chakra-ui/react";
+import { FullOfferInfo, getOffersFrom, offerRevoked } from "libs/backend";
+import { Flex, HStack, Spacer } from "@chakra-ui/react";
 import { BigNumber, ethers } from "ethers";
 import { ReactNode } from "react";
-import { formatDate } from "libs/helperFunctions";
+import { formatDate, isValidOffer } from "libs/helperFunctions";
 import { getSupplyAddress, getSupplyABI } from "libs/constants";
 import {
   getLenderLoanIds,
   getFullLoanInfo,
   getSupplyTokenAddresses,
   getTokenBalance,
-} from "libs/dataLoaders";
+} from "libs/fetchers";
 import { FullLoanInfo, TokenBalanceInfo } from "libs/types";
+import { getOfferKey } from "libs/sharedUtils";
+import OfferInfo, { Check } from "components/OfferInfo";
 
-const offerTableColdims = {
-  Asset: 1,
-  Borrowed: 1,
-  APY: 1,
-  "Min Loan Amount": 1,
-  "Min/Max Duration": 1,
-  Expiration: 1,
+const offerTableColdims: { [key: string]: ColSpecs } = {
+  Asset: { size: 0.5, align: "left" },
+  Borrowed: { size: 1.2, align: "right" },
+  APY: { size: 0.6, align: "right" },
+  "Min Loan Amount": { size: 1, align: "center" },
+  "Min/Max Duration": { size: 1, align: "center" },
+  Expiration: { size: 1, align: "right" },
+  Status: { size: 0.5, align: "center" },
 };
-const lentTableColdims = {
-  Asset: 1,
-  Debt: 1,
-  Claimable: 1,
-  APY: 1,
-  Term: 1,
+const lentTableColdims: { [key: string]: ColSpecs } = {
+  Asset: { size: 1, align: "left" },
+  Debt: { size: 1, align: "left" },
+  Claimable: { size: 1, align: "left" },
+  APY: { size: 1, align: "left" },
+  Term: { size: 1, align: "left" },
 };
 
-const toSupplyColDims = {
-  Asset: 1,
-  "In Wallet": 1,
+const toSupplyColDims: { [key: string]: ColSpecs } = {
+  Asset: { size: 1, align: "left" },
+  "In Wallet": { size: 1, align: "left" },
   // " ": 1,
 };
 
@@ -62,12 +60,13 @@ export default function SupplyPage() {
       <VStack align="left" spacing="4">
         <Box>
           <Heading as="h6" size="sm" mb="3">
-            {"Your Offers"}
+            {"Lending Offers"}
           </Heading>
           <ListLoader
             fetchData={() => getOffersFrom(provider, account!)}
+            placeholderText={"Your offers will appear here"}
             makeHeader={() => (
-              <TableHeaderView colDims={offerTableColdims}></TableHeaderView>
+              <TableHeaderView colSpecs={offerTableColdims}></TableHeaderView>
             )}
             reloadEvents={[
               { eventType: EventType.SUPPLY_OFFER_CREATED },
@@ -78,12 +77,16 @@ export default function SupplyPage() {
                 <BaseView
                   fetcher={() => Promise.resolve(props.id)}
                   level={2}
-                  key={getOfferKey(props.id.offer)}
+                  key={getOfferKey(
+                    props.id.offer.owner,
+                    props.id.offer.token,
+                    props.id.offer.offerId
+                  )}
                   dataView={(data: FullOfferInfo, setExpanded) => {
                     return (
                       <TableRowView
                         expandedCallback={setExpanded}
-                        colDims={offerTableColdims}
+                        colSpecs={offerTableColdims}
                         colData={{
                           Asset: data.token,
                           Borrowed:
@@ -107,11 +110,28 @@ export default function SupplyPage() {
                             data.offer.maxLoanDuration / 3600 / 24 +
                             "d",
                           Expiration: formatDate(data.offer.expiration),
+                          Status: () => (
+                            <Check checked={isValidOffer(data)}></Check>
+                          ),
                         }}
                       />
                     );
                   }}
                   actions={[
+                    {
+                      action: "Info",
+                      onClickView: (
+                        data: FullOfferInfo,
+                        actionFinished: () => any
+                      ) => {
+                        return (
+                          <OfferInfo
+                            fullOfferInfo={data}
+                            callback={() => {}}
+                          ></OfferInfo>
+                        );
+                      },
+                    },
                     {
                       action: "Revoke",
                       onClickView: (
@@ -119,13 +139,13 @@ export default function SupplyPage() {
                         actionFinished: () => any
                       ) => {
                         return (
-                          <Flex w="100%">
-                            <Spacer></Spacer>
+                          <HStack alignItems={"left"} w="100%" paddingX={"4"}>
+                            <Text alignSelf={"center"}>Revoke Offer</Text>
                             <ContractCallButton
                               contractAddress={getSupplyAddress()}
                               abi={getSupplyABI()}
                               functionName={"setOfferNonce"}
-                              args={[data.offer.offerId, 1]}
+                              args={[data.offer.offerId, data.offer.token, 1]}
                               enabled={true}
                               callback={() => {
                                 actionFinished();
@@ -135,7 +155,7 @@ export default function SupplyPage() {
                                 });
                               }}
                             ></ContractCallButton>
-                          </Flex>
+                          </HStack>
                         );
                       },
                     },
@@ -153,7 +173,7 @@ export default function SupplyPage() {
           <ListLoader
             fetchData={() => getLenderLoanIds(provider, account!)}
             makeHeader={() => (
-              <TableHeaderView colDims={lentTableColdims}></TableHeaderView>
+              <TableHeaderView colSpecs={lentTableColdims}></TableHeaderView>
             )}
             makeListItem={(props) => {
               return (
@@ -165,7 +185,7 @@ export default function SupplyPage() {
                     return (
                       <TableRowView
                         expandedCallback={setExpanded}
-                        colDims={lentTableColdims}
+                        colSpecs={lentTableColdims}
                         colData={{
                           Asset: data.token,
                           Debt: ethers.utils.formatUnits(
@@ -224,7 +244,7 @@ export default function SupplyPage() {
           <ListLoader
             fetchData={() => getSupplyTokenAddresses(provider)}
             makeHeader={() => (
-              <TableHeaderView colDims={toSupplyColDims}></TableHeaderView>
+              <TableHeaderView colSpecs={toSupplyColDims}></TableHeaderView>
             )}
             makeListItem={(props) => {
               return (
@@ -242,7 +262,7 @@ export default function SupplyPage() {
                     return (
                       <TableRowView
                         expandedCallback={setExpanded}
-                        colDims={toSupplyColDims}
+                        colSpecs={toSupplyColDims}
                         colData={{
                           Asset: data.token,
                           "In Wallet": parseFloat(
@@ -266,7 +286,6 @@ export default function SupplyPage() {
                           <MakeOfferInputs
                             account={account!}
                             balanceData={data}
-                            approvalAddress={getSupplyAddress()}
                             callback={() => {
                               actionFinished();
                               eventEmitter.dispatch({

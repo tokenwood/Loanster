@@ -20,30 +20,30 @@ import { BigNumber, ethers } from "ethers";
 import { FullOfferInfo } from "libs/backend";
 import { formatDate } from "libs/helperFunctions";
 import { FullLoanInfo } from "libs/types";
-import { useEffect } from "react";
+import { ReactNode, useEffect } from "react";
 import { statFontSize, tableRowHoverStyle } from "./Theme";
 
-interface TableHeaderViewProps {
-  colDims: { [key: string]: number };
+export interface ColSpecs {
+  size?: number;
+  align?: "left" | "right" | "center";
 }
+
+interface TableHeaderViewProps {
+  colSpecs: { [key: string]: ColSpecs };
+}
+
+const TABLE_ROW_WIDTH = "95%";
 
 export function TableHeaderView(props: TableHeaderViewProps) {
   return (
     <Flex w={"100%"} layerStyle={"level2"}>
-      <HStack
-        w={"90%"}
-        // paddingRight={"58px"}
-
-        paddingLeft="3"
-        paddingRight="3"
-        // padding="3"
-      >
-        {Object.keys(props.colDims).map((key) => {
+      <HStack w={TABLE_ROW_WIDTH} paddingLeft="3" paddingRight="3">
+        {Object.keys(props.colSpecs).map((key) => {
           return (
             <Box
               key={key}
-              w={getWidth(key, props.colDims)}
-              textAlign="left"
+              w={getWidth(key, props.colSpecs)}
+              textAlign={props.colSpecs[key].align ?? "left"}
               textStyle={"tableHeader"}
             >
               {key}
@@ -57,8 +57,8 @@ export function TableHeaderView(props: TableHeaderViewProps) {
 }
 
 interface TableRowViewProps {
-  colDims: { [key: string]: number };
-  colData: { [key: string]: string | Token };
+  colSpecs: { [key: string]: ColSpecs };
+  colData: { [key: string]: string | Token | (() => JSX.Element) };
   expandedCallback?: (expanded: boolean) => void;
 }
 
@@ -83,15 +83,15 @@ export function TableRowView(props: TableRowViewProps) {
       _hover={expanded ? undefined : tableRowHoverStyle}
       alignItems="center"
     >
-      <HStack w={"90%"} padding="3">
-        {Object.keys(props.colDims).map((key) => {
+      <HStack w={TABLE_ROW_WIDTH} padding="3">
+        {Object.keys(props.colSpecs).map((key) => {
           if (props.colData[key] instanceof Token) {
             const token = props.colData[key] as Token;
             return (
               <HStack
                 key={key}
-                w={getWidth(key, props.colDims)}
-                textAlign="left"
+                w={getWidth(key, props.colSpecs)}
+                textAlign={props.colSpecs[key].align ?? "left"}
                 textStyle={"tableRow"}
               >
                 <Image
@@ -101,12 +101,22 @@ export function TableRowView(props: TableRowViewProps) {
                 <Text>{token.symbol}</Text>
               </HStack>
             );
+          } else if (typeof props.colData[key] == "function") {
+            const element = props.colData[key] as () => JSX.Element;
+            return (
+              <Box
+                w={getWidth(key, props.colSpecs)}
+                textAlign={props.colSpecs[key].align ?? "left"}
+              >
+                {element()}
+              </Box>
+            );
           } else {
             return (
               <Box
                 key={key}
-                w={getWidth(key, props.colDims)}
-                textAlign="left"
+                w={getWidth(key, props.colSpecs)}
+                textAlign={props.colSpecs[key].align ?? "left"}
                 textStyle={"tableRow"}
               >
                 {props.colData[key] as string}
@@ -175,12 +185,12 @@ export function LoanInfoView(props: LoanInfoViewProps) {
   );
 }
 
-function getWidth(key: string, colDims: { [key: string]: number }) {
+function getWidth(key: string, colDims: { [key: string]: ColSpecs }) {
   let totalWidth = 0;
   for (const key in colDims) {
-    totalWidth += colDims[key];
+    totalWidth += colDims[key].size ?? 1;
   }
-  return (colDims[key] * 100) / totalWidth + "%";
+  return ((colDims[key].size ?? 1) * 100) / totalWidth + "%";
 }
 
 interface AccountViewProps {

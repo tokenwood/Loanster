@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import {
   Box,
   Table,
+  Text,
   TableCaption,
   TableContainer,
   Tbody,
@@ -24,6 +25,7 @@ interface ListLoaderProps<T> {
   fetchData: () => Promise<T[]>;
   makeListItem: (props: MakeListItemProps<T>) => JSX.Element;
   makeHeader?: (data: T[]) => JSX.Element;
+  placeholderText?: string;
   reloadEvents?: EventId[];
 }
 
@@ -36,7 +38,16 @@ export default function ListLoader<T>(props: ListLoaderProps<T>) {
       makeChildren={(childProps: ChildProps<T[]>) => {
         return (
           <VStack>
-            {props.makeHeader ? props.makeHeader(childProps.data) : <></>}
+            {childProps.data.length == 0 && props.placeholderText ? (
+              <Text>{props.placeholderText}</Text>
+            ) : (
+              <></>
+            )}
+            {childProps.data.length > 0 && props.makeHeader ? (
+              props.makeHeader(childProps.data)
+            ) : (
+              <></>
+            )}
             {childProps.data.map((id: T, index: number) =>
               props.makeListItem({
                 id: id,

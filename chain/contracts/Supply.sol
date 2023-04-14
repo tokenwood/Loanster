@@ -40,7 +40,6 @@ contract Supply is ERC721, Ownable, SignUtils {
     //todo remove EnumerableSet and use mapping as in latest ERC721.sol
 
     mapping(bytes32 => uint256) private _offerNonces;
-    mapping(bytes32 => address) private _offerToken;
     mapping(bytes32 => uint256) private _offerAmountBorrowed;
     mapping(uint256 => uint256) private _claimable;
     mapping(uint256 => Loan) private _loans;
@@ -53,6 +52,7 @@ contract Supply is ERC721, Ownable, SignUtils {
 
     event LoanRepayment(uint256 loanId, uint256 interest, uint256 newAmount);
     event NonceUpdated(address owner, uint256 offerId, uint256 nonce);
+    event PublishOffer(LoanOffer offer, bytes signature);
 
     // init and configuration functions
     constructor() ERC721("DepositNFT", "ULD") {}
@@ -65,8 +65,19 @@ contract Supply is ERC721, Ownable, SignUtils {
     }
 
     // state changing functions
-    function setOfferNonce(uint256 offerId, uint256 nonce) public {
-        _offerNonces[getOfferKey(msg.sender, offerId)] = nonce;
+    function publishOffer(
+        LoanOffer calldata offer,
+        bytes calldata signature
+    ) public {
+        emit PublishOffer(offer, signature); //33k gas
+    }
+
+    function setOfferNonce(
+        uint256 offerId,
+        address token,
+        uint256 nonce
+    ) public {
+        _offerNonces[getOfferKey(msg.sender, token, offerId)] = nonce;
         emit NonceUpdated(msg.sender, offerId, nonce);
     }
 
@@ -82,15 +93,13 @@ contract Supply is ERC721, Ownable, SignUtils {
             "only trove manager can start loan"
         );
         verifyLoanOfferSignature(loanOffer, signature); //8k gas
-        bytes32 key = getOfferKey(loanOffer.owner, loanOffer.offerId); // should use hash of message as key instead?
+        bytes32 key = getOfferKey(
+            loanOffer.owner,
+            loanOffer.token,
+            loanOffer.offerId
+        ); // should use hash of message as key instead?
 
         require(_offerNonces[key] <= loanOffer.nonce, "invalid nonce");
-
-        if (_offerToken[key] == address(0)) {
-            _offerToken[key] = loanOffer.token; //20k gas
-        } else {
-            require(_offerToken[key] == loanOffer.token);
-        }
 
         // check if loan verifies parameters of offer
         require(amount >= loanOffer.minLoanAmount, "amount too small");
@@ -201,8 +210,10 @@ contract Supply is ERC721, Ownable, SignUtils {
 
     // view functions
 
-    function getOfferNonce(bytes32 offerKey) public view returns (uint256) {
-        return (_offerNonces[offerKey]);
+    function getOfferInfo(
+        bytes32 offerKey
+    ) public view returns (uint256, uint256) {
+        return (_offerNonces[offerKey], _offerAmountBorrowed[offerKey]);
     }
 
     function getLoanToken(uint256 loanId) public view returns (address) {
@@ -274,9 +285,10 @@ contract Supply is ERC721, Ownable, SignUtils {
     // is this safe from collisions? could be replaced with mapping -> mapping for nonces and offerLoans.
     function getOfferKey(
         address sender,
+        address token,
         uint256 offerId
     ) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(sender, offerId));
+        return keccak256(abi.encodePacked(sender, token, offerId));
     }
 
     function max(uint256 a, uint256 b) private pure returns (uint256) {

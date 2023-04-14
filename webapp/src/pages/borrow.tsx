@@ -18,6 +18,7 @@ import {
   RepayLoanInputs,
 } from "components/InputViews";
 import {
+  ColSpecs,
   LoanInfoView,
   TableHeaderView,
   TableRowView,
@@ -50,7 +51,7 @@ import {
   getFullLoanInfo,
   getSupplyTokens,
   getDetailedHealthFactor,
-} from "libs/dataLoaders";
+} from "libs/fetchers";
 import {
   BNToPrecision,
   formatDate,
@@ -60,13 +61,23 @@ import { TokenDepositInfo, FullLoanInfo } from "libs/types";
 import { WETH_TOKEN } from "libs/constants";
 import OfferBrowser from "components/OfferBrowser";
 
-const depositTableColdims = { Asset: 1, "In Wallet": 1, Deposited: 1, " ": 1 };
-const borrowedTableColdims = { Asset: 1, Debt: 1, APY: 1, Term: 1 };
-const toBorrowTableColdims = {
-  Asset: 1,
-  "Lowest APY": 1,
-  Available: 1,
-  " ": 1,
+const depositTableColdims: { [key: string]: ColSpecs } = {
+  Asset: { size: 1 },
+  "In Wallet": { size: 1 },
+  Deposited: { size: 1 },
+  " ": { size: 1 },
+};
+const borrowedTableColdims: { [key: string]: ColSpecs } = {
+  Asset: { size: 1 },
+  Debt: { size: 1 },
+  APY: { size: 1 },
+  Term: { size: 1 },
+};
+const toBorrowTableColdims: { [key: string]: ColSpecs } = {
+  Asset: { size: 1 },
+  "Lowest APY": { size: 1 },
+  Available: { size: 1 },
+  " ": { size: 1 },
 };
 
 export default function LoansPage() {
@@ -136,7 +147,7 @@ export default function LoansPage() {
           <ListLoader
             fetchData={() => getCollateralDeposits(provider, account!)}
             makeHeader={() => (
-              <TableHeaderView colDims={depositTableColdims}></TableHeaderView>
+              <TableHeaderView colSpecs={depositTableColdims}></TableHeaderView>
             )}
             reloadEvents={[
               { eventType: EventType.COLLATERAL_TOKEN_DEPOSITED },
@@ -157,7 +168,7 @@ export default function LoansPage() {
                     return (
                       <TableRowView
                         expandedCallback={setExpanded}
-                        colDims={depositTableColdims}
+                        colSpecs={depositTableColdims}
                         colData={{
                           Asset: data.token,
                           "In Wallet": BNToPrecision(
@@ -225,7 +236,9 @@ export default function LoansPage() {
           <ListLoader
             fetchData={() => getBorrowerLoanIds(provider, account!)}
             makeHeader={() => (
-              <TableHeaderView colDims={borrowedTableColdims}></TableHeaderView>
+              <TableHeaderView
+                colSpecs={borrowedTableColdims}
+              ></TableHeaderView>
             )}
             reloadEvents={[{ eventType: EventType.LOAN_CREATED }]}
             makeListItem={(listItemProps) => {
@@ -238,7 +251,7 @@ export default function LoansPage() {
                     return (
                       <TableRowView
                         expandedCallback={setExpanded}
-                        colDims={borrowedTableColdims}
+                        colSpecs={borrowedTableColdims}
                         colData={{
                           Asset: data.token,
                           Debt: Number(
@@ -291,7 +304,9 @@ export default function LoansPage() {
           <ListLoader
             fetchData={() => getSupplyTokens(provider)}
             makeHeader={() => (
-              <TableHeaderView colDims={toBorrowTableColdims}></TableHeaderView>
+              <TableHeaderView
+                colSpecs={toBorrowTableColdims}
+              ></TableHeaderView>
             )}
             makeListItem={(listItemProps) => {
               return (
@@ -303,7 +318,7 @@ export default function LoansPage() {
                     return (
                       <TableRowView
                         expandedCallback={setExpanded}
-                        colDims={toBorrowTableColdims}
+                        colSpecs={toBorrowTableColdims}
                         colData={{
                           Asset: data.token,
                           "Lowest APY":

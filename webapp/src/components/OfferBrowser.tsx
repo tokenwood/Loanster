@@ -31,7 +31,7 @@ import { getTroveManagerAddress, getTroveManagerABI } from "libs/constants";
 import { eventEmitter, EventType } from "libs/eventEmitter";
 import { ContractCallButton } from "./BaseComponents";
 import { LoanOfferType } from "libs/types";
-import { getHealthFactor, getNewHealthFactor } from "libs/dataLoaders";
+import { getHealthFactor, getNewHealthFactor } from "libs/fetchers";
 import { HealthFactor } from "./InputViews";
 import { MyNumberInput } from "./InputFields";
 import { SimpleRow } from "./DataViews";

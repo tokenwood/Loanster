@@ -49,6 +49,7 @@ describe("Supply", function () {
     );
 
     // await supply.verifyLoanOfferSignature(offer, signature);
+    await supply.publishOffer(offer, signature);
 
     const openLoanTx = supply.openLoan(
       offer,
