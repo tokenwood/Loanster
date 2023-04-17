@@ -1,17 +1,23 @@
-.PHONE: install install_prereq start_chain start_front start_db start_backend deploy_all start_all
+.PHONY: install install_js install_os start_chain start_front start_db start_backend deploy_all start_all test lint
 
 PROJECT_FOLDER=$(shell pwd)
 
 include ${PROJECT_FOLDER}/.env
 
-install: install_deps
+install: install_os install_js
+
+start_all: start_chain_bg start_db_bg start_backend_bg start_front_bg deploy_all
+
+install_js:
 	cd ${PROJECT_FOLDER}/unilib && yarn install
 	cd ${PROJECT_FOLDER}/webapp && yarn install
 	cd ${PROJECT_FOLDER}/chain && yarn install
 	cd ${PROJECT_FOLDER}/backend && npm install
 
-install_deps:
+install_os:
 	brew install node@18
+	# brew unlink node
+	# brew link node@18
 	brew install yarn
 	brew install --cask docker
 	brew install docker-compose
@@ -32,7 +38,6 @@ start_front:
 start_front_bg:
 	cd ${PROJECT_FOLDER}/webapp && \
 	yarn dev &
-
 
 start_db:
 	cd ${PROJECT_FOLDER} && \
@@ -58,9 +63,6 @@ deploy_all:
 	yarn hardhat run scripts/deploy.ts --network localhost
 	cd ${PROJECT_FOLDER}/chain && \
 	yarn hardhat run scripts/mock.ts --network localhost
-
-
-start_all: start_chain_bg start_db_bg start_backend_bg start_front_bg deploy_all
 
 lint:
 	cd ${PROJECT_FOLDER}/unilib && \

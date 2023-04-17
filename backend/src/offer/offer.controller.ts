@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { OfferService } from './offer.service';
 import { CreateOfferDto } from './dto/create-offer.dto';
-import { parseBigNumbers } from 'src/helperFunctions';
+import { parseBigNumbers } from '../helperFunctions';
 
 @Controller('offer')
 export class OfferController {

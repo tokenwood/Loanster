@@ -31,7 +31,6 @@ describe('OfferService', () => {
   });
 
   it('should create an offer and store it in the database', async () => {
-
     const testOffer: CreateOfferDto = {
       key: 'some_key',
       offerId: 1,
@@ -60,5 +59,4 @@ describe('OfferService', () => {
     expect(offerRepository.save).toHaveBeenCalledWith(testOffer);
     expect(result).toEqual(savedOffer);
   });
-
 });
