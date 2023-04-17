@@ -1,8 +1,6 @@
 import { Address } from "wagmi";
-
 import { erc20ABI, erc721ABI, Provider } from "@wagmi/core";
 import { ethers, utils } from "ethers";
-
 import { BigNumber } from "ethers";
 import {
   ADDRESS_TO_TOKEN,
@@ -337,8 +335,11 @@ export async function getERC20BalanceAndAllowance(
   tokenAddress: Address
 ) {
   const tokenContract = new ethers.Contract(tokenAddress, erc20ABI, provider);
-  const balance: BigNumber = await tokenContract.balanceOf(account);
-  const allowance: BigNumber = await tokenContract.allowance(account, spender);
+
+  const [balance, allowance] = await Promise.all([
+    tokenContract.balanceOf(account),
+    tokenContract.allowance(account, spender),
+  ]);
 
   return [balance, allowance];
 }

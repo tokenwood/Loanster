@@ -37,4 +37,13 @@ export class Offer {
 
   @Column()
   maxLoanDuration: number;
+
+  @Column({ nullable: true })
+  borrowed?: string; // BigNumber
+
+  @Column({ nullable: true })
+  allowance?: string; // BigNumber
+
+  @Column({ nullable: true })
+  balance?: string; // BigNumber
 }

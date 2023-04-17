@@ -1,4 +1,11 @@
-import { IsString, IsNumber, IsNotEmpty } from 'class-validator';
+import { isBigNumberish } from '@ethersproject/bignumber/lib/bignumber';
+import {
+  IsString,
+  IsNumber,
+  IsNotEmpty,
+  IsBoolean,
+  IsOptional,
+} from 'class-validator';
 
 export class OfferDto {
   // This is the dto (Data Transfer Object) that is used to validate the data that is sent to the backend
@@ -50,4 +57,16 @@ export class OfferDto {
   @IsNotEmpty()
   @IsNumber()
   maxLoanDuration: number;
+
+  @IsOptional()
+  @IsString()
+  borrowed?: string; // BigNumber
+
+  @IsOptional()
+  @IsString()
+  allowance?: string; // BigNumber
+
+  @IsOptional()
+  @IsString()
+  balance?: string; // BigNumber
 }

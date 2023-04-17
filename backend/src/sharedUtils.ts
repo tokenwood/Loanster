@@ -1,6 +1,6 @@
 import { BigNumber, ethers } from 'ethers';
 
-//this file contains shared classes between the front-end and back-end. Should be a module instead?
+//this file contains shared classes between the front-end and back-end. Should be a module instead? TODO: Refactor
 
 export interface TokenOfferStatsResponse {
   minAPY: number;

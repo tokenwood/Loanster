@@ -10,9 +10,7 @@ import {
 } from '@nestjs/common';
 import { OfferService } from './offer.service';
 import { CreateOfferDto } from './dto/create-offer.dto';
-import { UpdateOfferDto } from './dto/update-offer.dto';
-import { BigNumber, ethers } from 'ethers';
-import { concat } from 'ethers/lib/utils';
+import { parseBigNumbers } from 'src/helperFunctions';
 
 @Controller('offer')
 export class OfferController {
@@ -53,14 +51,4 @@ export class OfferController {
   // delete(@Param('id') id: number) {
   //   return this.offerService.delete(+id);
   // }
-}
-
-function parseBigNumbers(response: CreateOfferDto): any {
-  for (const key in response) {
-    const value = response[key];
-    if (value.type === 'BigNumber') {
-      response[key] = value.hex;
-    }
-  }
-  return response;
 }

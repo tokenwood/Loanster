@@ -76,7 +76,6 @@ contract TroveManager is Ownable {
         _borrowFactorsBPS[token] = borrowFactorBPS;
         _oraclePoolFees[token] = oraclePoolFee;
         Supply(_supply).approveToken(token);
-
         emit SupplyTokenChanged(token, true);
     }
 

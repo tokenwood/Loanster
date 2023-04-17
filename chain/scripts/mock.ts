@@ -5,7 +5,6 @@ import {
   deployTroveManager,
   depositWETH,
   getERC20Contract,
-  getSupplyContract,
   getTroveManagerContract,
   getUniUtilsAddress,
   ONE_DAY_IN_SECS,
@@ -13,6 +12,7 @@ import {
   ONE_YEAR_IN_SECS,
   depositCollateral,
 } from "./utils";
+import { getSupplyContract } from "./getSupplyContract";
 import {
   LUSD_TOKEN,
   RETH_TOKEN,
