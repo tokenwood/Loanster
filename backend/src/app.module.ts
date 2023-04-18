@@ -5,6 +5,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { OfferModule } from './offer/offer.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { DatabaseTestModule } from './database-test.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { ScheduleModule } from '@nestjs/schedule';
         synchronize: true, // Use false in production: this creates tables and columns automatically
       }),
     }),
+    DatabaseTestModule,
     OfferModule,
   ],
   controllers: [AppController],
