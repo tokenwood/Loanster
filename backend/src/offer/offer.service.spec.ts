@@ -34,9 +34,9 @@ describe('OfferService', () => {
     const testOffer: CreateOfferDto = {
       key: 'some_key',
       offerId: 1,
-      owner: 'some_owner',
+      owner: '0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266',
       signature: 'some_signature',
-      token: 'some_token',
+      token: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
       nonce: 42,
       minLoanAmount: '1000',
       amount: '5000',
