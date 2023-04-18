@@ -153,20 +153,30 @@ async function callBackend(
   method: string,
   params?: { [key: string]: string }
 ): Promise<any> {
-  const url = new URL(`${fullBackendUrl}/${path}`);
-  for (let key in params) {
-    url.searchParams.append(key, params[key]);
+  try {
+    const url = new URL(`${fullBackendUrl}/${path}`);
+    for (let key in params) {
+      url.searchParams.append(key, params[key]);
+    }
+    const response = await fetch(url, {
+      method: method,
+      headers: { "Content-Type": "application/json; charset=UTF-8" },
+      // body: body,
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
+    }
+
+    const responseJSON = await response.json();
+    parseBigNumberInResponse(responseJSON);
+
+    return responseJSON;
+  } catch (error) {
+    console.error("Failed to fetch:", error);
+    // Handle the error as needed, e.g., return an error object or re-throw the error
+    return { error: { message: "Failed to fetch data from the backend server. Please try again later." } };
   }
-  const response = await fetch(url, {
-    method: method,
-    headers: { "Content-Type": "application/json; charset=UTF-8" },
-    // body: body,
-  });
-
-  const responseJSON = await response.json();
-  parseBigNumberInResponse(responseJSON);
-
-  return responseJSON;
 }
 
 async function offerResponseToFullOfferInfo(
