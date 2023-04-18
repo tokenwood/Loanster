@@ -75,7 +75,6 @@ function isTokenAmount(obj: any) {
     typeof obj === "object" &&
     "amount" in obj &&
     "token" in obj;
-  console.log("is token amount: " + val);
   return val;
 }
 
@@ -129,16 +128,13 @@ export function TableRowView(props: TableRowViewProps) {
                 >
                   {bigNumberString(tokenAmount.amount, tokenAmount.token)}
                 </Text>
-                <Text
-                  w={"100%"}
+                <Price
+                  token={tokenAmount.token}
+                  amount={tokenAmount.amount}
                   textAlign={props.colSpecs[key].align ?? "left"}
                   textStyle={"price"}
-                >
-                  <Price
-                    token={tokenAmount.token}
-                    amount={tokenAmount.amount}
-                  ></Price>
-                </Text>
+                  w={"100%"}
+                ></Price>
               </VStack>
             );
           } else if (typeof props.colData[key] == "function") {

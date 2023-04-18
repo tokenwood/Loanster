@@ -143,7 +143,6 @@ export async function getEthPrice() {
       "api/eth_price_usd",
       "GET"
     );
-    console.log("eth price response", response);
     eth_price_cached = response.usd;
   }
   return eth_price_cached!;

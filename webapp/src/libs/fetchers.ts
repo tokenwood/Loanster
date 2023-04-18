@@ -150,9 +150,7 @@ export async function getTokenPrice(
   amount: BigNumber
 ): Promise<number> {
   const contract = getTroveManagerContract(provider);
-  console.log("token: " + token + " amount " + amount);
   const eth_value = await contract.getOracleValueEth(token, amount);
-  console.log("eth_value: " + eth_value);
   const price = await getEthPrice();
   return Number.parseFloat(ethers.utils.formatEther(eth_value)) * price;
 }

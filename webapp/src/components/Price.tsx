@@ -10,6 +10,9 @@ import { DataLoader } from "./DataLoaders";
 interface PriceProps {
   token: Token;
   amount: BigNumber;
+  textAlign?: "left" | "right" | "center";
+  textStyle?: string;
+  w?: string;
 }
 
 export default function Price(props: PriceProps) {
@@ -20,8 +23,16 @@ export default function Price(props: PriceProps) {
       fetcher={() =>
         getTokenPrice(provider, props.token.address as Address, props.amount)
       }
-      makeChildren={(props) => {
-        return <Text>$ {splitThousands(props.data, 0)}</Text>;
+      makeChildren={(childProps) => {
+        return (
+          <Text
+            textAlign={props.textAlign}
+            textStyle={props.textStyle}
+            w={props.w ?? undefined}
+          >
+            $ {splitThousands(childProps.data, 0)}
+          </Text>
+        );
       }}
     ></DataLoader>
   );
