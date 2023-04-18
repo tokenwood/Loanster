@@ -149,8 +149,6 @@ contract Supply is ERC721, Ownable, SignUtils {
         return loanId;
     }
 
-    function getAmountToTransfer() public view {}
-
     function repayLoan(
         address borrower,
         uint256 loanId,

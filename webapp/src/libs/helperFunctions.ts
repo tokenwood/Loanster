@@ -16,7 +16,11 @@ export function bigNumberString(amount: BigNumber, token: Token) {
   if (token == WETH_TOKEN) {
     decimals = 3;
   }
-  //   number = number.toFixed(2); // Round to 2 decimal places
+
+  return splitThousands(number, decimals);
+}
+
+export function splitThousands(number: number, decimals: number) {
   const parts = number.toFixed(decimals).split("."); // Split into integer and decimal parts
   parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, " "); // Add space between thousands
   return parts.join(".");

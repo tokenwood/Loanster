@@ -2,6 +2,7 @@ import { Box, Text } from "@chakra-ui/react";
 import { CurrencyAmount, Token } from "@uniswap/sdk-core";
 import { BigNumber } from "ethers";
 import { getTokenPrice } from "libs/fetchers";
+import { splitThousands } from "libs/helperFunctions";
 import { TokenAmount } from "libs/types";
 import { Address, useProvider } from "wagmi";
 import { DataLoader } from "./DataLoaders";
@@ -20,7 +21,7 @@ export default function Price(props: PriceProps) {
         getTokenPrice(provider, props.token.address as Address, props.amount)
       }
       makeChildren={(props) => {
-        return <Text>$ {props.data.toFixed(2)}</Text>;
+        return <Text>$ {splitThousands(props.data, 0)}</Text>;
       }}
     ></DataLoader>
   );
