@@ -36,7 +36,7 @@ export default function Header() {
     <ClientOnly>
       <Flex as="header" p={4} alignItems="center" layerStyle={"header"}>
         <Box alignSelf={"center"} alignContent={"center"}>
-          <Image src={"bankicon.png"} height="30px"></Image>
+          <Image src={"loanster_icon.png"} height="40px"></Image>
         </Box>
         <HeaderButton linkPath="/borrow" buttonText="Borrow"></HeaderButton>
         {/* <HeaderButton linkPath="/loans" buttonText="Loans"></HeaderButton> */}

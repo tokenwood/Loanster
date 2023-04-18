@@ -13,12 +13,16 @@ type Props = {
   children: ReactNode;
 };
 
-// bgGradient={"linear(to-b, #Fdfcfa, #F7f3ec)"}
+//
 
 export function Layout(props: Props) {
   return (
     <div>
-      <Box layerStyle={"level0"} h={"100%"}>
+      <Box
+        layerStyle={"level0"}
+        h={"100%"}
+        bgGradient={"linear(to-br, gray.150, #FFFFFF)"}
+      >
         <Header />
         <Container maxW="container.lg" py="20">
           {props.children}
