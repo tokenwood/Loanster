@@ -96,19 +96,19 @@ export default function SupplyPage() {
                         colSpecs={offerTableColdims}
                         colData={{
                           Asset: data.token,
-                          Borrowed: bigNumberString(
-                            data.amountBorrowed,
-                            data.token
-                          ),
-                          "Max Borrowed": bigNumberString(
-                            data.offer.amount,
-                            data.token
-                          ),
+                          Borrowed: {
+                            amount: data.amountBorrowed,
+                            token: data.token,
+                          },
+                          "Max Borrowed": {
+                            amount: data.offer.amount,
+                            token: data.token,
+                          },
                           APY: data.offer.interestRateBPS / 100 + " %",
-                          "Min Loan Amount": ethers.utils.formatUnits(
-                            data.offer.minLoanAmount,
-                            data.token.decimals
-                          ),
+                          "Min Loan Amount": {
+                            amount: data.offer.minLoanAmount,
+                            token: data.token,
+                          },
                           "Min/Max Duration":
                             data.offer.minLoanDuration / 3600 / 24 +
                             "d / " +
@@ -196,15 +196,15 @@ export default function SupplyPage() {
                         colSpecs={lentTableColdims}
                         colData={{
                           Asset: data.token,
-                          Debt: bigNumberString(
-                            data.loan.amount.add(data.interest),
-                            data.token
-                          ),
+                          Debt: {
+                            amount: data.loan.amount.add(data.interest),
+                            token: data.token,
+                          },
                           APY: data.loan.interestRateBPS / 100 + " %",
-                          Claimable: bigNumberString(
-                            data.claimable,
-                            data.token
-                          ),
+                          Claimable: {
+                            amount: data.claimable,
+                            token: data.token,
+                          },
                           Term: formatDate(data.loan.expiration),
                         }}
                       />
@@ -285,7 +285,10 @@ export default function SupplyPage() {
                         colSpecs={toSupplyColDims}
                         colData={{
                           Asset: data.token,
-                          "In Wallet": bigNumberString(data.amount, data.token),
+                          "In Wallet": {
+                            amount: data.amount,
+                            token: data.token,
+                          },
                         }}
                       />
                     );

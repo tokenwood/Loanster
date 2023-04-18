@@ -267,12 +267,10 @@ export default function LoansPage() {
                         colSpecs={borrowedTableColdims}
                         colData={{
                           Asset: data.token,
-                          Debt: Number(
-                            ethers.utils.formatUnits(
-                              data.loan.amount.add(data.interest),
-                              data.token.decimals
-                            )
-                          ).toFixed(2),
+                          Debt: {
+                            amount: data.loan.amount.add(data.interest),
+                            token: data.token,
+                          },
                           APY:
                             (data.loan.interestRateBPS / 100).toFixed(2) + " %",
                           Term: formatDate(data.loan.expiration),
