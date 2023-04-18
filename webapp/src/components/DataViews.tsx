@@ -15,12 +15,17 @@ import {
   IconButton,
   useBoolean,
 } from "@chakra-ui/react";
-import { Token } from "@uniswap/sdk-core";
+import { CurrencyAmount, Token } from "@uniswap/sdk-core";
 import { BigNumber, ethers } from "ethers";
 import { FullOfferInfo } from "libs/backend";
-import { formatDate } from "libs/helperFunctions";
-import { FullLoanInfo } from "libs/types";
+import {
+  bigNumberString,
+  BNToPrecision,
+  formatDate,
+} from "libs/helperFunctions";
+import { FullLoanInfo, TokenAmount } from "libs/types";
 import { ReactNode, useEffect } from "react";
+import Price from "./Price";
 import { statFontSize, tableRowHoverStyle } from "./Theme";
 
 export interface ColSpecs {
@@ -58,8 +63,20 @@ export function TableHeaderView(props: TableHeaderViewProps) {
 
 interface TableRowViewProps {
   colSpecs: { [key: string]: ColSpecs };
-  colData: { [key: string]: string | Token | (() => JSX.Element) };
+  colData: {
+    [key: string]: string | Token | TokenAmount | (() => JSX.Element);
+  };
   expandedCallback?: (expanded: boolean) => void;
+}
+
+function isTokenAmount(obj: any) {
+  const val =
+    obj !== undefined &&
+    typeof obj === "object" &&
+    "amount" in obj &&
+    "token" in obj;
+  console.log("is token amount: " + val);
+  return val;
 }
 
 export function TableRowView(props: TableRowViewProps) {
@@ -83,7 +100,7 @@ export function TableRowView(props: TableRowViewProps) {
       _hover={expanded ? undefined : tableRowHoverStyle}
       alignItems="center"
     >
-      <HStack w={TABLE_ROW_WIDTH} padding="3">
+      <HStack w={TABLE_ROW_WIDTH} paddingX="3" paddingY="1.5">
         {Object.keys(props.colSpecs).map((key) => {
           if (props.colData[key] instanceof Token) {
             const token = props.colData[key] as Token;
@@ -100,6 +117,29 @@ export function TableRowView(props: TableRowViewProps) {
                 ></Image>
                 <Text>{token.symbol}</Text>
               </HStack>
+            );
+          } else if (isTokenAmount(props.colData[key])) {
+            const tokenAmount = props.colData[key] as TokenAmount;
+            return (
+              <VStack key={key} w={getWidth(key, props.colSpecs)} spacing={0}>
+                <Text
+                  w={"100%"}
+                  textAlign={props.colSpecs[key].align ?? "left"}
+                  textStyle={"tableRow"}
+                >
+                  {bigNumberString(tokenAmount.amount, tokenAmount.token)}
+                </Text>
+                <Text
+                  w={"100%"}
+                  textAlign={props.colSpecs[key].align ?? "left"}
+                  textStyle={"price"}
+                >
+                  <Price
+                    token={tokenAmount.token}
+                    amount={tokenAmount.amount}
+                  ></Price>
+                </Text>
+              </VStack>
             );
           } else if (typeof props.colData[key] == "function") {
             const element = props.colData[key] as () => JSX.Element;

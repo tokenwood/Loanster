@@ -26,7 +26,11 @@ import { DateInput, MyNumberInput, TokenAmountInput } from "./InputFields";
 import { eventEmitter, EventType } from "libs/eventEmitter";
 import { ChildProps, DataLoader, TableLoader } from "./DataLoaders";
 import { defaultBorderRadius, DEFAULT_SIZE } from "./Theme";
-import { FullOfferInfo, getOffers, submitOffer } from "libs/backend";
+import {
+  FullOfferInfo,
+  getOffersForLoanParams,
+  submitOffer,
+} from "libs/backend";
 import { Token } from "@uniswap/sdk-core";
 import {
   getSupplyAddress,
@@ -50,7 +54,7 @@ import {
   TokenDepositInfo,
   FullLoanInfo,
   LoanType,
-  TokenBalanceInfo,
+  TokenAmount,
   LoanOfferType,
   LoanParameters,
 } from "libs/types";
@@ -493,7 +497,7 @@ export function BorrowInputs(props: BorrowInputProps) {
 
 export interface MakeOfferInputProps {
   account: Address;
-  balanceData: TokenBalanceInfo;
+  balanceData: TokenAmount;
   callback: () => any;
 }
 
@@ -703,7 +707,7 @@ export function LoanOfferView(props: LoanOfferViewProps) {
     return (
       <DataLoader
         key={props.loanParams?.amount + props.loanParams!.token.address}
-        fetcher={() => getOffers(provider, props.loanParams!)}
+        fetcher={() => getOffersForLoanParams(provider, props.loanParams!)}
         makeChildren={(childProps) => {
           updateNewHealthFactor(childProps.data[0]);
           return (

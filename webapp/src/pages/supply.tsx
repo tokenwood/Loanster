@@ -30,7 +30,7 @@ import {
   getSupplyTokenAddresses,
   getTokenBalance,
 } from "libs/fetchers";
-import { FullLoanInfo, TokenBalanceInfo } from "libs/types";
+import { FullLoanInfo, TokenAmount } from "libs/types";
 import { getOfferKey } from "libs/sharedUtils";
 import OfferInfo, { Check } from "components/OfferInfo";
 
@@ -277,7 +277,7 @@ export default function SupplyPage() {
                       suffix: props.id,
                     },
                   ]}
-                  dataView={(data: TokenBalanceInfo, setExpanded) => {
+                  dataView={(data: TokenAmount, setExpanded) => {
                     return (
                       <TableRowView
                         key={"wallet_supply_token_ballance_" + props.id}
@@ -294,7 +294,7 @@ export default function SupplyPage() {
                     {
                       action: "Make Offer",
                       onClickView: (
-                        data: TokenBalanceInfo,
+                        data: TokenAmount,
                         actionFinished: () => any
                       ) => {
                         return (

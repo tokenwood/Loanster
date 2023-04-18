@@ -99,6 +99,15 @@ const theme = extendTheme({
       // letterSpacing: "-1%",
       // color: "gray.600",
     },
+    price: {
+      fontSize: ["14px"],
+      // fontWeight: "thin",
+      // lineHeight: "80%",
+      // marginTop: "0px",
+      // paddingTop: "0px",
+      // letterSpacing: "-1%",
+      color: "gray.600",
+    },
     numberInput: {
       // fontSize: ["36px", "48px"],
       fontWeight: "bold",

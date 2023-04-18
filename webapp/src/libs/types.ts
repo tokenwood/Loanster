@@ -44,7 +44,7 @@ export interface LoanStats {
 }
 
 export interface FullAccountInfo {
-  deposits: TokenBalanceInfo[];
+  deposits: TokenAmount[];
   loanIds: number[];
 }
 
@@ -56,7 +56,7 @@ export interface FullLoanInfo {
   token: Token;
 }
 
-export interface TokenBalanceInfo {
+export interface TokenAmount {
   amount: BigNumber;
   token: Token;
 }

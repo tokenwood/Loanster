@@ -14,3 +14,13 @@ export function getOfferKey(owner: string, token: string, offerId: number) {
     [owner, token, BigNumber.from(offerId)]
   );
 }
+
+export function parseBigNumberInResponse(response: [key: any]): any {
+  for (const key in response) {
+    const value = response[key];
+    if (value.type === "BigNumber") {
+      response[key] = BigNumber.from(value.hex);
+    }
+  }
+  return response;
+}

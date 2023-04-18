@@ -1,8 +1,11 @@
 import { Address, Provider } from "@wagmi/core";
 import { BigNumber, ethers, utils } from "ethers";
 import { Token } from "@uniswap/sdk-core";
-import { concat } from "ethers/lib/utils.js";
-import { getOfferKey, TokenOfferStatsResponse } from "./sharedUtils";
+import {
+  getOfferKey,
+  parseBigNumberInResponse,
+  TokenOfferStatsResponse,
+} from "./sharedUtils";
 import { bigNumberMin, floatToBigNumber } from "./helperFunctions";
 import { LoanOfferType, LoanParameters } from "./types";
 import { getERC20BalanceAndAllowance, getToken } from "./fetchers";
@@ -15,10 +18,6 @@ const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 const backendPort = process.env.NEXT_PUBLIC_BACKEND_PORT;
 const fullBackendUrl = `${backendUrl}:${backendPort}`;
 
-function getBackendUrl() {
-  return process.env.NEXT_PUBLIC_BACKEND_URL;
-}
-
 export interface FullOfferInfo {
   offer: LoanOfferType;
   signature: string;
@@ -30,10 +29,6 @@ export interface FullOfferInfo {
 }
 
 export type OfferResponse = LoanOfferType & { signature: string };
-
-export async function offerRevoked(data: FullOfferInfo) {
-  //todo: this should be done on backend by listening for nonce update events or checking nonce on-chain because may not get called
-}
 
 export async function submitOffer(offer: LoanOfferType, signature: string) {
   const offerWithSignature = {
@@ -80,57 +75,10 @@ export async function getTokenOfferStats(token: Token) {
   return { ...response, token: token };
 }
 
-async function offerResponseToFullOfferInfo(
+export async function getOffersForLoanParams(
   provider: Provider,
-  response: OfferResponse
+  params: LoanParameters
 ) {
-  response.amount = BigNumber.from(response.amount);
-  response.minLoanAmount = BigNumber.from(response.minLoanAmount);
-
-  const key = getOfferKey(response.owner, response.token, response.offerId);
-  const [nonce, amountBorrowed] = await getSupplyContract(
-    provider
-  ).getOfferInfo(key);
-
-  const [balance, allowance] = await getERC20BalanceAndAllowance(
-    provider,
-    response.owner as Address,
-    getSupplyAddress(),
-    response.token as Address
-  );
-
-  return {
-    offer: response,
-    signature: response.signature,
-    amountBorrowed: amountBorrowed,
-    isCancelled: nonce.toNumber() > response.nonce,
-    balance: balance,
-    allowance: allowance,
-    token: await getToken(provider, response.token),
-  };
-}
-
-async function callBackend(
-  path: string,
-  method: string,
-  params?: { [key: string]: string }
-): Promise<any> {
-  const url = new URL(`${fullBackendUrl}/${path}`);
-  for (let key in params) {
-    url.searchParams.append(key, params[key]);
-  }
-  const response = await fetch(url, {
-    method: method,
-    headers: { "Content-Type": "application/json; charset=UTF-8" },
-  });
-
-  const responseJSON = await response.json();
-  parseBigNumberInResponse(responseJSON);
-
-  return responseJSON;
-}
-
-export async function getOffers(provider: Provider, params: LoanParameters) {
   const loans: [FullOfferInfo, BigNumber][] = [];
   const token = await getToken(provider, params.token.address);
   console.log("getting offers for loan amount " + params.amount);
@@ -168,19 +116,14 @@ export async function getOffers(provider: Provider, params: LoanParameters) {
 
 export async function getSortedOffers(provider: Provider, token?: Address) {
   let output: FullOfferInfo[] = [];
-  try {
-    let response: OfferResponse[];
-    if (token !== undefined) {
-      response = await callBackend("offer", "GET", { token: token });
-    } else {
-      response = await callBackend("offer", "GET");
-    }
-    for (const item of response) {
-      //todo promise.all
-      output.push(await offerResponseToFullOfferInfo(provider, item));
-    }
-  } catch (error) {
-    console.error("Error fetching offers from owner:", error);
+  let response: OfferResponse[];
+  if (token !== undefined) {
+    response = await callBackend("offer", "GET", { token: token });
+  } else {
+    response = await callBackend("offer", "GET");
+  }
+  for (const item of response) {
+    output.push(await offerResponseToFullOfferInfo(provider, item));
   }
   return output;
 }
@@ -189,12 +132,70 @@ export async function getUnhealthyTroves(amount: number) {
   // todo return trove
 }
 
-export function parseBigNumberInResponse(response: [key: any]): any {
-  for (const key in response) {
-    const value = response[key];
-    if (value.type === "BigNumber") {
-      response[key] = BigNumber.from(value.hex);
-    }
+export async function offerRevoked(data: FullOfferInfo) {
+  //todo: this should be done on backend by listening for nonce update events or checking nonce on-chain because may not get called
+}
+
+let eth_price_cached: number | undefined = undefined;
+export async function getEthPrice() {
+  if (eth_price_cached == undefined) {
+    const response: { usd: number } = await callBackend(
+      "api/eth_price_usd",
+      "GET"
+    );
+    console.log("eth price response", response);
+    eth_price_cached = response.usd;
   }
-  return response;
+  return eth_price_cached!;
+}
+
+async function callBackend(
+  path: string,
+  method: string,
+  params?: { [key: string]: string }
+): Promise<any> {
+  const url = new URL(`${fullBackendUrl}/${path}`);
+  for (let key in params) {
+    url.searchParams.append(key, params[key]);
+  }
+  const response = await fetch(url, {
+    method: method,
+    headers: { "Content-Type": "application/json; charset=UTF-8" },
+    // body: body,
+  });
+
+  const responseJSON = await response.json();
+  parseBigNumberInResponse(responseJSON);
+
+  return responseJSON;
+}
+
+async function offerResponseToFullOfferInfo(
+  provider: Provider,
+  response: OfferResponse
+) {
+  response.amount = BigNumber.from(response.amount);
+  response.minLoanAmount = BigNumber.from(response.minLoanAmount);
+
+  const key = getOfferKey(response.owner, response.token, response.offerId);
+  const [nonce, amountBorrowed] = await getSupplyContract(
+    provider
+  ).getOfferInfo(key);
+
+  const [balance, allowance] = await getERC20BalanceAndAllowance(
+    provider,
+    response.owner as Address,
+    getSupplyAddress(),
+    response.token as Address
+  );
+
+  return {
+    offer: response,
+    signature: response.signature,
+    amountBorrowed: amountBorrowed,
+    isCancelled: nonce.toNumber() > response.nonce,
+    balance: balance,
+    allowance: allowance,
+    token: await getToken(provider, response.token),
+  };
 }

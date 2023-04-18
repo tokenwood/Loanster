@@ -57,9 +57,10 @@ import {
   formatDate,
   bigNumberString,
 } from "libs/helperFunctions";
-import { TokenDepositInfo, FullLoanInfo } from "libs/types";
+import { TokenDepositInfo, FullLoanInfo, TokenAmount } from "libs/types";
 import { WETH_TOKEN } from "libs/constants";
 import OfferBrowser from "components/OfferBrowser";
+import Price from "components/Price";
 
 const depositTableColdims: { [key: string]: ColSpecs } = {
   Asset: { size: 0.3 },
@@ -125,6 +126,12 @@ export default function LoansPage() {
                           WETH_TOKEN
                         )}
                     </StatNumber>
+                    <StatHelpText textStyle={"price"}>
+                      <Price
+                        token={WETH_TOKEN}
+                        amount={childProps.data.collateralValueEth}
+                      />
+                    </StatHelpText>
                   </Stat>
                   <Stat textAlign={"center"}>
                     <StatLabel>Total Debt</StatLabel>
@@ -135,6 +142,12 @@ export default function LoansPage() {
                           WETH_TOKEN
                         )}
                     </StatNumber>
+                    <StatHelpText textStyle={"price"}>
+                      <Price
+                        token={WETH_TOKEN}
+                        amount={childProps.data.loanValueEth}
+                      />
+                    </StatHelpText>
                   </Stat>
                 </HStack>
               );
@@ -172,15 +185,14 @@ export default function LoansPage() {
                         colSpecs={depositTableColdims}
                         colData={{
                           Asset: data.token,
-                          "In Wallet": BNToPrecision(
-                            data.wallet_amount,
-                            data.token.decimals,
-                            4
-                          ),
-                          Deposited: ethers.utils.formatUnits(
-                            data.deposit_amount ?? BigNumber.from(0),
-                            data.token.decimals
-                          ),
+                          Deposited: {
+                            token: data.token,
+                            amount: data.deposit_amount ?? BigNumber.from(0),
+                          },
+                          "In Wallet": {
+                            token: data.token,
+                            amount: data.wallet_amount,
+                          },
                         }}
                       />
                     );
@@ -326,7 +338,10 @@ export default function LoansPage() {
                             data.minAPY != undefined
                               ? (data.minAPY / 100).toFixed(2) + " %"
                               : "-",
-                          Available: bigNumberString(data.total, data.token),
+                          Available: {
+                            token: data.token,
+                            amount: data.total ?? BigNumber.from(0),
+                          },
                         }}
                       />
                     );

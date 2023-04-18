@@ -10,12 +10,12 @@ import {
 } from "./constants";
 import { SupportedChainId, Token } from "@uniswap/sdk-core";
 import { CurrencyAmount } from "@uniswap/sdk-core";
-import { FullOfferInfo, getOffersFrom } from "./backend";
+import { FullOfferInfo, getEthPrice, getOffersFrom } from "./backend";
 import { ADDRESS_ZERO } from "@uniswap/v3-sdk";
 import {
   LoanStats,
   AccountStats,
-  TokenBalanceInfo,
+  TokenAmount,
   FullLoanInfo,
   TokenDepositInfo,
   LoanOfferType,
@@ -122,10 +122,12 @@ export async function getNewHealthFactor(
     adjustedCollateralValue = adjustedCollateralValue.sub(adjustedValue);
   }
   if (addLoan) {
+    console.log("2 token: " + token + " amount " + addLoan);
     const [, adjustedValue] = await contract.getLoanValueEth(token, addLoan);
     adjustedLoanValue = adjustedLoanValue.add(adjustedValue);
   }
   if (removeLoan) {
+    console.log("2 token: " + token + " amount " + addLoan);
     const [_, adjustedValue] = await contract.getLoanValueEth(
       token,
       removeLoan
@@ -140,6 +142,19 @@ export async function getNewHealthFactor(
   } else {
     return Number.POSITIVE_INFINITY;
   }
+}
+
+export async function getTokenPrice(
+  provider: Provider,
+  token: Address,
+  amount: BigNumber
+): Promise<number> {
+  const contract = getTroveManagerContract(provider);
+  console.log("token: " + token + " amount " + amount);
+  const eth_value = await contract.getOracleValueEth(token, amount);
+  console.log("eth_value: " + eth_value);
+  const price = await getEthPrice();
+  return Number.parseFloat(ethers.utils.formatEther(eth_value)) * price;
 }
 
 export async function getToken(provider: Provider, tokenAddress: string) {
@@ -165,7 +180,7 @@ export async function getTokenBalance(
   provider: Provider,
   tokenAddress: Address,
   account: Address
-): Promise<TokenBalanceInfo> {
+): Promise<TokenAmount> {
   const token = await getToken(provider, tokenAddress);
   console.log("fetching token balance " + token.symbol);
 

@@ -293,17 +293,33 @@ contract TroveManager is Ownable {
         return (_accountLoansMap[account][index]);
     }
 
+    function getOracleValueEth(
+        address token,
+        uint256 amount
+    ) public view returns (uint256) {
+        return
+            IUniUtils(_uniUtils).getTWAPValueEth(
+                amount,
+                token,
+                _oraclePoolFees[token],
+                _twapInterval
+            );
+    }
+
     function getLoanValueEth(
         address token,
         uint256 amount
     ) public view returns (uint, uint) {
-        uint256 loanValue = IUniUtils(_uniUtils).getTWAPValueEth(
-            amount,
-            token,
-            _oraclePoolFees[token],
-            _twapInterval
-        );
+        uint256 loanValue = getOracleValueEth(token, amount);
         return (loanValue, (loanValue * 10000) / _borrowFactorsBPS[token]);
+    }
+
+    function getCollateralValueEth(
+        address token,
+        uint256 amount
+    ) public view returns (uint256, uint256) {
+        uint256 value = getOracleValueEth(token, amount);
+        return (value, (value * _collateralFactorsBPS[token]) / 10000);
     }
 
     // could there be so many loans that health becomes impossible to calculate without running out of gas?
@@ -347,19 +363,6 @@ contract TroveManager is Ownable {
         }
 
         return (collateralValue, adjustedCollateralValue);
-    }
-
-    function getCollateralValueEth(
-        address token,
-        uint256 amount
-    ) public view returns (uint256, uint256) {
-        uint256 value = IUniUtils(_uniUtils).getTWAPValueEth(
-            amount,
-            token,
-            _oraclePoolFees[token],
-            _twapInterval
-        );
-        return (value, (value * _collateralFactorsBPS[token]) / 10000);
     }
 
     function getHealthFactorBPS(

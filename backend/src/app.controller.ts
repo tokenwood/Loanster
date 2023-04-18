@@ -6,21 +6,21 @@ import { BigNumber } from 'ethers';
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
-  @Get()
-  getHello(): string {
-    return this.appService.getHello();
+  @Get('/api/eth_price_usd')
+  getEthPrice() {
+    return this.appService.getEthPriceAsync();
   }
 
-  @Post('/api/submit_offer')
-  postSubmitOffer(@Body() data: any) {
-    console.log('Request data:', data);
+  // @Post('/api/submit_offer')
+  // postSubmitOffer(@Body() data: any) {
+  //   console.log('Request data:', data);
 
-    // Return a response
-    return {
-      message: 'Data received successfully',
-      data: data,
-    };
+  //   // Return a response
+  //   return {
+  //     message: 'Data received successfully',
+  //     data: data,
+  //   };
 
-    // return this.appService.postSubmitOffer();
-  }
+  //   // return this.appService.postSubmitOffer();
+  // }
 }
