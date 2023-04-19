@@ -20,8 +20,8 @@ export function Layout(props: Props) {
     <div>
       <Box
         layerStyle={"level0"}
-        h={"100%"}
-        bgGradient={"linear(to-br, gray.150, #FFFFFF)"}
+        minH={"100vh"}
+        bgGradient={"linear(to-r, gray.50, gray.200)"}
       >
         <Header />
         <Container maxW="container.lg" py="20">
