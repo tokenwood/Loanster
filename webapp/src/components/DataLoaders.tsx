@@ -132,25 +132,33 @@ export function DataLoader<T>(props: DataLoaderProps<T>) {
   const [data, setData] = useState<T>(props.defaultValue);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
+  const [isError, setIsError] = useState<boolean>(false);
 
   const fetchData = async () => {
-    const tokens = await props.fetcher();
-    setIsLoaded(true);
-    setIsLoading(false);
-    setData(tokens);
-    if (props.dataLoaded != undefined) {
-      props.dataLoaded(tokens);
+    try {
+      setIsLoading(true);
+      const tokens = await props.fetcher();
+
+      if (tokens !== null && tokens !== undefined) {
+        setData(tokens);
+        if (props.dataLoaded !== undefined) {
+          props.dataLoaded(tokens);
+        }
+      } else {
+        setIsError(true);
+      }
+    } catch (error) {
+      console.log(error);
+      setIsError(true);
+    } finally {
+      setIsLoaded(true);
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
     if (!isLoaded && !isLoading) {
-      setIsLoading(true);
-      fetchData().catch((error) => {
-        console.log(error);
-        setIsLoaded(true);
-        setIsLoading(false);
-      });
+      fetchData();
     }
   }, [data]);
 
@@ -172,15 +180,19 @@ export function DataLoader<T>(props: DataLoaderProps<T>) {
   }, []);
 
   return isLoaded ? (
-    props.makeChildren({
-      data: data,
-      refetchData: () => {
-        fetchData();
-      },
-    })
+    !isError ? (
+      props.makeChildren({
+        data: data,
+        refetchData: () => {
+          fetchData();
+        },
+      })
+    ) : (
+      <Box>Error...</Box>
+    )
   ) : isLoading ? (
-    <Box>loading...</Box>
+    <Box>Loading...</Box>
   ) : (
-    <Box>error...</Box>
+    <Box>Error...</Box>
   );
 }
