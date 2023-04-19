@@ -163,17 +163,18 @@ export function DataLoader<T>(props: DataLoaderProps<T>) {
   }, [data]);
 
   useEffect(() => {
+    const eventCallback = () => {
+      fetchData();
+    };
     if (props.reloadEvents !== undefined) {
       props.reloadEvents.forEach((eventType: EventId) => {
-        eventEmitter.subscribe(eventType, () => {
-          fetchData();
-        });
+        eventEmitter.subscribe(eventType, eventCallback);
       });
     }
     return () => {
       if (props.reloadEvents !== undefined) {
         props.reloadEvents.forEach((eventType: EventId) => {
-          eventEmitter.unsubscribe(eventType);
+          eventEmitter.unsubscribe(eventType, eventCallback);
         });
       }
     };

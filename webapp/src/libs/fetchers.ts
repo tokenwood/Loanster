@@ -122,12 +122,10 @@ export async function getNewHealthFactor(
     adjustedCollateralValue = adjustedCollateralValue.sub(adjustedValue);
   }
   if (addLoan) {
-    console.log("2 token: " + token + " amount " + addLoan);
     const [, adjustedValue] = await contract.getLoanValueEth(token, addLoan);
     adjustedLoanValue = adjustedLoanValue.add(adjustedValue);
   }
   if (removeLoan) {
-    console.log("2 token: " + token + " amount " + addLoan);
     const [_, adjustedValue] = await contract.getLoanValueEth(
       token,
       removeLoan
@@ -371,7 +369,7 @@ export async function getUnusedOfferId(provider: Provider, account: Address) {
   const offerResponses = await getOffersFrom(provider, account); // should be cached
 
   const maxOfferId = Math.max(
-    ...offerResponses.map((offerResponse) => offerResponse.offer.offerId)
+    ...offerResponses.map((offerResponse) => offerResponse.offerId)
   );
 
   const troveManager = await getTroveManagerContract(provider);

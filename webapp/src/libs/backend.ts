@@ -57,10 +57,7 @@ export async function getOffersFrom(provider: Provider, account: Address) {
       owner: account,
     }
   );
-  const output = await Promise.all(
-    response.map((value) => offerResponseToFullOfferInfo(provider, value))
-  );
-  return output;
+  return response;
 }
 
 export async function getTokenOfferStats(token: Token) {
@@ -175,11 +172,16 @@ async function callBackend(
   } catch (error) {
     console.error("Failed to fetch:", error);
     // Handle the error as needed, e.g., return an error object or re-throw the error
-    return { error: { message: "Failed to fetch data from the backend server. Please try again later." } };
+    return {
+      error: {
+        message:
+          "Failed to fetch data from the backend server. Please try again later.",
+      },
+    };
   }
 }
 
-async function offerResponseToFullOfferInfo(
+export async function offerResponseToFullOfferInfo(
   provider: Provider,
   response: OfferResponse
 ) {

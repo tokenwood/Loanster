@@ -18,6 +18,7 @@ import {
 import { CurrencyAmount, Token } from "@uniswap/sdk-core";
 import { BigNumber, ethers } from "ethers";
 import { FullOfferInfo } from "libs/backend";
+import { eventEmitter, EventId } from "libs/eventEmitter";
 import {
   bigNumberString,
   BNToPrecision,
@@ -67,6 +68,7 @@ interface TableRowViewProps {
     [key: string]: string | Token | TokenAmount | (() => JSX.Element);
   };
   expandedCallback?: (expanded: boolean) => void;
+  events?: EventId[];
 }
 
 function isTokenAmount(obj: any) {
@@ -86,6 +88,25 @@ export function TableRowView(props: TableRowViewProps) {
       props.expandedCallback(expanded);
     }
   }, [expanded]);
+
+  useEffect(() => {
+    const eventCallback = () => {
+      setExpanded.off();
+    };
+    if (props.events !== undefined) {
+      props.events.forEach((eventType: EventId) => {
+        eventEmitter.subscribe(eventType, eventCallback);
+      });
+    }
+    return () => {
+      if (props.events !== undefined) {
+        props.events.forEach((eventType: EventId) => {
+          eventEmitter.unsubscribe(eventType, eventCallback);
+        });
+      }
+    };
+  }, []);
+
   return (
     <Flex
       w="100%"

@@ -102,6 +102,7 @@ export default function LoansPage() {
               { eventType: EventType.COLLATERAL_TOKEN_DEPOSITED },
               { eventType: EventType.COLLATERAL_TOKEN_WITHDRAWN },
               { eventType: EventType.LOAN_CREATED },
+              { eventType: EventType.LOAN_REPAID },
             ]}
             makeChildren={(childProps) => {
               return (
@@ -183,6 +184,16 @@ export default function LoansPage() {
                       <TableRowView
                         expandedCallback={setExpanded}
                         colSpecs={depositTableColdims}
+                        events={[
+                          {
+                            eventType: EventType.COLLATERAL_TOKEN_DEPOSITED,
+                            suffix: data.token.address,
+                          },
+                          {
+                            eventType: EventType.COLLATERAL_TOKEN_WITHDRAWN,
+                            suffix: data.token.address,
+                          },
+                        ]}
                         colData={{
                           Asset: data.token,
                           Deposited: {
@@ -265,6 +276,12 @@ export default function LoansPage() {
                       <TableRowView
                         expandedCallback={setExpanded}
                         colSpecs={borrowedTableColdims}
+                        events={[
+                          {
+                            eventType: EventType.LOAN_REPAID,
+                            suffix: listItemProps.id,
+                          },
+                        ]}
                         colData={{
                           Asset: data.token,
                           Debt: {

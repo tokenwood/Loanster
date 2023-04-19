@@ -21,7 +21,7 @@ export const eventEmitter: {
   readonly events: Record<string, (() => void)[]>;
   dispatch(eventId: EventId): void;
   subscribe(eventId: EventId, callback: () => void): void;
-  unsubscribe(eventId: EventId): void;
+  unsubscribe(eventId: EventId, callback: () => void): void;
   getEventKey(eventId: EventId): string;
 } = {
   //This is event object to store events.
@@ -33,8 +33,12 @@ export const eventEmitter: {
   //This will dispatch the event and call the callback for every event.
   dispatch(eventId) {
     const eventName = this.getEventKey(eventId);
-    if (!this.events[eventName]) return;
-    this.events[eventName].forEach((callback: () => void) => callback());
+    if (this.events[eventName]) {
+      this.events[eventName].forEach((callback: () => void) => callback());
+    }
+    if (eventId.suffix) {
+      this.dispatch({ eventType: eventId.eventType });
+    }
   },
   //This will subscribe the event with a specific callback
   subscribe(eventId, callback) {
@@ -45,9 +49,14 @@ export const eventEmitter: {
     }
   },
   //This will unsubscribe the event to avoid unnecessary event calls
-  unsubscribe(eventId) {
+  unsubscribe(eventId, callback) {
     const eventName = this.getEventKey(eventId);
     if (!this.events[eventName]) return;
-    delete this.events[eventName];
+    const callbacks = this.events[eventName];
+    const index = callbacks.indexOf(callback, 0);
+    if (index > -1) {
+      callbacks.splice(index, 1);
+    }
+    // delete this.events[eventName];
   },
 };

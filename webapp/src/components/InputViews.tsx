@@ -189,6 +189,7 @@ export function CollateralInputs(props: DepositInputsProps) {
                 props.callback();
                 eventEmitter.dispatch({
                   eventType: EventType.COLLATERAL_TOKEN_DEPOSITED,
+                  suffix: props.balanceData.token.address,
                 });
               }}
             ></ContractCallButton>
@@ -217,6 +218,7 @@ export function CollateralInputs(props: DepositInputsProps) {
               props.callback();
               eventEmitter.dispatch({
                 eventType: EventType.COLLATERAL_TOKEN_WITHDRAWN,
+                suffix: props.balanceData.token.address,
               });
             }}
           ></ContractCallButton>
@@ -406,7 +408,12 @@ export function RepayLoanInputs(props: RepayLoanInputs) {
                       args={[props.loanInfo.loanId, debtAmount]}
                       enabled={true}
                       callback={() => {
+                        console.log("loan repaid");
                         props.callback();
+                        eventEmitter.dispatch({
+                          eventType: EventType.LOAN_REPAID,
+                          suffix: props.loanInfo.loanId,
+                        });
                       }}
                     ></ContractCallButton>
                   ) : (

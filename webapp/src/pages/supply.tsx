@@ -14,7 +14,12 @@ import {
   TableRowView,
 } from "components/DataViews";
 import { eventEmitter, EventType } from "libs/eventEmitter";
-import { FullOfferInfo, getOffersFrom, offerRevoked } from "libs/backend";
+import {
+  FullOfferInfo,
+  getOffersFrom,
+  offerResponseToFullOfferInfo,
+  offerRevoked,
+} from "libs/backend";
 import { Flex, HStack, Spacer } from "@chakra-ui/react";
 import { BigNumber, ethers } from "ethers";
 import { ReactNode } from "react";
@@ -85,7 +90,9 @@ export default function SupplyPage() {
             makeListItem={(props) => {
               return (
                 <BaseView
-                  fetcher={() => Promise.resolve(props.id)}
+                  fetcher={() =>
+                    offerResponseToFullOfferInfo(provider, props.id)
+                  }
                   level={2}
                   key={"lending_offers_base" + props.index}
                   dataView={(data: FullOfferInfo, setExpanded) => {
@@ -189,10 +196,22 @@ export default function SupplyPage() {
                   key={props.id}
                   fetcher={() => getFullLoanInfo(provider, props.id)}
                   dataView={(data, setExpanded) => {
+                    if (
+                      data.claimable.eq(0) &&
+                      data.loan.amount.add(data.interest).eq(0)
+                    ) {
+                      return <></>;
+                    }
                     return (
                       <TableRowView
                         key={"lent_assets_" + props.id}
                         expandedCallback={setExpanded}
+                        events={[
+                          {
+                            eventType: EventType.LOAN_CLAIMED,
+                            suffix: data.token.address,
+                          },
+                        ]}
                         colSpecs={lentTableColdims}
                         colData={{
                           Asset: data.token,
