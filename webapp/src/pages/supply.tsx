@@ -60,7 +60,7 @@ const lentTableColdims: { [key: string]: ColSpecs } = {
 const toSupplyColDims: { [key: string]: ColSpecs } = {
   Asset: { size: 1, align: "left" },
   "In Wallet": { size: 1, align: "right" },
-  " ": { size: 2, align: "right" },
+  " ": { size: 0.1, align: "right" },
 };
 
 export default function SupplyPage() {

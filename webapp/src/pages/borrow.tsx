@@ -64,22 +64,22 @@ import Price from "components/Price";
 
 const depositTableColdims: { [key: string]: ColSpecs } = {
   Asset: { size: 0.3 },
-  "In Wallet": { size: 1, align: "right" },
+  "In Wallet": { size: 0.7, align: "right" },
   Deposited: { size: 1, align: "right" },
-  " ": { size: 2 },
+  " ": { size: 0.1 },
 };
 const borrowedTableColdims: { [key: string]: ColSpecs } = {
   Asset: { size: 0.3 },
   Debt: { size: 1, align: "right" },
   APY: { size: 1, align: "right" },
   Term: { size: 1, align: "right" },
-  " ": { size: 1 },
+  " ": { size: 0.2 },
 };
 const toBorrowTableColdims: { [key: string]: ColSpecs } = {
   Asset: { size: 0.3 },
   "Lowest APY": { size: 1, align: "right" },
   Available: { size: 1, align: "right" },
-  " ": { size: 2 },
+  " ": { size: 0.1 },
 };
 
 export default function LoansPage() {

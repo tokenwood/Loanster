@@ -59,6 +59,12 @@ const theme = extendTheme({
       bgColor: "transparent",
       //   borderColor: "transparent",
     },
+    tableHeader: {
+      level2: {
+        border: "0px",
+        color: "gray.800",
+      },
+    },
     headerButtonSelected: {
       border: "0px solid",
       color: "gray.900",

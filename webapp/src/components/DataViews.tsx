@@ -42,7 +42,7 @@ const TABLE_ROW_WIDTH = "95%";
 
 export function TableHeaderView(props: TableHeaderViewProps) {
   return (
-    <Flex w={"100%"} layerStyle={"level2"}>
+    <Flex w={"100%"} layerStyle={"tableHeader"}>
       <HStack w={TABLE_ROW_WIDTH} paddingLeft="3" paddingRight="3">
         {Object.keys(props.colSpecs).map((key) => {
           return (

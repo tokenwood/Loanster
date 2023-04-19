@@ -22,10 +22,12 @@ export function bigNumberString(amount: BigNumber, token: Token) {
 
 export function splitThousands(number: number, decimals: number) {
   if (number === undefined || number === null) {
-    return '0';
+    return "0";
   }
 
-  const parts = number.toFixed(decimals).split("."); // Split into integer and decimal parts
+  const parts = (Math.round(number * 10 ** decimals) / 10 ** decimals)
+    .toString()
+    .split("."); // Split into integer and decimal parts
   parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, " "); // Add space between thousands
   return parts.join(".");
 }

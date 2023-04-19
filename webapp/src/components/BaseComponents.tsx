@@ -7,7 +7,14 @@ import {
   useSignMessage,
 } from "wagmi";
 import ClientOnly from "components/clientOnly";
-import { background, Button, IconButton, useBoolean } from "@chakra-ui/react";
+import {
+  background,
+  Button,
+  IconButton,
+  Spinner,
+  useBoolean,
+  useToast,
+} from "@chakra-ui/react";
 import {
   actionInitColorScheme,
   cancelColorScheme,
@@ -67,7 +74,8 @@ interface ContractCallButtonProps {
 }
 
 export function ContractCallButton(props: ContractCallButtonProps) {
-  const { config, isError } = usePrepareContractWrite({
+  const toast = useToast();
+  const { config, isLoading, isError } = usePrepareContractWrite({
     address: props.contractAddress,
     abi: props.abi,
     functionName: props.functionName,
@@ -82,8 +90,16 @@ export function ContractCallButton(props: ContractCallButtonProps) {
 
   async function onClick() {
     try {
-      await writeAsync!();
+      const result = await writeAsync!();
       props.callback();
+      toast({
+        title: "Transaction confirmed",
+        description: result.hash,
+        status: "success",
+        position: "bottom-right",
+        duration: 9000,
+        isClosable: true,
+      });
     } catch (error) {
       console.log(error);
     }
@@ -99,7 +115,7 @@ export function ContractCallButton(props: ContractCallButtonProps) {
       isDisabled={!props.enabled || !writeAsync || isError}
       onClick={onClick}
     >
-      {props.buttonText ? props.buttonText : "Confirm"}
+      {isLoading ? <Spinner /> : props.buttonText ?? "Confirm"}
     </Button>
   );
 }
