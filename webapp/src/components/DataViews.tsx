@@ -160,6 +160,7 @@ export function TableRowView(props: TableRowViewProps) {
                   {bigNumberString(tokenAmount.amount, tokenAmount.token)}
                 </Text>
                 <Price
+                  key={tokenAmount.amount.toString()}
                   token={tokenAmount.token}
                   amount={tokenAmount.amount}
                   textAlign={props.colSpecs[key].align ?? "left"}

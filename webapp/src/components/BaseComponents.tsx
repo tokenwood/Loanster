@@ -29,6 +29,7 @@ import { EventId } from "libs/eventEmitter";
 import { verifyMessage } from "ethers/lib/utils.js";
 import { ethers } from "ethers";
 import { ChevronDownIcon, ChevronUpIcon } from "@chakra-ui/icons";
+import { bigNumberString } from "libs/helperFunctions";
 
 interface BasePageProps {
   account: Address | undefined;
@@ -75,7 +76,7 @@ interface ContractCallButtonProps {
 
 export function ContractCallButton(props: ContractCallButtonProps) {
   const toast = useToast();
-  const { config, isLoading, isError } = usePrepareContractWrite({
+  const { data, config, isLoading, isError } = usePrepareContractWrite({
     address: props.contractAddress,
     abi: props.abi,
     functionName: props.functionName,
@@ -91,15 +92,35 @@ export function ContractCallButton(props: ContractCallButtonProps) {
   async function onClick() {
     try {
       const result = await writeAsync!();
-      props.callback();
       toast({
-        title: "Transaction confirmed",
-        description: result.hash,
-        status: "success",
+        title: "Transaction submitted",
+        description: undefined,
+        status: "info",
         position: "bottom-right",
-        duration: 9000,
+        duration: 5000,
         isClosable: true,
       });
+      const confirmed = await result.wait();
+      props.callback();
+      if (confirmed.status === 1) {
+        toast({
+          title: "Transaction confirmed",
+          description: undefined,
+          status: "success",
+          position: "bottom-right",
+          duration: 5000,
+          isClosable: true,
+        });
+      } else {
+        toast({
+          title: "Transaction failed",
+          description: undefined,
+          status: "error",
+          position: "bottom-right",
+          duration: 5000,
+          isClosable: true,
+        });
+      }
     } catch (error) {
       console.log(error);
     }

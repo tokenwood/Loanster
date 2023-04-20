@@ -31,7 +31,7 @@ export function Layout(props: Props) {
             //   ? "container.xl"
             //   : "container.lg"
           }
-          paddingTop={"10"}
+          paddingY={"10"}
         >
           {props.children}
         </Container>

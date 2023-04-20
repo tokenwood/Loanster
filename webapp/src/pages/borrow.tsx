@@ -264,7 +264,11 @@ export default function LoansPage() {
                 colSpecs={borrowedTableColdims}
               ></TableHeaderView>
             )}
-            reloadEvents={[{ eventType: EventType.LOAN_CREATED }]}
+            placeholderText={"No loans"}
+            reloadEvents={[
+              { eventType: EventType.LOAN_CREATED },
+              { eventType: EventType.LOAN_REPAID },
+            ]}
             makeListItem={(listItemProps) => {
               return (
                 <BaseView
