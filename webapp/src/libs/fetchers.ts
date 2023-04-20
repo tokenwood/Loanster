@@ -379,9 +379,16 @@ export async function getUnusedOfferId(provider: Provider, account: Address) {
   console.log("getting unused offer id");
   const offerResponses = await getOffersFrom(provider, account); // should be cached
 
-  const maxOfferId = Math.max(
-    ...offerResponses.map((offerResponse) => offerResponse.offerId)
-  );
+  let maxOfferId = 0;
+  if (Array.isArray(offerResponses)) {
+    maxOfferId = Math.max(
+      ...offerResponses.map((offerResponse) => offerResponse.offerId)
+    );
+  } else {
+    console.log("Error: Backend is not working");
+    // Handle the error case when the backend is not working
+    // You can return an error, throw an error, or use a default value depending on your use case
+  }
 
   const troveManager = await getTroveManagerContract(provider);
   const addressBytes32 = ethers.utils.hexZeroPad(account, 32);

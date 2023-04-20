@@ -172,12 +172,7 @@ async function callBackend(
   } catch (error) {
     console.error("Failed to fetch:", error);
     // Handle the error as needed, e.g., return an error object or re-throw the error
-    return {
-      error: {
-        message:
-          "Failed to fetch data from the backend server. Please try again later.",
-      },
-    };
+    return null;
   }
 }
 
