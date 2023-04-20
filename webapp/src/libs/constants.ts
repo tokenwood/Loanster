@@ -17,6 +17,8 @@ export const V3_SWAP_ROUTER_2_ADDRESS =
 export const V3_SWAP_ROUTER_ADDRESS =
   "0xE592427A0AEce92De3Edee1F18E0157C05861564";
 
+// Currencies and Tokens
+
 export const WETH_TOKEN = new Token(
   SupportedChainId.MAINNET,
   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
@@ -24,7 +26,46 @@ export const WETH_TOKEN = new Token(
   "WETH",
   "Wrapped Ether"
 );
-// Currencies and Tokens
+
+export const WETH_TOKEN_GOERLI = new Token(
+  SupportedChainId.GOERLI,
+  "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6",
+  18,
+  "WETH",
+  "Wrapped Ether"
+);
+
+export const RETH_TOKEN_GOERLI = new Token(
+  SupportedChainId.GOERLI,
+  "0x178E141a0E3b34152f73Ff610437A7bf9B83267A",
+  18,
+  "rETH",
+  "Rocketpool Ether"
+);
+
+export const UNI_TOKEN_GOERLI = new Token(
+  SupportedChainId.GOERLI,
+  "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
+  18,
+  "UNI",
+  "Uniswap"
+);
+
+export const CHAINLINK_TOKEN_GOERLI = new Token(
+  SupportedChainId.GOERLI,
+  "0x75fCb584D1066907b0f8E5EdB7AC89954B292575",
+  18,
+  "LINK",
+  "Chainlink"
+);
+
+export const USDC_TOKEN_GOERLI = new Token(
+  SupportedChainId.MAINNET,
+  "0x07865c6E87B9F70255377e024ace6630C1Eaa37F",
+  6,
+  "USDC",
+  "USD//C"
+);
 
 export const USDC_TOKEN = new Token(
   SupportedChainId.MAINNET,

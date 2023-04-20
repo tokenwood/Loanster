@@ -64,6 +64,12 @@ deploy_all:
 	cd ${PROJECT_FOLDER}/chain && \
 	yarn hardhat run scripts/mock.ts --network localhost
 
+deploy_all_goerli:
+	cd ${PROJECT_FOLDER}/unilib && \
+		yarn hardhat run scripts/deploy.ts --network goerli 
+	cd ${PROJECT_FOLDER}/chain && \
+		yarn hardhat run scripts/deploy.ts --network goerli 
+
 lint:
 	cd ${PROJECT_FOLDER}/unilib && \
 	yarn hardhat check

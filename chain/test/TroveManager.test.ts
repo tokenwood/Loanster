@@ -44,7 +44,7 @@ describe("TroveManager", function () {
 
   async function deployTroveManagerFixture() {
     const supply = await deploySupply();
-    const troveManager = await deployTroveManager(supply.address);
+    const troveManager = await deployTroveManager(supply.address, networkName);
     await supply.setTroveManager(troveManager.address);
 
     console.log(`supply and troveManager deployed`);

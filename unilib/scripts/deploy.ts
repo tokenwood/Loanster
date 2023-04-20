@@ -1,16 +1,25 @@
 import { deployUniUtils } from "./utils";
 import hre from "hardhat";
 import { error } from "console";
+import { ethers } from "hardhat";
+import { WETH_TOKEN_GOERLI, WETH_TOKEN } from "../../webapp/src/libs/constants";
 
 const networkName = hre.network.name;
-const chainId = hre.network.config.chainId;
 
 async function main() {
-  if (networkName !== "localhost") {
-    throw error("should deploy to localhost");
+  if (!["localhost", "goerli"].includes(networkName)) {
+    throw error("unknown network: " + networkName);
   }
 
-  const uniUtils = await deployUniUtils();
+  console.log("deploying to network: ", networkName);
+  const [deployer] = await ethers.getSigners();
+  console.log("deployer address: ", deployer.address);
+
+  const wethAddress =
+    networkName === "goerli" ? WETH_TOKEN_GOERLI.address : WETH_TOKEN.address;
+
+  console.log("weth address: " + wethAddress);
+  const uniUtils = await deployUniUtils(wethAddress!);
   console.log(`uni utils deployed to ${uniUtils.address}`);
 
   const deployments = {
@@ -19,7 +28,7 @@ async function main() {
 
   var fs = require("fs");
   fs.writeFile(
-    "./cache/deployments.json",
+    "./cache/deployments_" + networkName + ".json",
     JSON.stringify(deployments),
     function (err: any) {
       if (err) {

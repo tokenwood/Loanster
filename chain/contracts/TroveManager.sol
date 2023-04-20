@@ -98,7 +98,7 @@ contract TroveManager is Ownable {
 
         require(
             IERC20(token).balanceOf(msg.sender) >= amount,
-            "Insufficient WETH balance"
+            "Insufficient balance"
         );
         require(
             IERC20(token).transferFrom(msg.sender, address(this), amount),

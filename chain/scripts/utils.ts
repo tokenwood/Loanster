@@ -1,12 +1,12 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { BigNumber } from "ethers";
 import { ethers } from "hardhat";
-import unilib_deployment from "../../unilib/cache/deployments.json";
 import deployments from "../cache/deployments.json";
 import {
   V3_SWAP_ROUTER_ADDRESS,
   WETH_TOKEN,
 } from "../../webapp/src/libs/constants";
+import fs from "fs";
 import { TroveManager } from "../typechain-types/contracts/TroveManager";
 
 export const ONE_YEAR_IN_SECS = 365 * 24 * 60 * 60;
@@ -15,16 +15,25 @@ export const ONE_DAY_IN_SECS = 24 * 60 * 60;
 
 const TIMESTAMP_2030 = 1893452400;
 
-export function getUniUtilsAddress() {
-  if (unilib_deployment == undefined) {
-    throw Error("uni utils not deployed");
+export function getUniUtilsAddress(networkName: string) {
+  const deploymentsPath =
+    "../unilib/cache/deployments_" + networkName + ".json";
+  const deployments = readJson(deploymentsPath);
+  if (deployments == undefined) {
+    throw Error("deployments file not found at " + deploymentsPath);
   }
-  return unilib_deployment.uniUtils;
+  return deployments.uniUtils;
 }
 
-export function getUniUtilsContract() {
-  const contract = ethers.getContractAt("IUniUtils", getUniUtilsAddress());
-  return contract;
+function readJson(filePath: string): any {
+  try {
+    const data = fs.readFileSync(filePath, "utf-8");
+    return JSON.parse(data);
+  } catch (error: any) {
+    throw new Error(
+      `Failed to read or parse JSON file at path ${filePath}: ${error.message}`
+    );
+  }
 }
 
 export function getWETHContract() {
@@ -63,15 +72,17 @@ export async function deploySupply() {
   const Supply = await ethers.getContractFactory("Supply");
   const supply = await Supply.deploy();
   await supply.deployed();
-
   return supply;
 }
 
-export async function deployTroveManager(supplyAddress: string) {
+export async function deployTroveManager(
+  supplyAddress: string,
+  networkName: string
+) {
   const TroveManager = await ethers.getContractFactory("TroveManager");
   const troveManager = await TroveManager.deploy(
     supplyAddress,
-    getUniUtilsAddress()
+    getUniUtilsAddress(networkName)
   );
 
   return troveManager;

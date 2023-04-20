@@ -1,4 +1,4 @@
-import { ethers } from "hardhat";
+import { ethers, network } from "hardhat";
 import {
   buyToken,
   deploySupply,
@@ -7,45 +7,67 @@ import {
   getUniUtilsAddress,
 } from "./utils";
 import {
+  CHAINLINK_TOKEN_GOERLI,
   LUSD_TOKEN,
   RETH_TOKEN,
+  RETH_TOKEN_GOERLI,
+  UNI_TOKEN_GOERLI,
   USDC_TOKEN,
+  USDC_TOKEN_GOERLI,
   WBTC_TOKEN,
   WETH_TOKEN,
+  WETH_TOKEN_GOERLI,
 } from "../../webapp/src/libs/constants";
 import hre from "hardhat";
 import { error } from "console";
 
 const networkName = hre.network.name;
-const chainId = hre.network.config.chainId;
 
 async function main() {
-  if (networkName !== "localhost") {
-    throw error("should deploy to localhost");
+  if (!["localhost", "goerli"].includes(networkName)) {
+    throw error("unknown network: " + networkName);
   }
+  console.log("deploying to network: ", networkName);
+  const [deployer] = await ethers.getSigners();
+  console.log("deployer address: ", deployer.address);
 
-  const supply = await deploySupply();
-  console.log(`supply deployed to ${supply.address}`);
+  // const supply = await deploySupply();
+  // console.log(`supply deployed to ${supply.address}`);
 
-  const troveManager = await deployTroveManager(supply.address);
+  const supplyAddress = "0xb579d65f781224A0d7fa8d5e845426FE3083ffF0"; //supply.address;
+  const troveManager = await deployTroveManager(supplyAddress, networkName);
   console.log(`trove manager deployed to ${troveManager.address}`);
 
-  await troveManager.addSupplyToken(USDC_TOKEN.address, 9000, 500);
-  await troveManager.addSupplyToken(LUSD_TOKEN.address, 9000, 500);
-  await troveManager.addSupplyToken(WBTC_TOKEN.address, 8000, 500);
+  if (networkName === "goerli") {
+    console.log("adding collateral tokens");
+    await troveManager.addCollateralToken(WETH_TOKEN_GOERLI.address, 10000, 0);
+    await troveManager.addCollateralToken(RETH_TOKEN_GOERLI.address, 9000, 500);
+    console.log("adding supply tokens");
+    await troveManager.addSupplyToken(USDC_TOKEN_GOERLI.address, 9000, 500);
+    await troveManager.addSupplyToken(UNI_TOKEN_GOERLI.address, 8000, 3000);
+    await troveManager.addSupplyToken(
+      CHAINLINK_TOKEN_GOERLI.address,
+      8000,
+      3000
+    );
+  } else if (networkName === "localhost") {
+    await troveManager.addSupplyToken(USDC_TOKEN.address, 9000, 500);
+    await troveManager.addSupplyToken(LUSD_TOKEN.address, 9000, 500);
+    await troveManager.addSupplyToken(WBTC_TOKEN.address, 8000, 500);
 
-  await troveManager.addCollateralToken(WETH_TOKEN.address, 10000, 0);
-  await troveManager.addCollateralToken(RETH_TOKEN.address, 9000, 500);
+    await troveManager.addCollateralToken(WETH_TOKEN.address, 10000, 0);
+    await troveManager.addCollateralToken(RETH_TOKEN.address, 9000, 500);
+  }
 
   const deployments = {
-    uniUtils: getUniUtilsAddress(),
-    supply: supply.address,
+    uniUtils: getUniUtilsAddress(networkName),
+    supply: supplyAddress,
     troveManager: troveManager.address,
   };
 
   var fs = require("fs");
   fs.writeFile(
-    "./cache/deployments.json",
+    "./deployments/deployments_" + networkName + ".json",
     JSON.stringify(deployments),
     function (err: any) {
       if (err) {

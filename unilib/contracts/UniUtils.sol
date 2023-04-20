@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity >=0.5.0;
+pragma solidity 0.7.6;
 
 import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 import "@uniswap/v3-core/contracts/libraries/TickMath.sol";
@@ -7,11 +7,15 @@ import "@uniswap/v3-core/contracts/libraries/FixedPoint96.sol";
 import "@uniswap/v3-core/contracts/libraries/FullMath.sol";
 import "@uniswap/v3-periphery/contracts/libraries/PoolAddress.sol";
 
-library UniUtils {
-    address internal constant FACTORY =
+contract UniUtils {
+    address private constant FACTORY =
         0x1F98431c8aD98523631AE4a59f267346ea31F984;
 
-    address internal constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+    address private immutable WETH;
+
+    constructor(address _WETH) {
+        WETH = _WETH;
+    }
 
     function getTWAPValueEth(
         uint256 amount,
@@ -22,6 +26,7 @@ library UniUtils {
         if (token == WETH) {
             return amount;
         }
+
         PoolAddress.PoolKey memory key = PoolAddress.getPoolKey(
             token,
             WETH,
