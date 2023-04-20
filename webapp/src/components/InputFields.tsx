@@ -36,8 +36,14 @@ export function TokenAmountInput(props: TokenAmountInputProps) {
       props.buttonValue ??
       ethers.utils.formatUnits(props.balance, props.token.decimals);
 
+    // Round the value to the token's decimals
+    const newValueRounded = ethers.utils.parseUnits(
+      newValueString,
+      props.token.decimals
+    );
+
     setValue(newValueString);
-    props.callback(BigNumber.from(newValueString));
+    props.callback(newValueRounded);
   };
 
   const numberChanged = (valueAsString: string, valueAsNumber: number) => {

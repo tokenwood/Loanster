@@ -38,22 +38,22 @@ export default function ListLoader<T>(props: ListLoaderProps<T>) {
       makeChildren={(childProps: ChildProps<T[]>) => {
         return (
           <VStack>
-            {childProps.data.length == 0 && props.placeholderText ? (
+            {childProps.data.length === 0 && props.placeholderText ? (
               <Text>{props.placeholderText}</Text>
+            ) : null}
+            {childProps.data.length > 0 && props.makeHeader
+              ? props.makeHeader(childProps.data)
+              : null}
+            {Array.isArray(childProps.data) ? (
+              childProps.data.map((id: T, index: number) =>
+                props.makeListItem({
+                  id: id,
+                  index: index,
+                  callback: childProps.refetchData,
+                })
+              )
             ) : (
-              <></>
-            )}
-            {childProps.data.length > 0 && props.makeHeader ? (
-              props.makeHeader(childProps.data)
-            ) : (
-              <></>
-            )}
-            {childProps.data.map((id: T, index: number) =>
-              props.makeListItem({
-                id: id,
-                index: index,
-                callback: childProps.refetchData,
-              })
+              <Box>Error fetching data</Box>
             )}
           </VStack>
         );
