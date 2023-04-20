@@ -82,9 +82,6 @@ export function ContractCallButton(props: ContractCallButtonProps) {
     functionName: props.functionName,
     enabled: props.enabled,
     args: props.args,
-    // onError(error) {
-    //   console.log(error);
-    // },
   });
 
   const { writeAsync } = useContractWrite(config);
@@ -127,17 +124,19 @@ export function ContractCallButton(props: ContractCallButtonProps) {
   }
 
   return (
-    <Button
-      colorScheme="green"
-      borderRadius={defaultBorderRadius}
-      size={DEFAULT_SIZE}
-      hidden={props.hidden}
-      alignSelf="center"
-      isDisabled={!props.enabled || !writeAsync || isError}
-      onClick={onClick}
-    >
-      {isLoading ? <Spinner /> : props.buttonText ?? "Confirm"}
-    </Button>
+    <VStack>
+      <Button
+        colorScheme="green"
+        borderRadius={defaultBorderRadius}
+        size={DEFAULT_SIZE}
+        hidden={props.hidden}
+        alignSelf="center"
+        isDisabled={!props.enabled || !writeAsync || isError}
+        onClick={onClick}
+      >
+        {isLoading ? <Spinner /> : props.buttonText ?? "Confirm"}
+      </Button>
+    </VStack>
   );
 }
 

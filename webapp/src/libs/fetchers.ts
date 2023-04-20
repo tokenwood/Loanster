@@ -282,6 +282,17 @@ export async function getBorrowerLoanIds(
   return loanIds;
 }
 
+export async function getOpenLoans(provider: Provider, account: Address) {
+  const loanIds = await getLenderLoanIds(provider, account);
+  const loanInfos = await Promise.all(
+    loanIds.map((id) => getFullLoanInfo(provider, id))
+  );
+
+  return loanInfos.filter(
+    (info) => info.claimable.eq(0) && !info.loan.amount.add(info.interest).eq(0)
+  );
+}
+
 export async function getLenderLoanIds(
   provider: Provider,
   account: Address

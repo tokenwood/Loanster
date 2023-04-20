@@ -34,6 +34,7 @@ import {
   getFullLoanInfo,
   getSupplyTokenAddresses,
   getTokenBalance,
+  getOpenLoans,
 } from "libs/fetchers";
 import { FullLoanInfo, TokenAmount } from "libs/types";
 import { getOfferKey } from "libs/sharedUtils";
@@ -185,7 +186,7 @@ export default function LendPage() {
             {"Lent Assets"}
           </Heading>
           <ListLoader
-            fetchData={() => getLenderLoanIds(provider, account!)}
+            fetchData={() => getOpenLoans(provider, account!)}
             makeHeader={() => (
               <TableHeaderView colSpecs={lentTableColdims}></TableHeaderView>
             )}
@@ -193,15 +194,9 @@ export default function LendPage() {
               return (
                 <BaseView
                   level={2}
-                  key={props.id}
-                  fetcher={() => getFullLoanInfo(provider, props.id)}
+                  key={props.id.loanId}
+                  fetcher={() => Promise.resolve(props.id)}
                   dataView={(data, setExpanded) => {
-                    if (
-                      data.claimable.eq(0) &&
-                      data.loan.amount.add(data.interest).eq(0)
-                    ) {
-                      return <></>;
-                    }
                     return (
                       <TableRowView
                         key={"lent_assets_" + props.id}
