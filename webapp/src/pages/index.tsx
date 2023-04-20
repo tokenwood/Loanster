@@ -9,7 +9,7 @@ const Home: NextPage = () => {
   const router = useRouter();
 
   useEffect(() => {
-    router.push("/supply");
+    router.push("/borrow");
   }, []);
 
   return <Box>index</Box>;

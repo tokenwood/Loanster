@@ -290,7 +290,9 @@ export default function LoansPage() {
                           },
                           APY:
                             (data.loan.interestRateBPS / 100).toFixed(2) + " %",
-                          Term: formatDate(data.loan.expiration),
+                          Term: {
+                            timestamp: data.loan.expiration,
+                          },
                         }}
                       />
                     );

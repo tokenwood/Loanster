@@ -20,6 +20,16 @@ export function bigNumberString(amount: BigNumber, token: Token) {
   return splitThousands(number, decimals);
 }
 
+export function dollarString(num: number) {
+  if (num >= 1000000) {
+    return "$" + (num / 1000000).toFixed(1) + "m";
+  } else if (num >= 1000) {
+    return "$" + (num / 1000).toFixed(1) + "k";
+  } else {
+    return "$" + num.toFixed(1);
+  }
+}
+
 export function splitThousands(number: number, decimals: number) {
   if (number === undefined || number === null) {
     return "0";
@@ -30,6 +40,34 @@ export function splitThousands(number: number, decimals: number) {
     .split("."); // Split into integer and decimal parts
   parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, " "); // Add space between thousands
   return parts.join(".");
+}
+
+export function formatTimeRemaining(timestamp: number): string {
+  const now = new Date().getTime();
+  const difference = timestamp - now;
+
+  // Calculate the time remaining in days, hours, and minutes
+  const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+  const hours = Math.floor(
+    (difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+  );
+  const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+
+  // Construct the time remaining string
+  let timeRemaining = "";
+  if (days > 0) {
+    timeRemaining += `${days} days `;
+  }
+  if (days < 2) {
+    if (hours > 0) {
+      timeRemaining += `${hours} hours `;
+    }
+    if (minutes > 0) {
+      timeRemaining += `${minutes} minutes`;
+    }
+  }
+
+  return timeRemaining.trim();
 }
 
 export function BNToPrecision(

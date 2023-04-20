@@ -61,6 +61,10 @@ export interface TokenAmount {
   token: Token;
 }
 
+export interface Timestamp {
+  timestamp: number;
+}
+
 export interface TokenDepositInfo {
   wallet_amount: BigNumber;
   deposit_amount?: BigNumber;

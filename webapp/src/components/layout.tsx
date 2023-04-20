@@ -24,7 +24,15 @@ export function Layout(props: Props) {
         bgGradient={"linear(to-r, gray.50, gray.200)"}
       >
         <Header />
-        <Container maxW="container.lg" paddingTop={"10"}>
+        <Container
+          maxW={
+            "container.lg"
+            // typeof window !== "undefined" && window.location.pathname == "/lend"
+            //   ? "container.xl"
+            //   : "container.lg"
+          }
+          paddingTop={"10"}
+        >
           {props.children}
         </Container>
       </Box>

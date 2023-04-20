@@ -2,7 +2,7 @@ import { Box, Text } from "@chakra-ui/react";
 import { CurrencyAmount, Token } from "@uniswap/sdk-core";
 import { BigNumber } from "ethers";
 import { getTokenPrice } from "libs/fetchers";
-import { splitThousands } from "libs/helperFunctions";
+import { dollarString, splitThousands } from "libs/helperFunctions";
 import { TokenAmount } from "libs/types";
 import { Address, useProvider } from "wagmi";
 import { DataLoader } from "./DataLoaders";
@@ -30,7 +30,7 @@ export default function Price(props: PriceProps) {
             textStyle={props.textStyle}
             w={props.w ?? undefined}
           >
-            $ {splitThousands(childProps.data, 0)}
+            {dollarString(childProps.data)}
           </Text>
         );
       }}

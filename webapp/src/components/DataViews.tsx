@@ -16,6 +16,7 @@ import {
   useBoolean,
 } from "@chakra-ui/react";
 import { CurrencyAmount, Token } from "@uniswap/sdk-core";
+import { timeStamp } from "console";
 import { BigNumber, ethers } from "ethers";
 import { FullOfferInfo } from "libs/backend";
 import { eventEmitter, EventId } from "libs/eventEmitter";
@@ -23,8 +24,9 @@ import {
   bigNumberString,
   BNToPrecision,
   formatDate,
+  formatTimeRemaining,
 } from "libs/helperFunctions";
-import { FullLoanInfo, TokenAmount } from "libs/types";
+import { FullLoanInfo, Timestamp, TokenAmount } from "libs/types";
 import { ReactNode, useEffect } from "react";
 import Price from "./Price";
 import { statFontSize, tableRowHoverStyle } from "./Theme";
@@ -65,19 +67,27 @@ export function TableHeaderView(props: TableHeaderViewProps) {
 interface TableRowViewProps {
   colSpecs: { [key: string]: ColSpecs };
   colData: {
-    [key: string]: string | Token | TokenAmount | (() => JSX.Element);
+    [key: string]:
+      | string
+      | Token
+      | TokenAmount
+      | Timestamp
+      | (() => JSX.Element);
   };
   expandedCallback?: (expanded: boolean) => void;
   events?: EventId[];
 }
 
 function isTokenAmount(obj: any) {
-  const val =
+  return (
     obj !== undefined &&
     typeof obj === "object" &&
     "amount" in obj &&
-    "token" in obj;
-  return val;
+    "token" in obj
+  );
+}
+function isTimestamp(obj: any) {
+  return obj !== undefined && typeof obj === "object" && "timestamp" in obj;
 }
 
 export function TableRowView(props: TableRowViewProps) {
@@ -156,6 +166,26 @@ export function TableRowView(props: TableRowViewProps) {
                   textStyle={"price"}
                   w={"100%"}
                 ></Price>
+              </VStack>
+            );
+          } else if (isTimestamp(props.colData[key])) {
+            const timestamp = (props.colData[key] as Timestamp).timestamp;
+            return (
+              <VStack key={key} w={getWidth(key, props.colSpecs)} spacing={0}>
+                <Text
+                  w={"100%"}
+                  textAlign={props.colSpecs[key].align ?? "left"}
+                  textStyle={"tableRow"}
+                >
+                  {formatDate(timestamp)}
+                </Text>
+                <Text
+                  textAlign={props.colSpecs[key].align ?? "left"}
+                  textStyle={"price"}
+                  w={"100%"}
+                >
+                  in {formatTimeRemaining(timestamp * 1000)}
+                </Text>
               </VStack>
             );
           } else if (typeof props.colData[key] == "function") {

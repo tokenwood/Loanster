@@ -63,7 +63,7 @@ const toSupplyColDims: { [key: string]: ColSpecs } = {
   " ": { size: 0.1, align: "right" },
 };
 
-export default function SupplyPage() {
+export default function LendPage() {
   const { address: account, isConnecting, isDisconnected } = useAccount();
   const provider = useProvider();
   return (
@@ -121,7 +121,7 @@ export default function SupplyPage() {
                             "d / " +
                             data.offer.maxLoanDuration / 3600 / 24 +
                             "d",
-                          Expiration: formatDate(data.offer.expiration),
+                          Expiration: { timestamp: data.offer.expiration },
                           Status: () => (
                             <Check checked={isValidOffer(data)}></Check>
                           ),
@@ -224,7 +224,7 @@ export default function SupplyPage() {
                             amount: data.claimable,
                             token: data.token,
                           },
-                          Term: formatDate(data.loan.expiration),
+                          Term: { timestamp: data.loan.expiration },
                         }}
                       />
                     );
@@ -277,7 +277,7 @@ export default function SupplyPage() {
 
         <Box>
           <Heading as="h6" size="sm" mb="3">
-            {"Assets to supply"}
+            {"Assets to lend"}
           </Heading>
           <ListLoader
             fetchData={() => getSupplyTokenAddresses(provider)}

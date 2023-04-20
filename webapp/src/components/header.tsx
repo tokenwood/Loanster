@@ -40,7 +40,7 @@ export default function Header() {
         </Box>
         <HeaderButton linkPath="/borrow" buttonText="Borrow"></HeaderButton>
         {/* <HeaderButton linkPath="/loans" buttonText="Loans"></HeaderButton> */}
-        <HeaderButton linkPath="/supply" buttonText="Supply"></HeaderButton>
+        <HeaderButton linkPath="/lend" buttonText="Lend"></HeaderButton>
         <HeaderButton
           linkPath="/liquidations"
           buttonText="Liquidations"
