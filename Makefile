@@ -41,20 +41,28 @@ start_front_bg:
 
 start_db:
 	cd ${PROJECT_FOLDER} && \
-	docker-compose up
+	docker-compose up loanster_db
 
 start_db_bg:
 	cd ${PROJECT_FOLDER} && \
-	docker-compose up -d
+	docker-compose up -d loanster_db
 	sleep 30
 
+stop_db:
+	cd ${PROJECT_FOLDER} && \
+	docker-compose stop loanster_db
+
 start_backend:
-	cd ${PROJECT_FOLDER}/backend && \
-	npm run start:dev
+	cd ${PROJECT_FOLDER} && \
+	docker-compose up backend
 
 start_backend_bg:
-	cd ${PROJECT_FOLDER}/backend && \
-	npm run start:dev &
+	cd ${PROJECT_FOLDER} && \
+	docker-compose up -d backend
+
+stop_backend:
+	cd ${PROJECT_FOLDER} && \
+	docker-compose stop backend
 
 deploy_all:	
 	cd ${PROJECT_FOLDER}/unilib && \

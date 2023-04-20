@@ -1,7 +1,7 @@
 version: '3.7'
 
 services:
-  postgres:
+  loanster_db:
     image: postgres:15-alpine
     container_name: postgres
     restart: always
@@ -15,6 +15,26 @@ services:
       - ${DB_PORT}:${DB_PORT}
     networks:
       - network
+
+  backend:
+    build:
+      context: . # Set the build context to the root of your project
+      dockerfile: backend/Dockerfile.backend
+    container_name: backend
+    restart: always
+    environment:
+      DB_HOST: loanster_db
+      DB_PORT: ${DB_PORT}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DATABASE: ${DB_DATABASE}
+      BACKEND_PORT: ${BACKEND_PORT}
+    ports:
+      - ${BACKEND_PORT}:${BACKEND_PORT}
+    networks:
+      - network
+    depends_on:
+      - loanster_db
 
 networks:
   network:
