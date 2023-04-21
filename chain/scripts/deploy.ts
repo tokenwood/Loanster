@@ -31,10 +31,10 @@ async function main() {
   const [deployer] = await ethers.getSigners();
   console.log("deployer address: ", deployer.address);
 
-  // const supply = await deploySupply();
-  // console.log(`supply deployed to ${supply.address}`);
+  const supply = await deploySupply();
+  console.log(`supply deployed to ${supply.address}`);
 
-  const supplyAddress = "0xb579d65f781224A0d7fa8d5e845426FE3083ffF0"; //supply.address;
+  const supplyAddress = supply.address; 
   const troveManager = await deployTroveManager(supplyAddress, networkName);
   console.log(`trove manager deployed to ${troveManager.address}`);
 
