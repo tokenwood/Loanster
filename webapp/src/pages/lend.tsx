@@ -28,7 +28,7 @@ import {
   formatDate,
   isValidOffer,
 } from "libs/helperFunctions";
-import { getSupplyAddress, getSupplyABI } from "libs/constants";
+import { getSupplyAddress, getSupplyABI } from "libs/chainUtils";
 import {
   getLenderLoanIds,
   getFullLoanInfo,
@@ -65,14 +65,10 @@ const toSupplyColDims: { [key: string]: ColSpecs } = {
 };
 
 export default function LendPage() {
-  const { address: account, isConnecting, isDisconnected } = useAccount();
+  const { address: account } = useAccount();
   const provider = useProvider();
   return (
-    <BasePage
-      account={account}
-      isConnecting={isConnecting}
-      isDisconnected={isDisconnected}
-    >
+    <BasePage>
       <VStack align="left" spacing="4">
         <Box>
           <Heading as="h6" size="sm" mb="3">
@@ -157,7 +153,7 @@ export default function LendPage() {
                           <HStack alignItems={"left"} w="100%" paddingX={"4"}>
                             <Text alignSelf={"center"}>Revoke Offer</Text>
                             <ContractCallButton
-                              contractAddress={getSupplyAddress()}
+                              contractAddress={getSupplyAddress(provider)}
                               abi={getSupplyABI()}
                               functionName={"setOfferNonce"}
                               args={[data.offer.offerId, data.offer.token, 1]}
@@ -190,6 +186,7 @@ export default function LendPage() {
             makeHeader={() => (
               <TableHeaderView colSpecs={lentTableColdims}></TableHeaderView>
             )}
+            placeholderText={"Your lent assets will appear here"}
             makeListItem={(props) => {
               return (
                 <BaseView
@@ -240,7 +237,7 @@ export default function LendPage() {
                                 data.token.symbol}
                             </Text>
                             <ContractCallButton
-                              contractAddress={getSupplyAddress()}
+                              contractAddress={getSupplyAddress(provider)}
                               abi={getSupplyABI()}
                               functionName={"withdraw"}
                               args={[data.loanId]}

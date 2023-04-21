@@ -20,6 +20,7 @@ import {
 } from "../../webapp/src/libs/constants";
 import hre from "hardhat";
 import { error } from "console";
+import fs from "fs";
 
 const networkName = hre.network.name;
 
@@ -34,8 +35,7 @@ async function main() {
   const supply = await deploySupply();
   console.log(`supply deployed to ${supply.address}`);
 
-  const supplyAddress = supply.address; 
-  const troveManager = await deployTroveManager(supplyAddress, networkName);
+  const troveManager = await deployTroveManager(supply.address, networkName);
   console.log(`trove manager deployed to ${troveManager.address}`);
 
   if (networkName === "goerli") {
@@ -59,15 +59,55 @@ async function main() {
     await troveManager.addCollateralToken(RETH_TOKEN.address, 9000, 500);
   }
 
+  // save deployment artifacts
+  save_deployment_artifacts(troveManager.address, supply.address, networkName);
+}
+
+function save_deployment_artifacts(
+  troveManagerAddress: string,
+  supplyAddress: string,
+  networkName: string
+) {
   const deployments = {
     uniUtils: getUniUtilsAddress(networkName),
     supply: supplyAddress,
-    troveManager: troveManager.address,
+    troveManager: troveManagerAddress,
   };
+  const deployment_path = `deployments/${networkName}`;
+  if (!fs.existsSync(deployment_path)) {
+    fs.mkdirSync(deployment_path);
+  }
+  if (!fs.existsSync(deployment_path + "/typechain-types")) {
+    fs.mkdirSync(deployment_path + "/typechain-types");
+  }
+  if (!fs.existsSync(deployment_path + "/typechain-types/contracts")) {
+    fs.mkdirSync(deployment_path + "/typechain-types/contracts");
+  }
 
-  var fs = require("fs");
+  fs.copyFileSync(
+    "artifacts/contracts/Supply.sol/Supply.json",
+    deployment_path + "/Supply.json"
+  );
+  fs.copyFileSync(
+    "typechain-types/contracts/Supply.ts",
+    deployment_path + "/typechain-types/contracts/Supply.ts"
+  );
+  fs.copyFileSync(
+    "artifacts/contracts/TroveManager.sol/TroveManager.json",
+    deployment_path + "/TroveManager.json"
+  );
+  fs.copyFileSync(
+    "typechain-types/contracts/TroveManager.ts",
+    deployment_path + "/typechain-types/contracts/TroveManager.ts"
+  );
+  fs.copyFileSync(
+    "typechain-types/common.ts",
+    deployment_path + "/typechain-types/common.ts"
+  );
+
+  // var fs = require("fs");
   fs.writeFile(
-    "./deployments/deployments_" + networkName + ".json",
+    deployment_path + `/deployments.json`,
     JSON.stringify(deployments),
     function (err: any) {
       if (err) {

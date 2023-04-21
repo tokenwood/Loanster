@@ -32,7 +32,7 @@ import {
   DEFAULT_SIZE,
 } from "./Theme";
 import { useEffect, useRef, useState } from "react";
-import { getTroveManagerAddress, getTroveManagerABI } from "libs/constants";
+import { getTroveManagerAddress, getTroveManagerABI } from "libs/chainUtils";
 import { eventEmitter, EventType } from "libs/eventEmitter";
 import { ContractCallButton } from "./BaseComponents";
 import { LoanOfferType } from "libs/types";
@@ -199,7 +199,7 @@ const BorrowModal = (props: BorrowModalProps) => {
 
           <ModalFooter>
             <ContractCallButton
-              contractAddress={getTroveManagerAddress()}
+              contractAddress={getTroveManagerAddress(provider)}
               abi={getTroveManagerABI()}
               functionName={"openLoan"}
               args={[

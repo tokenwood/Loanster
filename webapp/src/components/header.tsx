@@ -1,7 +1,8 @@
 //src/components/header.tsx
-import { Flex, Button, Spacer, Image, Box } from "@chakra-ui/react";
+import { Flex, Button, Spacer, Image, Box, Text } from "@chakra-ui/react";
 import { ConnectKitButton } from "connectkit";
 import Link from "next/link";
+import { useProvider } from "wagmi";
 import ClientOnly from "./clientOnly";
 import { headerButtonBorderRadius, headerButtonHoverStyle } from "./Theme";
 
@@ -32,6 +33,7 @@ function HeaderButton(props: Props) {
 }
 
 export default function Header() {
+  const provider = useProvider();
   return (
     <ClientOnly>
       <Flex as="header" p={4} alignItems="center" layerStyle={"header"}>
@@ -46,6 +48,7 @@ export default function Header() {
           buttonText="Liquidations"
         ></HeaderButton>
         <Spacer />
+        <Text padding={2}>network: {provider.network.name}</Text>
         <ConnectKitButton showBalance={false} showAvatar={false} />
       </Flex>
     </ClientOnly>

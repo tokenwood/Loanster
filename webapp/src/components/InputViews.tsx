@@ -36,7 +36,7 @@ import {
   getSupplyAddress,
   getTroveManagerABI,
   getTroveManagerAddress,
-} from "libs/constants";
+} from "libs/chainUtils";
 import {
   getHealthFactor,
   getNewHealthFactor,
@@ -113,7 +113,7 @@ export function CollateralInputs(props: DepositInputsProps) {
     abi: erc20ABI,
     enabled: props.type == "deposit",
     functionName: "allowance",
-    args: [props.account, getTroveManagerAddress()],
+    args: [props.account, getTroveManagerAddress(provider)],
   });
 
   const updateHealthFactor = async () => {
@@ -180,7 +180,7 @@ export function CollateralInputs(props: DepositInputsProps) {
         {props.type == "deposit" ? (
           hasEnoughAllowance(allowance, amount) ? (
             <ContractCallButton
-              contractAddress={getTroveManagerAddress()}
+              contractAddress={getTroveManagerAddress(provider)}
               abi={getTroveManagerABI()}
               functionName={"deposit"}
               args={[props.balanceData.token.address, amount]}
@@ -198,7 +198,10 @@ export function CollateralInputs(props: DepositInputsProps) {
               contractAddress={props.balanceData.token.address as Address}
               abi={erc20ABI}
               functionName={"approve"}
-              args={[getTroveManagerAddress(), ethers.constants.MaxUint256]}
+              args={[
+                getTroveManagerAddress(provider),
+                ethers.constants.MaxUint256,
+              ]}
               enabled={canConfirm()}
               callback={allowanceRefetch}
               buttonText="Approve"
@@ -206,7 +209,7 @@ export function CollateralInputs(props: DepositInputsProps) {
           )
         ) : (
           <ContractCallButton
-            contractAddress={getTroveManagerAddress()}
+            contractAddress={getTroveManagerAddress(provider)}
             abi={getTroveManagerABI()}
             functionName={"withdraw"}
             args={[
@@ -326,7 +329,7 @@ export function RepayLoanInputs(props: RepayLoanInputs) {
         getERC20BalanceAndAllowance(
           provider,
           props.account,
-          getSupplyAddress(),
+          getSupplyAddress(provider),
           props.loanInfo.token.address as Address
         )
       }
@@ -402,7 +405,7 @@ export function RepayLoanInputs(props: RepayLoanInputs) {
                     getTotalPayment(paymentInfo)
                   ) ? (
                     <ContractCallButton
-                      contractAddress={getTroveManagerAddress()}
+                      contractAddress={getTroveManagerAddress(provider)}
                       abi={getTroveManagerABI()}
                       functionName={"repayLoan"}
                       args={[props.loanInfo.loanId, debtAmount]}
@@ -421,7 +424,10 @@ export function RepayLoanInputs(props: RepayLoanInputs) {
                       contractAddress={props.loanInfo.token.address as Address}
                       abi={erc20ABI}
                       functionName={"approve"}
-                      args={[getSupplyAddress(), ethers.constants.MaxUint256]}
+                      args={[
+                        getSupplyAddress(provider),
+                        ethers.constants.MaxUint256,
+                      ]}
                       enabled={true}
                       callback={childProps.refetchData}
                       buttonText="Approve"
@@ -564,7 +570,7 @@ export function MakeOfferInputs(props: MakeOfferInputProps) {
     address: props.balanceData.token.address as Address,
     abi: erc20ABI,
     functionName: "allowance",
-    args: [props.account, getSupplyAddress()],
+    args: [props.account, getSupplyAddress(provider)],
   });
 
   const hasEnoughAllowance = (
@@ -660,7 +666,7 @@ export function MakeOfferInputs(props: MakeOfferInputProps) {
             contractAddress={props.balanceData.token.address as Address}
             abi={erc20ABI}
             functionName={"approve"}
-            args={[getSupplyAddress(), ethers.constants.MaxUint256]}
+            args={[getSupplyAddress(provider), ethers.constants.MaxUint256]}
             enabled={canConfirm()}
             callback={() => allowanceRefetch()}
             buttonText="Approve"
@@ -748,7 +754,7 @@ export function LoanOfferView(props: LoanOfferViewProps) {
               <Flex w="100%">
                 <Spacer></Spacer>
                 <ContractCallButton
-                  contractAddress={getTroveManagerAddress()}
+                  contractAddress={getTroveManagerAddress(provider)}
                   abi={getTroveManagerABI()}
                   functionName={"openLoan"}
                   args={[

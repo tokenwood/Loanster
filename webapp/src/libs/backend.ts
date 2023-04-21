@@ -8,8 +8,8 @@ import {
 } from "./sharedUtils";
 import { bigNumberMin, floatToBigNumber } from "./helperFunctions";
 import { LoanOfferType, LoanParameters } from "./types";
-import { getERC20BalanceAndAllowance, getToken } from "./fetchers";
-import { getSupplyAddress, getSupplyContract } from "./constants";
+import { getERC20BalanceAndAllowance, getNetwork, getToken } from "./fetchers";
+import { getSupplyAddress, getSupplyContract } from "./chainUtils";
 
 // todo: update offer state (amountBorrowed, cancelled) by listening to events
 // todo: make sure offers are valid by verifying owner balance and allowance
@@ -184,14 +184,14 @@ export async function offerResponseToFullOfferInfo(
   response.minLoanAmount = BigNumber.from(response.minLoanAmount);
 
   const key = getOfferKey(response.owner, response.token, response.offerId);
-  const [nonce, amountBorrowed] = await getSupplyContract(
-    provider
+  const [nonce, amountBorrowed] = await (
+    await getSupplyContract(provider)
   ).getOfferInfo(key);
 
   const [balance, allowance] = await getERC20BalanceAndAllowance(
     provider,
     response.owner as Address,
-    getSupplyAddress(),
+    getSupplyAddress(provider),
     response.token as Address
   );
 

@@ -2,12 +2,8 @@ import { Address } from "wagmi";
 import { erc20ABI, erc721ABI, Provider } from "@wagmi/core";
 import { ethers, utils } from "ethers";
 import { BigNumber } from "ethers";
-import {
-  ADDRESS_TO_TOKEN,
-  getSupplyContract,
-  getTroveManagerContract,
-  WETH_TOKEN,
-} from "./constants";
+import { UNI_TOKEN_GOERLI, WETH_TOKEN, WETH_TOKEN_GOERLI } from "./constants";
+import { getSupplyContract, getTroveManagerContract } from "./chainUtils";
 import { SupportedChainId, Token } from "@uniswap/sdk-core";
 import { CurrencyAmount } from "@uniswap/sdk-core";
 import { FullOfferInfo, getEthPrice, getOffersFrom } from "./backend";
@@ -22,12 +18,16 @@ import {
 } from "./types";
 import { getAllowedTokensFromEvents } from "./helperFunctions";
 
+export async function getNetwork(provider: Provider) {
+  return (await provider.getNetwork()).name;
+}
+
 export async function getNewAccountStats(
   provider: Provider,
   loanStats: LoanStats,
   account: Address
 ): Promise<AccountStats> {
-  const contract = getTroveManagerContract(provider);
+  const contract = await getTroveManagerContract(provider);
 
   // collateral value
   const [collateralValue, collateralFactorBPS]: [BigNumber, BigNumber] =
@@ -63,7 +63,7 @@ export async function getHealthFactor(
   token?: Address,
   amount?: BigNumber
 ) {
-  const contract = getTroveManagerContract(provider);
+  const contract = await getTroveManagerContract(provider);
   const healthFactor: BigNumber = await contract.getHealthFactorBPS(
     account,
     amount ?? BigNumber.from(0),
@@ -81,7 +81,7 @@ export async function getDetailedHealthFactor(
   provider: Provider,
   account: Address
 ) {
-  const contract = getTroveManagerContract(provider);
+  const contract = await getTroveManagerContract(provider);
   let [collateralValue] = await contract.getAccountCollateralValueEth(account);
   let [loanValue] = await contract.getAccountLoansValueEth(account);
   const healthFactor = await getHealthFactor(provider, account);
@@ -102,7 +102,7 @@ export async function getNewHealthFactor(
   addLoan?: BigNumber,
   removeLoan?: BigNumber
 ) {
-  const contract = getTroveManagerContract(provider);
+  const contract = await getTroveManagerContract(provider);
   let [, adjustedCollateralValue] = await contract.getAccountCollateralValueEth(
     account
   );
@@ -147,28 +147,31 @@ export async function getTokenPrice(
   token: Address,
   amount: BigNumber
 ): Promise<number> {
-  const contract = getTroveManagerContract(provider);
+  const contract = await getTroveManagerContract(provider);
   const eth_value = await contract.getOracleValueEth(token, amount);
   const price = await getEthPrice();
   return Number.parseFloat(ethers.utils.formatEther(eth_value)) * price;
 }
 
+let cached_tokens: { [key: string]: Token } = {};
 export async function getToken(provider: Provider, tokenAddress: string) {
-  if (ADDRESS_TO_TOKEN[tokenAddress] !== undefined) {
-    return ADDRESS_TO_TOKEN[tokenAddress];
+  if (cached_tokens[tokenAddress] !== undefined) {
+    //todo add tokens from constants to cached_tokens
+    return cached_tokens[tokenAddress];
   } else {
-    // throw new Error("unknown token " + address);
     const tokenContract = new ethers.Contract(tokenAddress, erc20ABI, provider);
     const decimals: number = await tokenContract.decimals();
     const symbol: string = await tokenContract.symbol();
 
-    return new Token(
-      SupportedChainId.MAINNET,
+    const token = new Token(
+      provider.network.chainId,
       tokenAddress,
       decimals,
       symbol,
       symbol
     );
+    cached_tokens[tokenAddress] = token;
+    return token;
   }
 }
 
@@ -193,9 +196,12 @@ export async function getSupplyTokenAddresses(
   provider: Provider
 ): Promise<Address[]> {
   console.log("fetching supply tokens");
-  const supplyContract = getTroveManagerContract(provider);
+  console.log("network name: " + (await provider.getNetwork()).name);
+  const supplyContract = await getTroveManagerContract(provider);
+  console.log("supply contract: " + supplyContract.address);
   let eventFilter = supplyContract.filters.SupplyTokenChanged();
   let events = await supplyContract.queryFilter(eventFilter);
+  console.log("events: " + events.length);
   return getAllowedTokensFromEvents(events);
 }
 
@@ -208,7 +214,7 @@ export async function getSupplyTokens(provider: Provider) {
 export async function getCollateralTokens(
   provider: Provider
 ): Promise<Address[]> {
-  const troveManager = getTroveManagerContract(provider);
+  const troveManager = await getTroveManagerContract(provider);
   let eventFilter = troveManager.filters.CollateralTokenChange();
   let events = await troveManager.queryFilter(eventFilter);
   return getAllowedTokensFromEvents(events);
@@ -218,7 +224,7 @@ export async function getFullLoanInfo(
   provider: Provider,
   loanId: number
 ): Promise<FullLoanInfo> {
-  const supply = getSupplyContract(provider);
+  const supply = await getSupplyContract(provider);
   const [loan, claimable] = await supply.getLoan(loanId);
   const [token, amount, minInterest] = await supply.getLoanAmountAndMinInterest(
     loanId
@@ -252,7 +258,7 @@ export async function getCollateralDeposits(
       ];
     })
   );
-  const troveManager = getTroveManagerContract(provider);
+  const troveManager = await getTroveManagerContract(provider);
   const numDeposits = await troveManager.getNumDepositsForAccount(account);
   for (let i = 0; i < numDeposits.toNumber(); i++) {
     const [tokenAddress, amount] =
@@ -269,7 +275,7 @@ export async function getBorrowerLoanIds(
   provider: Provider,
   account: Address
 ): Promise<number[]> {
-  const troveManager = getTroveManagerContract(provider);
+  const troveManager = await getTroveManagerContract(provider);
   console.log("fetching loan ids");
 
   const numLoans = await troveManager.getNumLoansForAccount(account);
@@ -297,13 +303,13 @@ export async function getLenderLoanIds(
   provider: Provider,
   account: Address
 ): Promise<number[]> {
-  const supplyContract = getSupplyContract(provider);
+  const supplyContract = await getSupplyContract(provider);
   console.log("fetching loans for lender " + account);
   return getERC721Ids(supplyContract, account);
 }
 
 export async function getAccounts(provider: Provider) {
-  const troveManager = getTroveManagerContract(provider);
+  const troveManager = await getTroveManagerContract(provider);
   const topics = [utils.id("NewLoan(address,uint256,uint256, address)")];
 
   const events = await troveManager.queryFilter({ topics });
@@ -358,7 +364,7 @@ export async function getERC20BalanceAndAllowance(
 ) {
   const tokenContract = new ethers.Contract(tokenAddress, erc20ABI, provider);
 
-  const [balance, allowance] = await Promise.all([
+  const [balance, allowance]: BigNumber[] = await Promise.all([
     tokenContract.balanceOf(account),
     tokenContract.allowance(account, spender),
   ]);
@@ -370,7 +376,7 @@ export async function getOfferMessageToSign(
   provider: Provider,
   offer: LoanOfferType
 ) {
-  const contract = getSupplyContract(provider);
+  const contract = await getSupplyContract(provider);
   const message: string = await contract.buildLoanOfferMessage(offer);
   return message;
 }
@@ -405,4 +411,29 @@ export async function getUnusedOfferId(provider: Provider, account: Address) {
   }, 0);
 
   return Math.max(maxUsedId, maxOfferId) + 1;
+}
+
+export function getWethToken(provider: Provider) {
+  if (
+    provider.network.name == "mainnet" ||
+    provider.network.name == "hardhat"
+  ) {
+    return WETH_TOKEN;
+  } else if (provider.network.name == "goerli") {
+    return WETH_TOKEN_GOERLI;
+  } else {
+    throw new Error("Unsupported network: " + provider.network.name);
+  }
+}
+
+export function getTokenIconPath(token: Token) {
+  let chain = undefined;
+  if (token.chainId == 1 || token.chainId == 31337) {
+    chain = "mainnet";
+  } else if (token.chainId == 5) {
+    chain = "goerli";
+  } else {
+    throw new Error("Unknown token chainid: " + token.chainId);
+  }
+  return "token_icons/" + chain + "/" + token.address + ".png";
 }

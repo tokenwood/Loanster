@@ -9,7 +9,7 @@ import { Address, erc20ABI, useProvider } from "wagmi";
 import { CheckIcon, CloseIcon } from "@chakra-ui/icons";
 import { ContractCallButton } from "./BaseComponents";
 import { ethers } from "ethers";
-import { getSupplyAddress } from "libs/constants";
+import { getSupplyAddress } from "libs/chainUtils";
 
 interface OfferInfoProps {
   fullOfferInfo: FullOfferInfo;
@@ -35,7 +35,7 @@ export default function OfferInfo(props: OfferInfoProps) {
             contractAddress={props.fullOfferInfo.token.address as Address}
             abi={erc20ABI}
             functionName={"approve"}
-            args={[getSupplyAddress(), ethers.constants.MaxUint256]}
+            args={[getSupplyAddress(provider), ethers.constants.MaxUint256]}
             enabled={true}
             callback={() => props.callback()}
             buttonText="Approve"

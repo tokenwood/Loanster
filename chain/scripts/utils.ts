@@ -1,7 +1,6 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { BigNumber } from "ethers";
-import { ethers } from "hardhat";
-import deployments from "../cache/deployments.json";
+import { ethers, network } from "hardhat";
 import {
   V3_SWAP_ROUTER_ADDRESS,
   WETH_TOKEN,
@@ -15,14 +14,8 @@ export const ONE_DAY_IN_SECS = 24 * 60 * 60;
 
 const TIMESTAMP_2030 = 1893452400;
 
-export function getUniUtilsAddress(networkName: string) {
-  const deploymentsPath =
-    "../unilib/cache/deployments_" + networkName + ".json";
-  const deployments = readJson(deploymentsPath);
-  if (deployments == undefined) {
-    throw Error("deployments file not found at " + deploymentsPath);
-  }
-  return deployments.uniUtils;
+export function getDeployments(networkName: string) {
+  return readJson(`deployments/${networkName}/deployments.json`);
 }
 
 function readJson(filePath: string): any {
@@ -36,6 +29,13 @@ function readJson(filePath: string): any {
   }
 }
 
+export function getUniUtilsAddress(networkName: string) {
+  const deployments = readJson(
+    "../unilib/cache/deployments_" + networkName + ".json"
+  ).uniutils;
+  return getDeployments(networkName).uniUtils;
+}
+
 export function getWETHContract() {
   return ethers.getContractAt("IWETH", WETH_TOKEN.address);
 }
@@ -44,11 +44,13 @@ export function getERC20Contract(address: string) {
   return ethers.getContractAt("ERC20", address);
 }
 
-export function getTroveManagerContract() {
+export function getTroveManagerContract(networkName: string) {
+  const deployments = getDeployments(networkName);
   return ethers.getContractAt("TroveManager", deployments.troveManager);
 }
 
-export function getSupplyContract() {
+export function getSupplyContract(networkName: string) {
+  const deployments = getDeployments(networkName);
   return ethers.getContractAt("Supply", deployments.supply);
 }
 

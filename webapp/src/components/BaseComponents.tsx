@@ -5,6 +5,7 @@ import {
   usePrepareContractWrite,
   useProvider,
   useSignMessage,
+  useAccount,
 } from "wagmi";
 import ClientOnly from "components/clientOnly";
 import {
@@ -32,13 +33,12 @@ import { ChevronDownIcon, ChevronUpIcon } from "@chakra-ui/icons";
 import { bigNumberString } from "libs/helperFunctions";
 
 interface BasePageProps {
-  account: Address | undefined;
-  isConnecting: boolean;
-  isDisconnected: boolean;
   width?: string;
 }
 
 export function BasePage(props: PropsWithChildren<BasePageProps>) {
+  const { address: account, isConnecting, isDisconnected } = useAccount();
+  const provider = useProvider();
   return (
     <VStack>
       <Box
@@ -47,14 +47,15 @@ export function BasePage(props: PropsWithChildren<BasePageProps>) {
         // borderWidth="0px"
         // borderRadius="lg"
         layerStyle={"level1"}
+        key={provider.network.name + (account ? account : "")}
       >
         <ClientOnly>
-          {props.account ? (
+          {account ? (
             props.children
           ) : (
             <Box>
-              <Box hidden={!props.isConnecting}>connecting...</Box>
-              <Box hidden={!props.isDisconnected}>Disconnected</Box>
+              <Box hidden={!isConnecting}>connecting...</Box>
+              <Box hidden={!isDisconnected}>Disconnected</Box>
             </Box>
           )}
         </ClientOnly>

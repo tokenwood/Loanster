@@ -1,18 +1,16 @@
-import { ethers } from "hardhat";
+import { ethers, network } from "hardhat";
 import {
   buyToken,
   deploySupply,
-  deployTroveManager,
   depositWETH,
   getERC20Contract,
   getTroveManagerContract,
-  getUniUtilsAddress,
+  getSupplyContract,
   ONE_DAY_IN_SECS,
   ONE_MONTH_IN_SECS,
   ONE_YEAR_IN_SECS,
   depositCollateral,
 } from "./utils";
-import { getSupplyContract } from "./getSupplyContract";
 import {
   LUSD_TOKEN,
   RETH_TOKEN,
@@ -52,7 +50,7 @@ async function main() {
     owner,
     WETH_TOKEN.address,
     ethers.utils.parseEther("1"),
-    await getTroveManagerContract()
+    await getTroveManagerContract(networkName)
   );
 
   const expiration = (await time.latest()) + 7 * ONE_DAY_IN_SECS;
@@ -72,8 +70,8 @@ async function main() {
     minLoanDuration: BigNumber.from(0),
     maxLoanDuration: BigNumber.from(ONE_MONTH_IN_SECS),
   };
-  const supply = await getSupplyContract();
-  const troveManager = await getTroveManagerContract();
+  const supply = await getSupplyContract(networkName);
+  const troveManager = await getTroveManagerContract(networkName);
   const offerMessage = await supply.buildLoanOfferMessage(offer);
   const signature = await owner.signMessage(
     ethers.utils.arrayify(offerMessage)

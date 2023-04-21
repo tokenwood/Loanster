@@ -51,6 +51,7 @@ import {
   getFullLoanInfo,
   getSupplyTokens,
   getDetailedHealthFactor,
+  getWethToken,
 } from "libs/fetchers";
 import {
   BNToPrecision,
@@ -58,7 +59,6 @@ import {
   bigNumberString,
 } from "libs/helperFunctions";
 import { TokenDepositInfo, FullLoanInfo, TokenAmount } from "libs/types";
-import { WETH_TOKEN } from "libs/constants";
 import OfferBrowser from "components/OfferBrowser";
 import Price from "components/Price";
 
@@ -83,14 +83,10 @@ const toBorrowTableColdims: { [key: string]: ColSpecs } = {
 };
 
 export default function LoansPage() {
-  const { address: account, isConnecting, isDisconnected } = useAccount();
+  const { address: account } = useAccount();
   const provider = useProvider();
   return (
-    <BasePage
-      account={account}
-      isConnecting={isConnecting}
-      isDisconnected={isDisconnected}
-    >
+    <BasePage key={provider.network.chainId + (account ?? "")}>
       <VStack align="left" spacing="4">
         <Box>
           <Heading as="h6" layerStyle={"onbg"} size="sm" mb="3">
@@ -124,12 +120,12 @@ export default function LoansPage() {
                       {"Ξ " +
                         bigNumberString(
                           childProps.data.collateralValueEth,
-                          WETH_TOKEN
+                          getWethToken(provider)
                         )}
                     </StatNumber>
                     <StatHelpText textStyle={"price"}>
                       <Price
-                        token={WETH_TOKEN}
+                        token={getWethToken(provider)}
                         amount={childProps.data.collateralValueEth}
                       />
                     </StatHelpText>
@@ -140,12 +136,12 @@ export default function LoansPage() {
                       {"Ξ " +
                         bigNumberString(
                           childProps.data.loanValueEth,
-                          WETH_TOKEN
+                          getWethToken(provider)
                         )}
                     </StatNumber>
                     <StatHelpText textStyle={"price"}>
                       <Price
-                        token={WETH_TOKEN}
+                        token={getWethToken(provider)}
                         amount={childProps.data.loanValueEth}
                       />
                     </StatHelpText>

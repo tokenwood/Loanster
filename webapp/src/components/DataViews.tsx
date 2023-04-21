@@ -20,6 +20,7 @@ import { timeStamp } from "console";
 import { BigNumber, ethers } from "ethers";
 import { FullOfferInfo } from "libs/backend";
 import { eventEmitter, EventId } from "libs/eventEmitter";
+import { getTokenIconPath } from "libs/fetchers";
 import {
   bigNumberString,
   BNToPrecision,
@@ -141,10 +142,7 @@ export function TableRowView(props: TableRowViewProps) {
                 textAlign={props.colSpecs[key].align ?? "left"}
                 textStyle={"tableRow"}
               >
-                <Image
-                  src={"token_icons/" + token.address + ".png"}
-                  height="30px"
-                ></Image>
+                <Image src={getTokenIconPath(token)} height="30px"></Image>
                 <Text>{token.symbol}</Text>
               </HStack>
             );

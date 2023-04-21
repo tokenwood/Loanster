@@ -11,13 +11,14 @@ import { ConnectKitProvider, getDefaultClient } from "connectkit";
 
 const client = createClient(
   getDefaultClient({
-    appName: "Unilend",
-    infuraId: process.env.REACT_APP_INFURA_ID,
-    chains: [hardhat, mainnet],
+    appName: "Loanster",
+    infuraId: process.env.NEXT_PUBLIC_REACT_APP_INFURA_ID,
+    chains: [hardhat, mainnet, goerli],
   })
 );
 
 function MyApp({ Component, pageProps }: AppProps) {
+  // console.log("infura id: ", process.env.NEXT_PUBLIC_REACT_APP_INFURA_ID);
   return (
     <WagmiConfig client={client}>
       <ConnectKitProvider theme="soft">

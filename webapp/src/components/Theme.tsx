@@ -21,7 +21,7 @@ const theme = extendTheme({
   layerStyles: {
     level0: {
       // border: "1px solid",
-      color: "red",
+      color: "black",
       bgColor: "gray.100",
       // borderColor: "yellow",
     },

@@ -1,8 +1,9 @@
 import { Token } from "@uniswap/sdk-core";
 import { BigNumber, ethers } from "ethers";
+import { Provider } from "react";
 import { Address } from "wagmi";
 import { FullOfferInfo } from "./backend";
-import { WETH_TOKEN } from "./constants";
+import { WETH_TOKEN, WETH_TOKEN_GOERLI } from "./constants";
 import { LoanStats } from "./types";
 
 export function bigNumberString(amount: BigNumber, token: Token) {
