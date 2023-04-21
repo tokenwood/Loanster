@@ -13,8 +13,10 @@ const config: HardhatUserConfig = {
   },
   networks: {
     goerli: {
-      url: "https://goerli.infura.io/v3/" + process.env.MY_INFURA_KEY,
-      accounts: [process.env.GOERLI_PRIVATE_KEY!],
+      url: `https://goerli.infura.io/v3/${process.env.MY_INFURA_KEY}`,
+      accounts: process.env.GOERLI_PRIVATE_KEY
+        ? [process.env.GOERLI_PRIVATE_KEY]
+        : [],
     },
   },
 };
