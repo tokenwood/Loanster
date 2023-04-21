@@ -6,7 +6,7 @@ import { Supply } from "../../../chain/typechain-types/contracts/Supply";
 import { Provider } from "@wagmi/core";
 import { ethers } from "ethers";
 import { Address } from "wagmi";
-import deployments from "../../../chain/cache/deployments.json";
+import deployments from "../../../chain/deployments/deployments_localhost.json";
 
 export const POOL_FACTORY_CONTRACT_ADDRESS =
   "0x1F98431c8aD98523631AE4a59f267346ea31F984";
