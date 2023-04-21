@@ -15,7 +15,7 @@ const erc20Abi = [
 ];
 
 function deployments() {
-  const deploymentsPath = '../chain/cache/deployments.json';
+  const deploymentsPath = '../chain/deployments/deployments_localhost.json';
   return fs.readJsonSync(deploymentsPath);
 }
 
