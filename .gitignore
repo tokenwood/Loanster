@@ -1,3 +1,4 @@
 .env
 **/.vscode
 node_modules/*
+chain/deployments/deployments_localhost.json
