@@ -1,0 +1,25 @@
+# Use the official Node.js 18 image as the base
+FROM node:18
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy code to the container
+COPY backend /app/backend
+
+# Copy code of dependencies to the container (TODO: remove this when we have a proper package manager)
+COPY chain /app/chain
+COPY webapp /app/webapp 
+COPY unilib /app/unilib
+
+# Change the working directory to the backend folder
+WORKDIR /app/backend
+
+# Install the dependencies
+RUN npm ci
+
+# Expose the port the backend will run on
+EXPOSE 3030
+
+# Start the backend
+CMD ["npm", "run", "start:dev"]

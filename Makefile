@@ -6,7 +6,7 @@ include ${PROJECT_FOLDER}/.env
 
 install: install_os install_js
 
-start_all: start_chain_bg start_db_bg start_backend_bg start_front_bg deploy_all
+start_all: start_chain_bg start_db_bg start_backend_docker start_front_bg deploy_all
 
 install_js:
 	cd ${PROJECT_FOLDER}/unilib && yarn install
@@ -41,12 +41,16 @@ start_front_bg:
 
 start_db:
 	cd ${PROJECT_FOLDER} && \
-	docker-compose up
+	docker-compose up loanster_db
 
 start_db_bg:
 	cd ${PROJECT_FOLDER} && \
-	docker-compose up -d
+	docker-compose up -d loanster_db
 	sleep 30
+
+stop_db:
+	cd ${PROJECT_FOLDER} && \
+	docker-compose stop loanster_db
 
 start_backend:
 	cd ${PROJECT_FOLDER}/backend && \
@@ -55,6 +59,14 @@ start_backend:
 start_backend_bg:
 	cd ${PROJECT_FOLDER}/backend && \
 	npm run start:dev &
+
+start_backend_docker:
+	cd ${PROJECT_FOLDER} && \
+	docker-compose up -d backend
+
+stop_backend_docker:
+	cd ${PROJECT_FOLDER} && \
+	docker-compose stop backend
 
 deploy_all:	
 	cd ${PROJECT_FOLDER}/unilib && \
@@ -95,3 +107,7 @@ test:
 	echo "#!/bin/sh" >> .git/hooks/pre-commit
 	echo "make lint test" >> .git/hooks/pre-commit
 	chmod +x .git/hooks/pre-commit
+
+heroku_deploy_webapp:
+	heroku buildpacks:set -a loanster-webapp https://github.com/heroku/heroku-buildpack-nodejs.git
+
