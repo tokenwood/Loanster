@@ -29,50 +29,6 @@ export default function LiquidationsPage() {
         <Heading as="h6" size="sm" mb="3">
           {"Loans"}
         </Heading>
-        <ListLoader
-          fetchData={() => getAccounts(provider)}
-          makeListItem={(props) => {
-            return (
-              <BaseView
-                level={2}
-                key={props.id}
-                fetcher={() => getFullAccountInfo(props.id, provider)}
-                dataView={(data) => {
-                  return <Box> {data.loanId} </Box>;
-                }}
-                actions={[
-                  {
-                    action: "Liquidate",
-                    onClickView: (
-                      data: FullLoanInfo,
-                      actionFinished: () => any
-                    ) => {
-                      return (
-                        <Flex w="100%">
-                          <Spacer></Spacer>
-                          <ContractCallButton
-                            contractAddress={getSupplyAddress()}
-                            abi={getSupplyABI()}
-                            functionName={"withdraw"}
-                            args={[data.loanId]}
-                            enabled={data.claimable.gt(BigNumber.from(0))}
-                            callback={() => {
-                              actionFinished();
-                              eventEmitter.dispatch({
-                                eventType: EventType.LOAN_CLAIMED,
-                                suffix: data.token.address,
-                              });
-                            }}
-                          ></ContractCallButton>
-                        </Flex>
-                      );
-                    },
-                  },
-                ]}
-              ></BaseView>
-            );
-          }}
-        ></ListLoader>
       </Box>
     </BasePage>
   );
