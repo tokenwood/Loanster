@@ -108,6 +108,8 @@ test:
 	echo "make lint test" >> .git/hooks/pre-commit
 	chmod +x .git/hooks/pre-commit
 
-heroku_deploy_webapp:
-	heroku buildpacks:set -a loanster-webapp https://github.com/heroku/heroku-buildpack-nodejs.git
+heroku_webapp_deploy:
+	cd ${PROJECT_FOLDER}/webapp && yarn build
+	cd ${PROJECT_FOLDER}/webapp && heroku local loanster-webapp --port 5001
+	cd ${PROJECT_FOLDER}/webapp && heroku buildpacks:set -a loanster-webapp https://github.com/heroku/heroku-buildpack-nodejs.git
 

@@ -87,3 +87,15 @@ You can use DBeaver Community to connect to the database for manual inspections.
 cd backend
 npm run start:dev
 ```
+
+# Heroku
+
+We use Heroku to deploy our application. To deploy to Heroku, you need to have Heroku CLI installed. You can find the installation instructions here: https://devcenter.heroku.com/articles/heroku-cli
+
+```bash
+brew tap heroku/brew && brew install heroku
+```
+
+```bash
+heroku login
+```
