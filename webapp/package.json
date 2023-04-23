@@ -24,7 +24,7 @@
     "dayzed": "^3.2.3",
     "ethers": "^5.7.2",
     "framer-motion": "^8.5.5",
-    "next": "12.1.6",
+    "next": "^13.3.1",
     "react": "18.2.0",
     "react-date-picker": "^9.2.0",
     "react-dom": "18.2.0",
