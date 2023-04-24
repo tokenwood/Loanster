@@ -1,4 +1,4 @@
-.PHONY: install install_js install_os start_chain start_front start_db start_backend deploy_all start_all test lint
+.PHONY: install install_js install_os start_chain start_front start_db start_backend deploy_all start_all test lint heroku_login heroku_deploy_dev heroku_install heroku_debug
 
 PROJECT_FOLDER=$(shell pwd)
 
@@ -111,20 +111,31 @@ test:
 	echo "make lint test" >> .git/hooks/pre-commit
 	chmod +x .git/hooks/pre-commit
 
-heroku_deploy_dev:
-	heroku login
-	./set-heroku-env.sh loanster-webapp-dev
-	./set-heroku-env.sh loanster-backend-dev
-	git subtree split --prefix webapp -b dev-webapp
-	git subtree split --prefix backend -b dev-backend
-	git push -f heroku dev-webapp:main -a loanster-webapp-dev
-	git push -f heroku dev-backend:main -a loanster-backend-dev
+heroku_deploy_dev: heroku_deploy_webapp_dev heroku_deploy_backend_dev
 
-heroku_install:
-	heroku login
+heroku_deploy_webapp_dev: heroku_login
+	./set-heroku-env.sh loanster-webapp-dev
+	git subtree split --prefix webapp -b dev-webapp
+	git push -f heroku-webapp-dev dev-webapp:main
+
+heroku_deploy_backend_dev: heroku_login
+	./set-heroku-env.sh loanster-backend-dev
+	git subtree split --prefix backend -b dev-backend
+	git push -f heroku-backend-dev dev-backend:main
+
+heroku_install: heroku_login
 	heroku buildpacks:add -a loanster-backend-dev heroku/nodejs
 	heroku buildpacks:add -a loanster-webapp-dev heroku/nodejs
+	git remote add heroku-webapp-dev https://git.heroku.com/loanster-webapp-dev.git
+	git remote add heroku-backend-dev https://git.heroku.com/loanster-backend-dev.git
 
-heroku_debug:
+heroku_debug: heroku_login
 	heroku local loanster-webapp-dev --port 5001
 	heroku local loanster-backend-dev --port 5002
+
+heroku_login:
+	@if ! heroku whoami >/dev/null 2>&1; then \
+		heroku login; \
+	else \
+		echo "Already logged in."; \
+	fi

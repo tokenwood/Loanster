@@ -1,0 +1,1 @@
+loanster-backend-dev: BACKEND_PORT=$PORT npm run start
