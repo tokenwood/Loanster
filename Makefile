@@ -6,7 +6,9 @@ include ${PROJECT_FOLDER}/.env
 
 install: install_os install_js
 
-start_all: start_chain_bg start_db_bg start_backend_docker start_front_bg deploy_all
+start_all_localchain: start_chain_bg deploy_all start 
+
+start_all: start_db_bg start_backend_docker start_front_bg 
 
 install_js:
 	cd ${PROJECT_FOLDER}/unilib && yarn install
