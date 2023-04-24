@@ -295,7 +295,8 @@ export async function getOpenLoans(provider: Provider, account: Address) {
   );
 
   return loanInfos.filter(
-    (info) => info.claimable.eq(0) && !info.loan.amount.add(info.interest).eq(0)
+    (info) =>
+      !(info.claimable.eq(0) && info.loan.amount.add(info.interest).eq(0))
   );
 }
 

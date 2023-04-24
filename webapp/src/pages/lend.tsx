@@ -187,11 +187,16 @@ export default function LendPage() {
               <TableHeaderView colSpecs={lentTableColdims}></TableHeaderView>
             )}
             placeholderText={"Your lent assets will appear here"}
+            reloadEvents={[{ eventType: EventType.LOAN_CLAIMED }]}
             makeListItem={(props) => {
               return (
                 <BaseView
                   level={2}
-                  key={props.id.loanId}
+                  key={
+                    props.id.loanId +
+                    props.id.claimable.toString() +
+                    props.id.loan.amount.toString()
+                  }
                   fetcher={() => Promise.resolve(props.id)}
                   dataView={(data, setExpanded) => {
                     return (

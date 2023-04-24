@@ -589,7 +589,7 @@ export function MakeOfferInputs(props: MakeOfferInputProps) {
   };
 
   const sendOffer = async (offer: LoanOfferType, signature: string) => {
-    await submitOffer(offer, signature);
+    await submitOffer(offer, signature, provider.network.chainId);
     props.callback();
   };
 
@@ -601,8 +601,8 @@ export function MakeOfferInputs(props: MakeOfferInputProps) {
       nonce: 0,
       minLoanAmount: offerMinAmount,
       amount: offerMaxAmount,
-      interestRateBPS: Math.floor(interestRatePCT * 100), //make sure precision = 2
-      expiration: Math.floor(expirationDateMilliseconds / 1000), // expiration date stored in seconds
+      interestRateBPS: Math.round(interestRatePCT * 100), //make sure precision = 2
+      expiration: Math.round(expirationDateMilliseconds / 1000), // expiration date stored in seconds
       minLoanDuration: minDurationDays * 60 * 60 * 24,
       maxLoanDuration: maxDurationDays * 60 * 60 * 24,
     };

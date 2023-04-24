@@ -16,6 +16,10 @@ export class OfferDto {
 
   @IsNotEmpty()
   @IsNumber()
+  chainId: number;
+
+  @IsNotEmpty()
+  @IsNumber()
   offerId: number;
 
   @IsNotEmpty()

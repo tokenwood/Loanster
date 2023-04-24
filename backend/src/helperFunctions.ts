@@ -19,23 +19,32 @@ function deployments() {
   return fs.readJsonSync(deploymentsPath);
 }
 
-export function getProvider(): ethers.providers.JsonRpcProvider {
-  return new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545');
+export function getProvider(chainId: number): ethers.providers.JsonRpcProvider {
+  if (chainId == 31337) {
+    return new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545');
+  } else if (chainId == 5) {
+    return new ethers.providers.InfuraProvider(
+      'goerli',
+      process.env.MY_INFURA_KEY,
+    );
+  } else {
+    throw new Error('Unknown chainId');
+  }
 }
 
-export function getTroveManagerContract() {
+export function getTroveManagerContract(chainId: number) {
   return new ethers.Contract(
     getTroveManagerAddress(),
     getTroveManagerABI(),
-    getProvider(),
+    getProvider(chainId),
   ) as TroveManager;
 }
 
-export function getSupplyContract() {
+export function getSupplyContract(chainId: number) {
   return new ethers.Contract(
     getSupplyAddress(),
     getSupplyABI(),
-    getProvider(),
+    getProvider(chainId),
   ) as Supply;
 }
 
@@ -62,11 +71,12 @@ export async function getERC20BalanceAndAllowance(
   account: string,
   spender: string,
   tokenAddress: string,
+  chainId: number,
 ) {
   const tokenContract = new ethers.Contract(
     tokenAddress,
     erc20Abi,
-    getProvider(),
+    getProvider(chainId),
   );
 
   const [balance, allowance]: [BigNumber, BigNumber] = await Promise.all([
@@ -81,12 +91,13 @@ export async function getOfferOnChainData(
   owner: string,
   token: string,
   offerId: number,
+  chainId: number,
 ) {
   const key = getOfferKey(owner, token, offerId);
 
   const [offerInfo, balanceAndAllowance] = await Promise.all([
-    getSupplyContract().getOfferInfo(key),
-    getERC20BalanceAndAllowance(owner, getSupplyAddress(), token),
+    getSupplyContract(chainId).getOfferInfo(key),
+    getERC20BalanceAndAllowance(owner, getSupplyAddress(), token, chainId),
   ]);
 
   const [nonce, amountBorrowed] = offerInfo;

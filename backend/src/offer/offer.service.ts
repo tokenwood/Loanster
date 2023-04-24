@@ -29,6 +29,7 @@ export class OfferService {
       offer.owner,
       offer.token,
       offer.offerId,
+      offer.chainId,
     );
     offer.borrowed = borrowed.toHexString();
     offer.balance = balance.toHexString();
@@ -40,18 +41,20 @@ export class OfferService {
     return this.offerRepository.save(offer);
   }
 
-  findOffersFromOwner(account: string): Promise<Offer[]> {
+  findOffersFromOwner(chainId: number, account: string): Promise<Offer[]> {
     return this.offerRepository.find({
       where: {
         owner: account,
+        chainId: chainId,
       },
     });
   }
 
-  findAllByToken(token?: string) {
+  findAllByToken(chainId: number, token?: string) {
     const output = this.offerRepository.find({
       where: {
         token: token,
+        chainId: chainId,
       },
       order: {
         token: 'ASC',
@@ -61,8 +64,11 @@ export class OfferService {
     return output;
   }
 
-  async getTokenOfferStats(token: string): Promise<TokenOfferStatsResponse> {
-    const tokenOffers = await this.findAllByToken(token);
+  async getTokenOfferStats(
+    chainId: number,
+    token: string,
+  ): Promise<TokenOfferStatsResponse> {
+    const tokenOffers = await this.findAllByToken(chainId, token);
 
     const minAPY =
       tokenOffers.length > 0 ? tokenOffers[0].interestRateBPS : undefined;
@@ -76,7 +82,7 @@ export class OfferService {
     };
   }
 
-  @Cron(CronExpression.EVERY_10_SECONDS)
+  @Cron(CronExpression.EVERY_MINUTE)
   async refreshAllOffers() {
     console.log('refreshing all offers');
     const offers = await this.offerRepository.find();
@@ -85,6 +91,7 @@ export class OfferService {
         offer.owner,
         offer.token,
         offer.offerId,
+        offer.chainId,
       );
       offer.borrowed = borrowed.toHexString();
       offer.balance = balance.toHexString();
@@ -103,8 +110,4 @@ export class OfferService {
       }
     }
   }
-}
-
-function bigNumberMin(a: BigNumber, b: BigNumber) {
-  return a.lt(b) ? a : b;
 }

@@ -23,18 +23,27 @@ export class OfferController {
   }
 
   @Get('from_owner')
-  findOffersFromOwner(@Query('owner') owner: string) {
-    return this.offerService.findOffersFromOwner(owner);
+  findOffersFromOwner(
+    @Query('chain_id') chainId: number,
+    @Query('owner') owner: string,
+  ) {
+    return this.offerService.findOffersFromOwner(chainId, owner);
   }
 
   @Get()
-  findAllByToken(@Query('token') token?: string) {
-    return this.offerService.findAllByToken(token);
+  findAllByToken(
+    @Query('chain_id') chainId: number,
+    @Query('token') token?: string,
+  ) {
+    return this.offerService.findAllByToken(chainId, token);
   }
 
   @Get('stats')
-  getTokenOfferStats(@Query('token') token: string) {
-    return this.offerService.getTokenOfferStats(token);
+  getTokenOfferStats(
+    @Query('chain_id') chainId: number,
+    @Query('token') token: string,
+  ) {
+    return this.offerService.getTokenOfferStats(chainId, token);
   }
 
   // @Get(':id')

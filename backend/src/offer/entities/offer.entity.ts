@@ -6,6 +6,9 @@ export class Offer {
   key: string;
 
   @Column()
+  chainId: number;
+
+  @Column()
   offerId: number;
 
   @Column()

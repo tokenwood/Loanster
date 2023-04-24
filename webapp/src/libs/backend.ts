@@ -30,10 +30,14 @@ export interface FullOfferInfo {
 
 export type OfferResponse = LoanOfferType & { signature: string };
 
-export async function submitOffer(offer: LoanOfferType, signature: string) {
+export async function submitOffer(
+  offer: LoanOfferType,
+  signature: string,
+  chainId: number
+) {
   const offerWithSignature = {
     ...offer,
-    ...{ signature: signature },
+    ...{ signature: signature, chainId: chainId },
   };
 
   try {
@@ -55,6 +59,7 @@ export async function getOffersFrom(provider: Provider, account: Address) {
     "GET",
     {
       owner: account,
+      chain_id: provider.network.chainId.toString(),
     }
   );
   return response;
@@ -66,6 +71,7 @@ export async function getTokenOfferStats(token: Token) {
     "GET",
     {
       token: token.address,
+      chain_id: token.chainId.toString(),
     }
   );
 
@@ -114,11 +120,13 @@ export async function getOffersForLoanParams(
 export async function getSortedOffers(provider: Provider, token?: Address) {
   let output: FullOfferInfo[] = [];
   let response: OfferResponse[];
+  let params: { [key: string]: string } = {
+    chain_id: provider.network.chainId.toString(),
+  };
   if (token !== undefined) {
-    response = await callBackend("offer", "GET", { token: token });
-  } else {
-    response = await callBackend("offer", "GET");
+    params["token"] = token;
   }
+  response = await callBackend("offer", "GET", params);
   for (const item of response) {
     output.push(await offerResponseToFullOfferInfo(provider, item));
   }
