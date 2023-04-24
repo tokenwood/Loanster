@@ -14,12 +14,23 @@ const erc20Abi = [
   'event Approval(address indexed owner, address indexed spender, uint256 value)',
 ];
 
-function deployments() {
-  const deploymentsPath = '../chain/deployments/localhost/deployments.json';
+function deployments(chainId: number) {
+  let deploymentsPath: string;
+  switch (chainId) {
+    case 31337:
+      deploymentsPath = '../chain/deployments/localhost/deployments.json';
+      break;
+    case 5:
+      deploymentsPath = '../chain/deployments/goerli/deployments.json';
+      break;
+    default:
+      throw new Error('Unknown chainId');
+  }
   return fs.readJsonSync(deploymentsPath);
 }
 
 export function getProvider(chainId: number): ethers.providers.JsonRpcProvider {
+  // console.log('getting provider with chainid: ', chainId);
   if (chainId == 31337) {
     return new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545');
   } else if (chainId == 5) {
@@ -34,7 +45,7 @@ export function getProvider(chainId: number): ethers.providers.JsonRpcProvider {
 
 export function getTroveManagerContract(chainId: number) {
   return new ethers.Contract(
-    getTroveManagerAddress(),
+    getTroveManagerAddress(chainId),
     getTroveManagerABI(),
     getProvider(chainId),
   ) as TroveManager;
@@ -42,14 +53,14 @@ export function getTroveManagerContract(chainId: number) {
 
 export function getSupplyContract(chainId: number) {
   return new ethers.Contract(
-    getSupplyAddress(),
+    getSupplyAddress(chainId),
     getSupplyABI(),
     getProvider(chainId),
   ) as Supply;
 }
 
-export function getSupplyAddress(): string {
-  return deployments().supply as string;
+export function getSupplyAddress(chainId: number): string {
+  return deployments(chainId).supply as string;
 }
 
 export function getSupplyABI(): any {
@@ -63,8 +74,8 @@ export function getTroveManagerABI(): any {
   return fs.readJsonSync(jsonpath).abi;
 }
 
-export function getTroveManagerAddress(): string {
-  return deployments().troveManager as string;
+export function getTroveManagerAddress(chainId: number): string {
+  return deployments(chainId).troveManager as string;
 }
 
 export async function getERC20BalanceAndAllowance(
@@ -97,7 +108,12 @@ export async function getOfferOnChainData(
 
   const [offerInfo, balanceAndAllowance] = await Promise.all([
     getSupplyContract(chainId).getOfferInfo(key),
-    getERC20BalanceAndAllowance(owner, getSupplyAddress(), token, chainId),
+    getERC20BalanceAndAllowance(
+      owner,
+      getSupplyAddress(chainId),
+      token,
+      chainId,
+    ),
   ]);
 
   const [nonce, amountBorrowed] = offerInfo;

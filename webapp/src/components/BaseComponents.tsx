@@ -77,7 +77,8 @@ interface ContractCallButtonProps {
 
 export function ContractCallButton(props: ContractCallButtonProps) {
   const toast = useToast();
-  const { data, config, isLoading, isError } = usePrepareContractWrite({
+  const [isSubmitted, setIsSubmitted] = useBoolean(false);
+  const { data, config, isError } = usePrepareContractWrite({
     address: props.contractAddress,
     abi: props.abi,
     functionName: props.functionName,
@@ -85,11 +86,12 @@ export function ContractCallButton(props: ContractCallButtonProps) {
     args: props.args,
   });
 
-  const { writeAsync } = useContractWrite(config);
+  const { writeAsync, isLoading } = useContractWrite(config);
 
   async function onClick() {
     try {
       const result = await writeAsync!();
+      setIsSubmitted.on();
       toast({
         title: "Transaction submitted",
         description: undefined,
@@ -99,6 +101,7 @@ export function ContractCallButton(props: ContractCallButtonProps) {
         isClosable: true,
       });
       const confirmed = await result.wait();
+      setIsSubmitted.off();
       props.callback();
       if (confirmed.status === 1) {
         toast({
@@ -132,10 +135,10 @@ export function ContractCallButton(props: ContractCallButtonProps) {
         size={DEFAULT_SIZE}
         hidden={props.hidden}
         alignSelf="center"
-        isDisabled={!props.enabled || !writeAsync || isError}
+        isDisabled={!props.enabled || !writeAsync || isError || isSubmitted}
         onClick={onClick}
       >
-        {isLoading ? <Spinner /> : props.buttonText ?? "Confirm"}
+        {isSubmitted ? <Spinner /> : props.buttonText ?? "Confirm"}
       </Button>
     </VStack>
   );

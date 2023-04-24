@@ -409,7 +409,7 @@ export function RepayLoanInputs(props: RepayLoanInputs) {
                       abi={getTroveManagerABI()}
                       functionName={"repayLoan"}
                       args={[props.loanInfo.loanId, debtAmount]}
-                      enabled={true}
+                      enabled={paymentInfo[0].add(paymentInfo[1]).gt(0)}
                       callback={() => {
                         console.log("loan repaid");
                         props.callback();
