@@ -1,7 +1,7 @@
 import { getOfferKey } from './sharedUtils';
 import { BigNumber, ethers } from 'ethers';
-import { TroveManager } from '../../chain/typechain-types/contracts/TroveManager';
-import { Supply } from '../../chain/typechain-types/contracts/Supply';
+import { TroveManager } from '../../chain/deployments/localhost/typechain-types/contracts/TroveManager';
+import { Supply } from '../../chain/deployments/localhost/typechain-types/contracts/Supply';
 import * as fs from 'fs-extra';
 import { CreateOfferDto } from './offer/dto/create-offer.dto';
 
@@ -64,13 +64,12 @@ export function getSupplyAddress(chainId: number): string {
 }
 
 export function getSupplyABI(): any {
-  const jsonpath = '../chain/artifacts/contracts/Supply.sol/Supply.json';
+  const jsonpath = '../chain/deployments/localhost/Supply.json';
   return fs.readJsonSync(jsonpath).abi;
 }
 
 export function getTroveManagerABI(): any {
-  const jsonpath =
-    '../chain/artifacts/contracts/TroveManager.sol/TroveManager.json';
+  const jsonpath = '../chain/deployments/localhost/TroveManager.json';
   return fs.readJsonSync(jsonpath).abi;
 }
 

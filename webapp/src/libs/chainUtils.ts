@@ -1,10 +1,10 @@
-import { TroveManager } from "../../../chain/typechain-types/contracts/TroveManager";
-import { Supply } from "../../../chain/typechain-types/contracts/Supply";
+import { TroveManager } from "../../../chain/deployments/localhost/typechain-types/contracts/TroveManager";
+import { Supply } from "../../../chain/deployments/localhost/typechain-types/contracts/Supply";
 import { Provider } from "@wagmi/core";
 import { ethers } from "ethers";
 import { Address } from "wagmi";
-import supplyContractJSON from "../../../chain/artifacts/contracts/Supply.sol/Supply.json";
-import troveManagerJSON from "../../../chain/artifacts/contracts/TroveManager.sol/TroveManager.json";
+import supplyContractJSON from "../../../chain/deployments/localhost/Supply.json";
+import troveManagerJSON from "../../../chain/deployments/localhost/TroveManager.json";
 import deploymentsLocalhost from "../../../chain/deployments/localhost/deployments.json";
 import deploymentsGoerli from "../../../chain/deployments/goerli/deployments.json";
 
