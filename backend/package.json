@@ -77,5 +77,9 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
+  },
+  "engines": {
+    "node": "18.x",
+    "yarn": "1.22.x"
   }
 }

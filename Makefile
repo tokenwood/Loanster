@@ -23,6 +23,7 @@ install_os:
 	brew install yarn
 	brew install --cask docker
 	brew install docker-compose
+	brew tap heroku/brew && brew install heroku
 
 start_chain:
 	cd ${PROJECT_FOLDER}/unilib && \
@@ -110,9 +111,20 @@ test:
 	echo "make lint test" >> .git/hooks/pre-commit
 	chmod +x .git/hooks/pre-commit
 
-heroku_webapp_deploy:
-	cd ${PROJECT_FOLDER}/webapp && git push heroku prod
-	# cd ${PROJECT_FOLDER}/webapp && yarn build
-	# cd ${PROJECT_FOLDER}/webapp && heroku local loanster-webapp --port 5001
-	# cd ${PROJECT_FOLDER}/webapp && heroku buildpacks:set -a loanster-webapp https://github.com/heroku/heroku-buildpack-nodejs.git
+heroku_deploy_dev:
+	heroku login
+	./set-heroku-env.sh loanster-webapp-dev
+	./set-heroku-env.sh loanster-backend-dev
+	git subtree split --prefix webapp -b dev-webapp
+	git subtree split --prefix backend -b dev-backend
+	git push -f heroku dev-webapp:main -a loanster-webapp-dev
+	git push -f heroku dev-backend:main -a loanster-backend-dev
 
+heroku_install:
+	heroku login
+	heroku buildpacks:add -a loanster-backend-dev heroku/nodejs
+	heroku buildpacks:add -a loanster-webapp-dev heroku/nodejs
+
+heroku_debug:
+	heroku local loanster-webapp-dev --port 5001
+	heroku local loanster-backend-dev --port 5002
