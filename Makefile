@@ -1,6 +1,8 @@
-.PHONY: install install_js install_os start_chain start_front start_db start_backend deploy_all start_all test lint heroku_login heroku_deploy_dev heroku_install heroku_debug
+.PHONY: install install_js install_os start_chain start_front start_db start_backend deploy_all start_all test lint heroku_login heroku_deploy_dev heroku_debug heroku_deploy_webapp_dev heroku_deploy_backend_dev
 
 PROJECT_FOLDER=$(shell pwd)
+APP_NAME ?= loanster-webapp-dev
+REMOTE_NAME ?= heroku-webapp-dev
 
 include ${PROJECT_FOLDER}/.env
 
@@ -9,6 +11,8 @@ install: install_os install_js
 start_localchain: start_chain_bg deploy_all 
 
 start_all: start_db_bg start_backend_docker start_front_bg 
+
+heroku_deploy_dev: heroku_deploy_webapp_dev heroku_deploy_backend_dev
 
 install_js:
 	cd ${PROJECT_FOLDER}/unilib && yarn install
@@ -111,23 +115,19 @@ test:
 	echo "make lint test" >> .git/hooks/pre-commit
 	chmod +x .git/hooks/pre-commit
 
-heroku_deploy_dev: heroku_deploy_webapp_dev heroku_deploy_backend_dev
-
 heroku_deploy_webapp_dev: heroku_login
+	make _heroku-set-buildpack APP_NAME=loanster-webapp-dev
+	make _heroku-add-remote REMOTE_NAME=heroku-webapp-dev APP_NAME=loanster-webapp-dev
 	./set-heroku-env.sh loanster-webapp-dev
 	git subtree split --prefix webapp -b dev-webapp
 	git push -f heroku-webapp-dev dev-webapp:main
 
 heroku_deploy_backend_dev: heroku_login
+	make _heroku-set-buildpack APP_NAME=loanster-backend-dev
+	make _heroku-add-remote REMOTE_NAME=heroku-backend-dev APP_NAME=loanster-backend-dev
 	./set-heroku-env.sh loanster-backend-dev
 	git subtree split --prefix backend -b dev-backend
 	git push -f heroku-backend-dev dev-backend:main
-
-heroku_install: heroku_login
-	heroku buildpacks:add -a loanster-backend-dev heroku/nodejs
-	heroku buildpacks:add -a loanster-webapp-dev heroku/nodejs
-	git remote add heroku-webapp-dev https://git.heroku.com/loanster-webapp-dev.git
-	git remote add heroku-backend-dev https://git.heroku.com/loanster-backend-dev.git
 
 heroku_debug: heroku_login
 	heroku local loanster-webapp-dev --port 5001
@@ -138,4 +138,20 @@ heroku_login:
 		heroku login; \
 	else \
 		echo "Already logged in."; \
+	fi
+
+_heroku-set-buildpack:
+	@if ! heroku buildpacks -a $(APP_NAME) | grep -q 'heroku/nodejs'; then \
+		heroku buildpacks:add -a $(APP_NAME) heroku/nodejs; \
+		echo "Buildpack heroku/nodejs added"; \
+	else \
+		echo "Buildpack heroku/nodejs already set"; \
+	fi
+
+_heroku-add-remote:
+	@if ! git remote | grep -q "$(REMOTE_NAME)"; then \
+		git remote add $(REMOTE_NAME) https://git.heroku.com/$(APP_NAME).git; \
+		echo "Remote $(REMOTE_NAME) added"; \
+	else \
+		echo "Remote $(REMOTE_NAME) already exists"; \
 	fi
