@@ -1,8 +1,23 @@
 //src/components/header.tsx
-import { Flex, Button, Spacer, Image, Box, Text } from "@chakra-ui/react";
+import { ChevronDownIcon } from "@chakra-ui/icons";
+import {
+  Flex,
+  Button,
+  Spacer,
+  Image,
+  Box,
+  Text,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  Select,
+} from "@chakra-ui/react";
 import { ConnectKitButton } from "connectkit";
+import { switchNetwork } from "@wagmi/core";
 import Link from "next/link";
-import { useProvider } from "wagmi";
+import { useEffect, useState } from "react";
+import { useProvider, useClient } from "wagmi";
 import ClientOnly from "./clientOnly";
 import { headerButtonBorderRadius, headerButtonHoverStyle } from "./Theme";
 
@@ -34,6 +49,25 @@ function HeaderButton(props: Props) {
 
 export default function Header() {
   const provider = useProvider();
+  const client = useClient();
+  const [chainId, setChainId] = useState<number>(provider.network.chainId);
+
+  useEffect(() => {
+    console.log("chainId changed to " + chainId);
+  }, [chainId]);
+
+  async function changeNetwork(chainId: number) {
+    try {
+      const chain = await switchNetwork({
+        chainId: chainId,
+      });
+      console.log("chain: " + chain);
+      setChainId(chain.id);
+    } catch (e) {
+      console.log("error switching network");
+    }
+  }
+
   return (
     <ClientOnly>
       <Flex as="header" p={4} alignItems="center" layerStyle={"header"}>
@@ -48,7 +82,24 @@ export default function Header() {
           buttonText="Liquidations"
         ></HeaderButton>
         <Spacer />
-        <Text padding={2}>network: {provider.network.name}</Text>
+        <Select
+          w="4xs"
+          padding={2}
+          onChange={(event) => {
+            changeNetwork(parseInt(event.target.value));
+          }}
+          value={chainId}
+          layerStyle={"level1"}
+          borderRadius={headerButtonBorderRadius}
+        >
+          {client.chains?.map((value) => {
+            return (
+              <option key={value.id} value={value.id}>
+                {value.name}
+              </option>
+            );
+          })}
+        </Select>
         <ConnectKitButton showBalance={false} showAvatar={false} />
       </Flex>
     </ClientOnly>

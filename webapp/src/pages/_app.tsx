@@ -13,7 +13,7 @@ const client = createClient(
   getDefaultClient({
     appName: "Loanster",
     infuraId: process.env.NEXT_PUBLIC_REACT_APP_INFURA_ID,
-    chains: [hardhat, mainnet, goerli],
+    chains: [goerli, hardhat],
   })
 );
 
