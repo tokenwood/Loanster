@@ -155,3 +155,31 @@ _heroku-add-remote:
 	else \
 		echo "Remote $(REMOTE_NAME) already exists"; \
 	fi
+
+# _create_deploy_branch_merge_dirs:
+# 	@deploy_branch=$$(echo "$(1)") && \
+# 	src1=$$(echo "$(2)") && \
+# 	src2=$$(echo "$(3)") && \
+# 	original_branch=$$(git symbolic-ref --short HEAD) && \
+# 	git stash save "Stash before creating $$deploy_branch" && \
+# 	git checkout -b temp_branch && \
+# 	git filter-branch --prune-empty --subdirectory-filter $$src1 --subdirectory-filter $$src2 temp_branch && \
+# 	git checkout -b $$deploy_branch && \
+# 	git checkout $$original_branch && \
+# 	git branch -D temp_branch && \
+# 	git stash pop
+
+# _create_deploy_branch_distinct_dirs:
+# 	@original_branch=$$(git symbolic-ref --short HEAD) && \
+# 	git stash save --include-untracked "Stash before creating $(NEW_BRANCH)" && \
+# 	if git show-ref --verify --quiet refs/heads/$(NEW_BRANCH); then \
+# 		git branch -D $(NEW_BRANCH); \
+# 	fi && \
+# 	git checkout --orphan $(NEW_BRANCH) && \
+# 	git rm -r --cached . && \
+# 	git clean -f -d && \
+# 	git checkout main -- $(SRC1) $(SRC2) && \
+# 	git add $(SRC1) $(SRC2) && \
+# 	git commit -m "Add $(SRC1) and $(SRC2) directories to $(NEW_BRANCH)" && \
+# 	git checkout $$original_branch && \
+# 	git stash pop

@@ -32,6 +32,7 @@
     "class-validator": "^0.14.0",
     "ethers": "^5.7.2",
     "fs-extra": "^11.1.1",
+    "hardhat": "^2.12.6",
     "pg": "^8.10.0",
     "postgres": "^3.3.4",
     "reflect-metadata": "^0.1.13",
