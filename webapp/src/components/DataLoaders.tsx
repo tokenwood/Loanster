@@ -12,6 +12,7 @@ import {
   Thead,
   Tr,
   VStack,
+  Accordion,
 } from "@chakra-ui/react";
 import { eventEmitter, EventId, EventType } from "libs/eventEmitter";
 
@@ -44,6 +45,7 @@ export default function ListLoader<T>(props: ListLoaderProps<T>) {
             {childProps.data.length > 0 && props.makeHeader
               ? props.makeHeader(childProps.data)
               : null}
+
             {Array.isArray(childProps.data) ? (
               childProps.data.map((id: T, index: number) =>
                 props.makeListItem({

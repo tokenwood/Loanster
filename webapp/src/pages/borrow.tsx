@@ -168,28 +168,27 @@ export default function LoansPage() {
               return (
                 <BaseView
                   level={2}
-                  key={
-                    "collateral_deposit_" +
-                    listItemProps.id.token.address +
-                    listItemProps.id.deposit_amount +
-                    listItemProps.id.wallet_amount
-                  }
+                  key={"collateral_deposit_" + listItemProps.id.token.address}
                   fetcher={() => Promise.resolve(listItemProps.id)}
-                  dataView={(data, setExpanded) => {
+                  collapseEvents={[
+                    {
+                      eventType: EventType.COLLATERAL_TOKEN_DEPOSITED,
+                      suffix: listItemProps.id.token.address,
+                    },
+                    {
+                      eventType: EventType.COLLATERAL_TOKEN_WITHDRAWN,
+                      suffix: listItemProps.id.token.address,
+                    },
+                  ]}
+                  dataView={(data) => {
                     return (
                       <TableRowView
-                        expandedCallback={setExpanded}
+                        key={
+                          "" +
+                          listItemProps.id.deposit_amount +
+                          listItemProps.id.wallet_amount
+                        }
                         colSpecs={depositTableColdims}
-                        events={[
-                          {
-                            eventType: EventType.COLLATERAL_TOKEN_DEPOSITED,
-                            suffix: data.token.address,
-                          },
-                          {
-                            eventType: EventType.COLLATERAL_TOKEN_WITHDRAWN,
-                            suffix: data.token.address,
-                          },
-                        ]}
                         colData={{
                           Asset: data.token,
                           Deposited: {
@@ -271,17 +270,16 @@ export default function LoansPage() {
                   level={2}
                   key={"loan_" + listItemProps.id.toString()}
                   fetcher={() => getFullLoanInfo(provider, listItemProps.id)}
-                  dataView={(data, setExpanded) => {
+                  collapseEvents={[
+                    {
+                      eventType: EventType.LOAN_REPAID,
+                      suffix: listItemProps.id,
+                    },
+                  ]}
+                  dataView={(data) => {
                     return (
                       <TableRowView
-                        expandedCallback={setExpanded}
                         colSpecs={borrowedTableColdims}
-                        events={[
-                          {
-                            eventType: EventType.LOAN_REPAID,
-                            suffix: listItemProps.id,
-                          },
-                        ]}
                         colData={{
                           Asset: data.token,
                           Debt: {
@@ -344,10 +342,9 @@ export default function LoansPage() {
                   level={2}
                   key={"asset_to_borrow" + listItemProps.id.address}
                   fetcher={() => getTokenOfferStats(listItemProps.id)} //todo get token info from server
-                  dataView={(data, setExpanded) => {
+                  dataView={(data) => {
                     return (
                       <TableRowView
-                        expandedCallback={setExpanded}
                         colSpecs={toBorrowTableColdims}
                         colData={{
                           Asset: data.token,

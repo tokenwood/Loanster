@@ -41,12 +41,16 @@ interface TableHeaderViewProps {
   colSpecs: { [key: string]: ColSpecs };
 }
 
-const TABLE_ROW_WIDTH = "95%";
+export const TABLE_ROW_WIDTH_PCT = 95;
+export const TABLE_ROW_PADDING_LEFT = "3";
 
 export function TableHeaderView(props: TableHeaderViewProps) {
   return (
     <Flex w={"100%"} layerStyle={"tableHeader"}>
-      <HStack w={TABLE_ROW_WIDTH} paddingLeft="3" paddingRight="3">
+      <HStack
+        w={TABLE_ROW_WIDTH_PCT + "%"}
+        paddingLeft={TABLE_ROW_PADDING_LEFT}
+      >
         {Object.keys(props.colSpecs).map((key) => {
           return (
             <Box
@@ -75,8 +79,6 @@ interface TableRowViewProps {
       | Timestamp
       | (() => JSX.Element);
   };
-  expandedCallback?: (expanded: boolean) => void;
-  events?: EventId[];
 }
 
 function isTokenAmount(obj: any) {
@@ -92,46 +94,9 @@ function isTimestamp(obj: any) {
 }
 
 export function TableRowView(props: TableRowViewProps) {
-  const [expanded, setExpanded] = useBoolean();
-
-  useEffect(() => {
-    if (props.expandedCallback !== undefined) {
-      props.expandedCallback(expanded);
-    }
-  }, [expanded]);
-
-  useEffect(() => {
-    const eventCallback = () => {
-      setExpanded.off();
-    };
-    if (props.events !== undefined) {
-      props.events.forEach((eventType: EventId) => {
-        eventEmitter.subscribe(eventType, eventCallback);
-      });
-    }
-    return () => {
-      if (props.events !== undefined) {
-        props.events.forEach((eventType: EventId) => {
-          eventEmitter.unsubscribe(eventType, eventCallback);
-        });
-      }
-    };
-  }, []);
-
   return (
-    <Flex
-      w="100%"
-      layerStyle={"level2"}
-      borderBottom={expanded ? "2px" : undefined}
-      borderBottomColor={expanded ? "white" : undefined}
-      borderBottomRadius={expanded ? 0 : undefined}
-      // bg="red"
-      onClick={setExpanded.toggle}
-      cursor={"pointer"}
-      _hover={expanded ? undefined : tableRowHoverStyle}
-      alignItems="center"
-    >
-      <HStack w={TABLE_ROW_WIDTH} paddingX="3" paddingY="1.5">
+    <Flex w="100%">
+      <HStack w={"100%"} paddingLeft={TABLE_ROW_PADDING_LEFT} paddingY="1.5">
         {Object.keys(props.colSpecs).map((key) => {
           if (props.colData[key] instanceof Token) {
             const token = props.colData[key] as Token;
@@ -149,7 +114,11 @@ export function TableRowView(props: TableRowViewProps) {
           } else if (isTokenAmount(props.colData[key])) {
             const tokenAmount = props.colData[key] as TokenAmount;
             return (
-              <VStack key={key} w={getWidth(key, props.colSpecs)} spacing={0}>
+              <VStack
+                key={tokenAmount.amount.toString()}
+                w={getWidth(key, props.colSpecs)}
+                spacing={0}
+              >
                 <Text
                   w={"100%"}
                   textAlign={props.colSpecs[key].align ?? "left"}
@@ -213,11 +182,6 @@ export function TableRowView(props: TableRowViewProps) {
         })}
       </HStack>
       <Spacer />
-      {expanded ? (
-        <ChevronUpIcon boxSize={6} marginRight={3} />
-      ) : (
-        <ChevronDownIcon boxSize={6} marginRight={3} />
-      )}
     </Flex>
   );
 }

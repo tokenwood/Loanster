@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import {
   Box,
   Button,
+  Center,
   Flex,
   Select,
   Spacer,
@@ -147,10 +148,10 @@ export function CollateralInputs(props: DepositInputsProps) {
   };
 
   const canConfirm = () => {
-    return (
-      BigNumber.from(0).lt(amount) &&
-      amount.lte(props.balanceData.wallet_amount)
-    );
+    return props.type == "deposit"
+      ? BigNumber.from(0).lt(amount) &&
+          amount.lte(props.balanceData.wallet_amount)
+      : BigNumber.from(0).lt(amount);
   };
 
   return (

@@ -196,12 +196,9 @@ export async function getSupplyTokenAddresses(
   provider: Provider
 ): Promise<Address[]> {
   console.log("fetching supply tokens");
-  console.log("network name: " + (await provider.getNetwork()).name);
   const supplyContract = await getTroveManagerContract(provider);
-  console.log("supply contract: " + supplyContract.address);
   let eventFilter = supplyContract.filters.SupplyTokenChanged();
   let events = await supplyContract.queryFilter(eventFilter);
-  console.log("events: " + events.length);
   return getAllowedTokensFromEvents(events);
 }
 

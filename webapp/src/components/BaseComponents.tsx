@@ -1,4 +1,4 @@
-import { VStack, Heading, Box, Flex, HStack, Spacer } from "@chakra-ui/layout";
+import { VStack, Box } from "@chakra-ui/layout";
 import {
   Address,
   useContractWrite,
@@ -9,10 +9,19 @@ import {
 } from "wagmi";
 import ClientOnly from "components/clientOnly";
 import {
-  background,
+  Accordion,
+  AccordionButton,
+  AccordionIcon,
+  AccordionItem,
+  AccordionPanel,
   Button,
-  IconButton,
+  Center,
   Spinner,
+  Tab,
+  TabList,
+  TabPanel,
+  TabPanels,
+  Tabs,
   useBoolean,
   useToast,
 } from "@chakra-ui/react";
@@ -20,17 +29,17 @@ import {
   actionInitColorScheme,
   cancelColorScheme,
   DEFAULT_SIZE,
-  headerButtonHoverStyle,
   tableRowHoverStyle,
 } from "components/Theme";
 import { PropsWithChildren, ReactNode, useEffect, useState } from "react";
 import { defaultBorderRadius } from "./Theme";
 import { DataLoader } from "./DataLoaders";
-import { EventId } from "libs/eventEmitter";
+import { eventEmitter, EventId } from "libs/eventEmitter";
 import { verifyMessage } from "ethers/lib/utils.js";
 import { ethers } from "ethers";
 import { ChevronDownIcon, ChevronUpIcon } from "@chakra-ui/icons";
 import { bigNumberString } from "libs/helperFunctions";
+import { TABLE_ROW_WIDTH_PCT } from "./DataViews";
 
 interface BasePageProps {
   width?: string;
@@ -44,8 +53,6 @@ export function BasePage(props: PropsWithChildren<BasePageProps>) {
       <Box
         p={4}
         w={props.width ? props.width : "100%"}
-        // borderWidth="0px"
-        // borderRadius="lg"
         layerStyle={"level1"}
         key={provider.network.name + (account ? account : "")}
       >
@@ -206,23 +213,36 @@ export interface ActionProp {
   onClickView: (data: any, actionFinished: () => any) => ReactNode;
 }
 
-export interface DataViewProps<T> {
+export interface BaseViewProps<T> {
   fetcher: () => Promise<T>;
-  dataView: (data: T, setExpanded?: (expanded: boolean) => void) => ReactNode;
+  dataView: (data: T) => ReactNode;
   actions: ActionProp[];
   level?: number;
   reloadEvents?: EventId[];
+  collapseEvents?: EventId[];
 }
 
-export function BaseView<T>(props: DataViewProps<T>) {
-  const [currentAction, setCurrentAction] = useState<ActionProp>(
-    props.actions[0]
-  );
-  const [expanded, setExpanded] = useState<boolean>(false);
+export function BaseView<T>(props: BaseViewProps<T>) {
+  const [accordionIndex, setAccordionIndex] = useState(-1);
 
-  const setExpandedCallback = (expanded: boolean) => {
-    setExpanded(expanded);
-  };
+  useEffect(() => {
+    const eventCallback = () => {
+      console.log("setting expanded callback");
+      setAccordionIndex(-1);
+    };
+    if (props.collapseEvents !== undefined) {
+      props.collapseEvents.forEach((eventType: EventId) => {
+        eventEmitter.subscribe(eventType, eventCallback);
+      });
+    }
+    return () => {
+      if (props.collapseEvents !== undefined) {
+        props.collapseEvents.forEach((eventType: EventId) => {
+          eventEmitter.unsubscribe(eventType, eventCallback);
+        });
+      }
+    };
+  }, []);
 
   return (
     <DataLoader
@@ -230,36 +250,51 @@ export function BaseView<T>(props: DataViewProps<T>) {
       reloadEvents={props.reloadEvents}
       makeChildren={(childProps) => {
         return (
-          <VStack
-            w="100%"
-            layerStyle={props.level ? "level" + props.level : "level3"}
-            paddingBottom={expanded ? 3 : undefined}
-          >
-            {props.dataView(childProps.data, setExpandedCallback)}
+          <Accordion w={"100%"} allowToggle index={accordionIndex}>
+            <AccordionItem
+              w="100%"
+              layerStyle={props.level ? "level" + props.level : "level3"}
+            >
+              <AccordionButton
+                layerStyle={"level2"}
+                padding={0}
+                onClick={() => {
+                  setAccordionIndex(accordionIndex === 0 ? -1 : 0);
+                }}
+                _expanded={{
+                  borderBottom: "2px",
+                  borderBottomColor: "white",
+                  borderBottomRadius: 0,
+                  _hover: { tableRowHoverStyle },
+                }}
+              >
+                {props.dataView(childProps.data)}
+                <AccordionIcon w={100 - TABLE_ROW_WIDTH_PCT + "%"} />
+              </AccordionButton>
 
-            {expanded ? (
-              <HStack w="100%" paddingLeft={3}>
-                {props.actions.map((actionProp: ActionProp) =>
-                  actionButton(
-                    actionProp,
-                    () => {
-                      setCurrentAction(actionProp);
-                    },
-                    currentAction.action == actionProp.action
-                  )
-                )}
-              </HStack>
-            ) : (
-              <></>
-            )}
-            {expanded ? (
-              currentAction!.onClickView(childProps.data, () => {
-                childProps.refetchData();
-              })
-            ) : (
-              <></>
-            )}
-          </VStack>
+              <AccordionPanel paddingBottom={2}>
+                <Tabs isLazy align="start">
+                  <TabList>
+                    {props.actions.map((actionProp: ActionProp, index) => (
+                      <Tab key={index}>{actionProp.action.toUpperCase()}</Tab>
+                    ))}
+                  </TabList>
+                  <TabPanels>
+                    {props.actions.map((actionProp: ActionProp, index) => (
+                      <TabPanel key={index} paddingBottom={2} paddingX={2}>
+                        <Center>
+                          {actionProp.onClickView(childProps.data, () => {
+                            childProps.refetchData();
+                            console.log("action finished callback");
+                          })}
+                        </Center>
+                      </TabPanel>
+                    ))}
+                  </TabPanels>
+                </Tabs>
+              </AccordionPanel>
+            </AccordionItem>
+          </Accordion>
         );
       }}
     ></DataLoader>

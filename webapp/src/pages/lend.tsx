@@ -92,11 +92,10 @@ export default function LendPage() {
                   }
                   level={2}
                   key={"lending_offers_base" + props.index}
-                  dataView={(data: FullOfferInfo, setExpanded) => {
+                  dataView={(data: FullOfferInfo) => {
                     return (
                       <TableRowView
                         key={"lending_offers_" + props.index}
-                        expandedCallback={setExpanded}
                         colSpecs={offerTableColdims}
                         colData={{
                           Asset: data.token,
@@ -198,17 +197,16 @@ export default function LendPage() {
                     props.id.loan.amount.toString()
                   }
                   fetcher={() => Promise.resolve(props.id)}
-                  dataView={(data, setExpanded) => {
+                  collapseEvents={[
+                    {
+                      eventType: EventType.LOAN_CLAIMED,
+                      suffix: props.id.token.address,
+                    },
+                  ]}
+                  dataView={(data) => {
                     return (
                       <TableRowView
                         key={"lent_assets_" + props.id}
-                        expandedCallback={setExpanded}
-                        events={[
-                          {
-                            eventType: EventType.LOAN_CLAIMED,
-                            suffix: data.token.address,
-                          },
-                        ]}
                         colSpecs={lentTableColdims}
                         colData={{
                           Asset: data.token,
@@ -293,11 +291,10 @@ export default function LendPage() {
                       suffix: props.id,
                     },
                   ]}
-                  dataView={(data: TokenAmount, setExpanded) => {
+                  dataView={(data: TokenAmount) => {
                     return (
                       <TableRowView
                         key={"wallet_supply_token_ballance_" + props.id}
-                        expandedCallback={setExpanded}
                         colSpecs={toSupplyColDims}
                         colData={{
                           Asset: data.token,
