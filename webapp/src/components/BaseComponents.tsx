@@ -145,7 +145,7 @@ export function ContractCallButton(props: ContractCallButtonProps) {
     // <VStack>
     <Button
       w={props.w}
-      colorScheme={props.done ? "green" : isDisabled() ? "gray" : "blue"}
+      colorScheme={"green"}
       borderRadius={defaultBorderRadius}
       size={DEFAULT_SIZE}
       hidden={props.hidden}
