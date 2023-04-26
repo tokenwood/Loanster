@@ -30,10 +30,8 @@ function readJson(filePath: string): any {
 }
 
 export function getUniUtilsAddress(networkName: string) {
-  const deployments = readJson(
-    "../unilib/cache/deployments_" + networkName + ".json"
-  ).uniutils;
-  return getDeployments(networkName).uniUtils;
+  return readJson("../unilib/cache/deployments_" + networkName + ".json")
+    .uniUtils;
 }
 
 export function getWETHContract() {
@@ -81,6 +79,12 @@ export async function deployTroveManager(
   supplyAddress: string,
   networkName: string
 ) {
+  // verify uni utils is deployed
+  const code = await ethers.provider.getCode(getUniUtilsAddress(networkName));
+  if (code == "0x") {
+    throw Error("uniutils address is not a contract");
+  }
+
   const TroveManager = await ethers.getContractFactory("TroveManager");
   const troveManager = await TroveManager.deploy(
     supplyAddress,

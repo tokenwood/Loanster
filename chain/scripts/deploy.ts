@@ -51,10 +51,12 @@ async function main() {
       3000
     );
   } else if (networkName === "localhost") {
+    console.log("adding supply tokens");
     await troveManager.addSupplyToken(USDC_TOKEN.address, 9000, 500);
     await troveManager.addSupplyToken(LUSD_TOKEN.address, 9000, 500);
     await troveManager.addSupplyToken(WBTC_TOKEN.address, 8000, 500);
 
+    console.log("adding collateral tokens");
     await troveManager.addCollateralToken(WETH_TOKEN.address, 10000, 0);
     await troveManager.addCollateralToken(RETH_TOKEN.address, 9000, 500);
   }

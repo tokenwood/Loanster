@@ -86,6 +86,8 @@ export class OfferService {
   async refreshAllOffers() {
     console.log('refreshing all offers');
     const offers = await this.offerRepository.find();
+
+    //todo remove expired offers
     for (const offer of offers) {
       const [nonce, borrowed, balance, allowance] = await getOfferOnChainData(
         offer.owner,

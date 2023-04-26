@@ -36,7 +36,7 @@ async function main() {
   console.log("buying usdc");
   await buyToken(owner.address, USDC_TOKEN.address, 10);
   console.log("buying lusd");
-  await buyToken(owner.address, LUSD_TOKEN.address, 10, 10000);
+  await buyToken(owner.address, LUSD_TOKEN.address, 1, 10000);
   console.log("buying wbtc");
   await buyToken(owner.address, WBTC_TOKEN.address, 10);
   console.log("buying reth");
@@ -57,7 +57,7 @@ async function main() {
 
   // open 1 loan
   console.log("creating loan offer");
-  const offerAmount = BigNumber.from(ethers.utils.parseUnits("1000", 6));
+  const offerAmount = ethers.utils.parseUnits("1000", 6);
   const offer: LoanOfferStruct = {
     owner: owner.address,
     token: USDC_TOKEN.address,

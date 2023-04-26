@@ -1,4 +1,4 @@
-.PHONY: install install_js install_os start_chain start_front start_db start_backend deploy_all start_all test lint heroku_login heroku_deploy_dev heroku_debug heroku_deploy_webapp_dev heroku_deploy_backend_dev
+.PHONY: install install_js install_os start_chain start_front start_db start_backend deploy_all_localhost start_all test lint heroku_login heroku_deploy_dev heroku_debug heroku_deploy_webapp_dev heroku_deploy_backend_dev copy_deployments
 
 PROJECT_FOLDER=$(shell pwd)
 APP_NAME ?= loanster-webapp-dev
@@ -8,7 +8,7 @@ include ${PROJECT_FOLDER}/.env
 
 install: install_os install_js
 
-start_localchain: start_chain_bg deploy_all 
+start_localchain: start_chain_bg deploy_all_localhost mock_localhost
 
 start_all: start_db_bg start_backend_docker start_front_bg 
 
@@ -75,19 +75,27 @@ stop_backend_docker:
 	cd ${PROJECT_FOLDER} && \
 	docker-compose stop backend
 
-deploy_all:	
+deploy_all_localhost:	
 	cd ${PROJECT_FOLDER}/unilib && \
 	yarn hardhat run scripts/deploy.ts --network localhost 
 	cd ${PROJECT_FOLDER}/chain && \
 	yarn hardhat run scripts/deploy.ts --network localhost
-	cd ${PROJECT_FOLDER}/chain && \
-	yarn hardhat run scripts/mock.ts --network localhost
+	make copy_deployments
 
 deploy_all_goerli:
 	cd ${PROJECT_FOLDER}/unilib && \
 		yarn hardhat run scripts/deploy.ts --network goerli 
 	cd ${PROJECT_FOLDER}/chain && \
 		yarn hardhat run scripts/deploy.ts --network goerli 
+	make copy_deployments
+	
+copy_deployments:
+	cp -r ${PROJECT_FOLDER}/chain/deployments ${PROJECT_FOLDER}/webapp/
+	cp -r ${PROJECT_FOLDER}/chain/deployments ${PROJECT_FOLDER}/backend/
+
+mock_localhost:
+	cd ${PROJECT_FOLDER}/chain && \
+	yarn hardhat run scripts/mock.ts --network localhost
 
 lint:
 	cd ${PROJECT_FOLDER}/unilib && \

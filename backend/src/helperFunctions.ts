@@ -1,9 +1,14 @@
 import { getOfferKey } from './sharedUtils';
 import { BigNumber, ethers } from 'ethers';
-import { TroveManager } from '../../chain/deployments/localhost/typechain-types/contracts/TroveManager';
-import { Supply } from '../../chain/deployments/localhost/typechain-types/contracts/Supply';
+import { TroveManager } from '../deployments/localhost/typechain-types/contracts/TroveManager';
+import { Supply } from '../deployments/localhost/typechain-types/contracts/Supply';
 import * as fs from 'fs-extra';
 import { CreateOfferDto } from './offer/dto/create-offer.dto';
+
+const TROVE_MANAGER_ABI_PATH = 'deployments/localhost/TroveManager.json';
+const SUPPLY_ABI_PATH = 'deployments/localhost/Supply.json';
+const LOCALHOST_DEPLOYMENTS_PATH = 'deployments/localhost/deployments.json';
+const GOERLI_DEPLOYMENTS_PATH = 'deployments/goerli/deployments.json';
 
 const erc20Abi = [
   'function balanceOf(address owner) view returns (uint256)',
@@ -18,10 +23,10 @@ function deployments(chainId: number) {
   let deploymentsPath: string;
   switch (chainId) {
     case 31337:
-      deploymentsPath = '../chain/deployments/localhost/deployments.json';
+      deploymentsPath = LOCALHOST_DEPLOYMENTS_PATH;
       break;
     case 5:
-      deploymentsPath = '../chain/deployments/goerli/deployments.json';
+      deploymentsPath = GOERLI_DEPLOYMENTS_PATH;
       break;
     default:
       throw new Error('Unknown chainId');
@@ -64,13 +69,11 @@ export function getSupplyAddress(chainId: number): string {
 }
 
 export function getSupplyABI(): any {
-  const jsonpath = '../chain/deployments/localhost/Supply.json';
-  return fs.readJsonSync(jsonpath).abi;
+  return fs.readJsonSync(SUPPLY_ABI_PATH).abi;
 }
 
 export function getTroveManagerABI(): any {
-  const jsonpath = '../chain/deployments/localhost/TroveManager.json';
-  return fs.readJsonSync(jsonpath).abi;
+  return fs.readJsonSync(TROVE_MANAGER_ABI_PATH).abi;
 }
 
 export function getTroveManagerAddress(chainId: number): string {
