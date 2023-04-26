@@ -78,8 +78,12 @@ export default function Header() {
         {/* <HeaderButton linkPath="/loans" buttonText="Loans"></HeaderButton> */}
         <HeaderButton linkPath="/lend" buttonText="Lend"></HeaderButton>
         <HeaderButton
-          linkPath="/liquidations"
-          buttonText="Liquidations"
+          linkPath="/marketplace"
+          buttonText="Marketplace"
+        ></HeaderButton>
+        <HeaderButton
+          linkPath="/governance"
+          buttonText="Governance"
         ></HeaderButton>
         <Spacer />
         <Select
