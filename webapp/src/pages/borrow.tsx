@@ -203,7 +203,7 @@ export default function LoansPage() {
                       />
                     );
                   }}
-                  actions={[
+                  tabs={[
                     {
                       action: "Deposit",
                       onClickView: (
@@ -295,7 +295,7 @@ export default function LoansPage() {
                       />
                     );
                   }}
-                  actions={[
+                  tabs={[
                     {
                       action: "Repay",
                       onClickView: (
@@ -360,7 +360,7 @@ export default function LoansPage() {
                       />
                     );
                   }}
-                  actions={[
+                  tabs={[
                     {
                       action: "Offers",
                       onClickView: (data, actionFinished: () => any) => {

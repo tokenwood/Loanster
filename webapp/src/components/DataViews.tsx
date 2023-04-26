@@ -39,6 +39,7 @@ export interface ColSpecs {
 
 interface TableHeaderViewProps {
   colSpecs: { [key: string]: ColSpecs };
+  tableRowWidthPct?: number;
 }
 
 export const TABLE_ROW_WIDTH_PCT = 95;
@@ -48,7 +49,7 @@ export function TableHeaderView(props: TableHeaderViewProps) {
   return (
     <Flex w={"100%"} layerStyle={"tableHeader"}>
       <HStack
-        w={TABLE_ROW_WIDTH_PCT + "%"}
+        w={(props.tableRowWidthPct ?? TABLE_ROW_WIDTH_PCT) + "%"}
         paddingLeft={TABLE_ROW_PADDING_LEFT}
       >
         {Object.keys(props.colSpecs).map((key) => {
@@ -115,7 +116,7 @@ export function TableRowView(props: TableRowViewProps) {
             const tokenAmount = props.colData[key] as TokenAmount;
             return (
               <VStack
-                key={tokenAmount.amount.toString()}
+                key={key + tokenAmount.amount.toString()}
                 w={getWidth(key, props.colSpecs)}
                 spacing={0}
               >

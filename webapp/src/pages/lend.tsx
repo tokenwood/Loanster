@@ -4,9 +4,9 @@ import {
   BasePage,
   BaseView,
   ContractCallButton,
+  SimpleView,
 } from "components/BaseComponents";
 import ListLoader, { MakeListItemProps } from "components/DataLoaders";
-import { MakeOfferInputs } from "components/InputViews";
 import {
   ColSpecs,
   LoanInfoView,
@@ -39,6 +39,9 @@ import {
 import { FullLoanInfo, TokenAmount } from "libs/types";
 import { getOfferKey } from "libs/sharedUtils";
 import OfferInfo, { Check } from "components/OfferInfo";
+import { OfferModal } from "components/OfferMaker";
+
+const MAKE_OFFER_TABLE_ROW_WIDTH_PCT = 85;
 
 const offerTableColdims: { [key: string]: ColSpecs } = {
   Asset: { size: 0.5, align: "left" },
@@ -60,8 +63,11 @@ const lentTableColdims: { [key: string]: ColSpecs } = {
 
 const toSupplyColDims: { [key: string]: ColSpecs } = {
   Asset: { size: 1, align: "left" },
+  "APY (7d)": { size: 1, align: "right" },
+  "APY (30d)": { size: 1, align: "right" },
+  "APY (90d)": { size: 1, align: "right" },
   "In Wallet": { size: 1, align: "right" },
-  " ": { size: 0.1, align: "right" },
+  " ": { size: 0.05, align: "right" },
 };
 
 export default function LendPage() {
@@ -125,7 +131,8 @@ export default function LendPage() {
                       />
                     );
                   }}
-                  actions={[
+                  // tabs={[]}
+                  tabs={[
                     {
                       action: "Info",
                       onClickView: (
@@ -224,7 +231,7 @@ export default function LendPage() {
                       />
                     );
                   }}
-                  actions={[
+                  tabs={[
                     {
                       action: "Claim",
                       onClickView: (
@@ -277,13 +284,16 @@ export default function LendPage() {
           <ListLoader
             fetchData={() => getSupplyTokenAddresses(provider)}
             makeHeader={() => (
-              <TableHeaderView colSpecs={toSupplyColDims}></TableHeaderView>
+              <TableHeaderView
+                colSpecs={toSupplyColDims}
+                tableRowWidthPct={MAKE_OFFER_TABLE_ROW_WIDTH_PCT}
+              ></TableHeaderView>
             )}
             makeListItem={(props) => {
               return (
-                <BaseView
+                <SimpleView
                   key={"wallet_supply_token_ballance_" + props.id}
-                  level={2}
+                  tableRowWidthPct={MAKE_OFFER_TABLE_ROW_WIDTH_PCT}
                   fetcher={() => getTokenBalance(provider, props.id, account!)}
                   reloadEvents={[
                     {
@@ -291,7 +301,7 @@ export default function LendPage() {
                       suffix: props.id,
                     },
                   ]}
-                  dataView={(data: TokenAmount) => {
+                  dataView={(data) => {
                     return (
                       <TableRowView
                         key={"wallet_supply_token_ballance_" + props.id}
@@ -306,28 +316,19 @@ export default function LendPage() {
                       />
                     );
                   }}
-                  actions={[
-                    {
-                      action: "Make Offer",
-                      onClickView: (
-                        data: TokenAmount,
-                        actionFinished: () => any
-                      ) => {
-                        return (
-                          <MakeOfferInputs
-                            account={account!}
-                            balanceData={data}
-                            callback={() => {
-                              actionFinished();
-                              eventEmitter.dispatch({
-                                eventType: EventType.SUPPLY_OFFER_CREATED,
-                              });
-                            }}
-                          />
-                        );
-                      },
-                    },
-                  ]}
+                  modalButton={(data) => {
+                    return (
+                      <OfferModal
+                        account={account!}
+                        balanceData={data}
+                        offerSubmittedCallback={() => {
+                          eventEmitter.dispatch({
+                            eventType: EventType.SUPPLY_OFFER_CREATED,
+                          });
+                        }}
+                      ></OfferModal>
+                    );
+                  }}
                 />
               );
             }}

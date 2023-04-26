@@ -16,6 +16,7 @@ import {
   AccordionPanel,
   Button,
   Center,
+  HStack,
   Spinner,
   Tab,
   TabList,
@@ -78,8 +79,10 @@ interface ContractCallButtonProps {
   args?: unknown[];
   hidden?: boolean;
   enabled?: boolean;
+  done?: boolean;
   callback: () => any;
   buttonText?: string;
+  w?: string;
 }
 
 export function ContractCallButton(props: ContractCallButtonProps) {
@@ -134,20 +137,27 @@ export function ContractCallButton(props: ContractCallButtonProps) {
     }
   }
 
+  function isDisabled() {
+    return !props.enabled || !writeAsync || isError || isSubmitted;
+  }
+
   return (
-    <VStack>
-      <Button
-        colorScheme="green"
-        borderRadius={defaultBorderRadius}
-        size={DEFAULT_SIZE}
-        hidden={props.hidden}
-        alignSelf="center"
-        isDisabled={!props.enabled || !writeAsync || isError || isSubmitted}
-        onClick={onClick}
-      >
-        {isSubmitted ? <Spinner /> : props.buttonText ?? "Confirm"}
-      </Button>
-    </VStack>
+    // <VStack>
+    <Button
+      w={props.w}
+      colorScheme={props.done ? "green" : isDisabled() ? "gray" : "blue"}
+      borderRadius={defaultBorderRadius}
+      size={DEFAULT_SIZE}
+      hidden={props.hidden}
+      alignSelf="center"
+      // isActive={false}
+      isDisabled={isDisabled()}
+      onClick={onClick}
+      isLoading={isSubmitted}
+    >
+      {props.buttonText ?? "Confirm"}
+    </Button>
+    // </VStack>
   );
 }
 
@@ -163,6 +173,7 @@ interface SignButtonProps {
     data: any
   ) => any;
   buttonText?: string;
+  w?: string;
 }
 
 export function SignButton(props: SignButtonProps) {
@@ -195,6 +206,7 @@ export function SignButton(props: SignButtonProps) {
 
   return (
     <Button
+      w={props.w}
       colorScheme="green"
       borderRadius={defaultBorderRadius}
       size={DEFAULT_SIZE}
@@ -208,7 +220,7 @@ export function SignButton(props: SignButtonProps) {
   );
 }
 
-export interface ActionProp {
+export interface TabProp {
   action: string;
   onClickView: (data: any, actionFinished: () => any) => ReactNode;
 }
@@ -216,7 +228,7 @@ export interface ActionProp {
 export interface BaseViewProps<T> {
   fetcher: () => Promise<T>;
   dataView: (data: T) => ReactNode;
-  actions: ActionProp[];
+  tabs: TabProp[];
   level?: number;
   reloadEvents?: EventId[];
   collapseEvents?: EventId[];
@@ -275,15 +287,15 @@ export function BaseView<T>(props: BaseViewProps<T>) {
               <AccordionPanel paddingBottom={2}>
                 <Tabs isLazy align="start">
                   <TabList>
-                    {props.actions.map((actionProp: ActionProp, index) => (
-                      <Tab key={index}>{actionProp.action.toUpperCase()}</Tab>
+                    {props.tabs.map((tabProp: TabProp, index) => (
+                      <Tab key={index}>{tabProp.action.toUpperCase()}</Tab>
                     ))}
                   </TabList>
                   <TabPanels>
-                    {props.actions.map((actionProp: ActionProp, index) => (
+                    {props.tabs.map((tabProp: TabProp, index) => (
                       <TabPanel key={index} paddingBottom={2} paddingX={2}>
                         <Center>
-                          {actionProp.onClickView(childProps.data, () => {
+                          {tabProp.onClickView(childProps.data, () => {
                             childProps.refetchData();
                             console.log("action finished callback");
                           })}
@@ -301,21 +313,33 @@ export function BaseView<T>(props: BaseViewProps<T>) {
   );
 }
 
-function actionButton(
-  actionProp: ActionProp,
-  onClick: () => any,
-  isCurrentAction: boolean
-) {
+export interface SimpleViewProps<T> {
+  fetcher: () => Promise<T>;
+  dataView: (data: T) => ReactNode;
+  modalButton: (data: T) => ReactNode;
+  reloadEvents?: EventId[];
+  tableRowWidthPct?: number;
+}
+
+export function SimpleView<T>(props: SimpleViewProps<T>) {
   return (
-    <Button
-      key={actionProp.action}
-      colorScheme={isCurrentAction ? actionInitColorScheme : cancelColorScheme}
-      borderRadius={defaultBorderRadius}
-      size={DEFAULT_SIZE}
-      onClick={() => onClick()}
-      alignSelf="center"
-    >
-      {actionProp.action}
-    </Button>
+    <DataLoader
+      fetcher={() => props.fetcher()}
+      reloadEvents={props.reloadEvents}
+      makeChildren={(childProps) => {
+        return (
+          <HStack w="100%" layerStyle={"level2"} padding={0} spacing={0}>
+            <Box w={(props.tableRowWidthPct ?? TABLE_ROW_WIDTH_PCT) + "%"}>
+              {props.dataView(childProps.data)}
+            </Box>
+            <Box
+              w={100 - (props.tableRowWidthPct ?? TABLE_ROW_WIDTH_PCT) + "%"}
+            >
+              <Center>{props.modalButton(childProps.data)}</Center>
+            </Box>
+          </HStack>
+        );
+      }}
+    ></DataLoader>
   );
 }
