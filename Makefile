@@ -46,6 +46,11 @@ start_front_bg:
 	cd ${PROJECT_FOLDER}/webapp && \
 	yarn dev &
 
+start_front_prod:
+	cd ${PROJECT_FOLDER}/webapp && \
+	yarn build && \
+	yarn start &
+
 start_db:
 	cd ${PROJECT_FOLDER} && \
 	docker-compose up loanster_db
@@ -139,7 +144,9 @@ heroku_deploy_backend_dev: heroku_login
 
 heroku_debug: heroku_login
 	heroku local loanster-webapp-dev --port 5001
+	heroku logs -a loanster-webapp-dev --tail
 	heroku local loanster-backend-dev --port 5002
+	heroku logs -a loanster-backend-dev --tail
 
 heroku_login:
 	@if ! heroku whoami >/dev/null 2>&1; then \
