@@ -1,1 +1,1 @@
-loanster-webapp-dev: yarn dev -p $PORT
+web: yarn start
