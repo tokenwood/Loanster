@@ -321,11 +321,6 @@ export default function LendPage() {
                       <OfferModal
                         account={account!}
                         balanceData={data}
-                        offerSubmittedCallback={() => {
-                          eventEmitter.dispatch({
-                            eventType: EventType.SUPPLY_OFFER_CREATED,
-                          });
-                        }}
                       ></OfferModal>
                     );
                   }}
