@@ -1,13 +1,10 @@
 import { Module, OnModuleInit } from '@nestjs/common';
 import { createConnection } from 'typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-
-const url = require('url');
+import * as url from 'url';
 
 @Module({
-  imports: [
-    ConfigModule.forRoot(),
-  ],
+  imports: [ConfigModule.forRoot()],
 })
 export class DatabaseTestModule implements OnModuleInit {
   constructor(private readonly configService: ConfigService) {}
@@ -15,7 +12,7 @@ export class DatabaseTestModule implements OnModuleInit {
   async onModuleInit() {
     const databaseUrl = process.env.DATABASE_URL;
     const parsedUrl = url.parse(databaseUrl);
-  
+
     try {
       const connection = await createConnection({
         type: 'postgres',
@@ -27,10 +24,10 @@ export class DatabaseTestModule implements OnModuleInit {
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: true, // Use false in production: this creates tables and columns automatically
         ssl: {
-          rejectUnauthorized: false
-        }
+          rejectUnauthorized: false,
+        },
       });
-        console.log('Database connection successful');
+      console.log('Database connection successful');
     } catch (error) {
       console.error('Error connecting to the database:', error);
       throw error;

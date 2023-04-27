@@ -1,11 +1,4 @@
-import { isBigNumberish } from '@ethersproject/bignumber/lib/bignumber';
-import {
-  IsString,
-  IsNumber,
-  IsNotEmpty,
-  IsBoolean,
-  IsOptional,
-} from 'class-validator';
+import { IsString, IsNumber, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class OfferDto {
   // This is the dto (Data Transfer Object) that is used to validate the data that is sent to the backend

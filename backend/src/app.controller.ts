@@ -1,6 +1,5 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 import { AppService } from './app.service';
-import { BigNumber } from 'ethers';
 
 @Controller()
 export class AppController {
@@ -10,17 +9,4 @@ export class AppController {
   getEthPrice() {
     return this.appService.getEthPriceAsync();
   }
-
-  // @Post('/api/submit_offer')
-  // postSubmitOffer(@Body() data: any) {
-  //   console.log('Request data:', data);
-
-  //   // Return a response
-  //   return {
-  //     message: 'Data received successfully',
-  //     data: data,
-  //   };
-
-  //   // return this.appService.postSubmitOffer();
-  // }
 }

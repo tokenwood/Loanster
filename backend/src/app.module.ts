@@ -6,8 +6,7 @@ import { AppService } from './app.service';
 import { OfferModule } from './offer/offer.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { DatabaseTestModule } from './database-test.module';
-
-const url = require('url');
+import * as url from 'url';
 
 @Module({
   imports: [
@@ -22,7 +21,7 @@ const url = require('url');
       useFactory: (configService: ConfigService) => {
         const databaseUrl = process.env.DATABASE_URL;
         const parsedUrl = url.parse(databaseUrl);
-      
+
         return {
           type: 'postgres',
           host: parsedUrl.hostname,
@@ -33,8 +32,8 @@ const url = require('url');
           entities: [__dirname + '/**/*.entity{.ts,.js}'],
           synchronize: true, // Use false in production: this creates tables and columns automatically
           ssl: {
-            rejectUnauthorized: false
-          }
+            rejectUnauthorized: false,
+          },
         };
       },
     }),
