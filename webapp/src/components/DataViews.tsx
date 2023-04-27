@@ -108,7 +108,11 @@ export function TableRowView(props: TableRowViewProps) {
                 textAlign={props.colSpecs[key].align ?? "left"}
                 textStyle={"tableRow"}
               >
-                <Image src={getTokenIconPath(token)} height="30px"></Image>
+                <Image
+                  src={getTokenIconPath(token)}
+                  height="30px"
+                  alt="Token icon"
+                ></Image>
                 <Text>{token.symbol}</Text>
               </HStack>
             );
