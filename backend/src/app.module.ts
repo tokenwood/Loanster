@@ -7,6 +7,8 @@ import { OfferModule } from './offer/offer.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { DatabaseTestModule } from './database-test.module';
 
+const url = require('url');
+
 @Module({
   imports: [
     ScheduleModule.forRoot(),
@@ -17,16 +19,21 @@ import { DatabaseTestModule } from './database-test.module';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get('DB_HOST'),
-        port: parseInt(configService.get('DB_PORT') as string, 10),
-        username: configService.get('DB_USERNAME'),
-        password: configService.get('DB_PASSWORD'),
-        database: configService.get('DB_DATABASE'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: true, // Use false in production: this creates tables and columns automatically
-      }),
+      useFactory: (configService: ConfigService) => {
+        const databaseUrl = process.env.DATABASE_URL;
+        const parsedUrl = url.parse(databaseUrl);
+      
+        return {
+          type: 'postgres',
+          host: parsedUrl.hostname,
+          port: parsedUrl.port ? parseInt(parsedUrl.port, 10) : 5432,
+          username: parsedUrl.auth.split(':')[0],
+          password: parsedUrl.auth.split(':')[1],
+          database: parsedUrl.pathname.slice(1),
+          entities: [__dirname + '/**/*.entity{.ts,.js}'],
+          synchronize: true, // Use false in production: this creates tables and columns automatically
+        };
+      },
     }),
     DatabaseTestModule,
     OfferModule,

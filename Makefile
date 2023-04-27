@@ -52,8 +52,19 @@ start_front_prod:
 	yarn start &
 
 start_db:
-	cd ${PROJECT_FOLDER} && \
-	docker-compose up loanster_db
+	if [ -z "${DATABASE_URL}" ]; then \
+		echo "DATABASE_URL is not set"; \
+		exit 1; \
+	else \
+		export DB_PORT=`echo ${DATABASE_URL} | awk -F ':' '{print $$NF}' | awk -F '/' '{print $$1}'` && \
+		export DB_DATABASE=`echo ${DATABASE_URL} | awk -F '/' '{print $$NF}'` && \
+		export DB_USERNAME=`echo ${DATABASE_URL} | awk -F ':' '{print $$2}' | awk -F '/' '{print $$NF}'` && \
+		export DB_PASSWORD=`echo ${DATABASE_URL} | awk -F ':' '{print $$3}' | awk -F '@' '{print $$1}'` && \
+		export DB_HOST=`echo ${DATABASE_URL} | awk -F '@' '{print $$2}' | awk -F ':' '{print $$1}'` && \
+		cd ${PROJECT_FOLDER} && \
+		docker-compose up loanster_db ; \
+	fi
+
 
 start_db_bg:
 	cd ${PROJECT_FOLDER} && \
@@ -73,8 +84,19 @@ start_backend_bg:
 	npm run start:dev &
 
 start_backend_docker:
-	cd ${PROJECT_FOLDER} && \
-	docker-compose up -d backend
+	if [ -z "${DATABASE_URL}" ]; then \
+		echo "DATABASE_URL is not set"; \
+		exit 1; \
+	else \
+		export DB_PORT=`echo ${DATABASE_URL} | awk -F ':' '{print $$NF}' | awk -F '/' '{print $$1}'` && \
+		export DB_DATABASE=`echo ${DATABASE_URL} | awk -F '/' '{print $$NF}'` && \
+		export DB_USERNAME=`echo ${DATABASE_URL} | awk -F ':' '{print $$2}' | awk -F '/' '{print $$NF}'` && \
+		export DB_PASSWORD=`echo ${DATABASE_URL} | awk -F ':' '{print $$3}' | awk -F '@' '{print $$1}'` && \
+		export DB_HOST=`echo ${DATABASE_URL} | awk -F '@' '{print $$2}' | awk -F ':' '{print $$1}'` && \
+		cd ${PROJECT_FOLDER} && \
+		docker-compose up -d backend ; \
+	fi
+
 
 stop_backend_docker:
 	cd ${PROJECT_FOLDER} && \
