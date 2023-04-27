@@ -1,1 +1,1 @@
-web: BACKEND_PORT=$PORT npm run start
+web: BACKEND_PORT=$PORT npm run start 

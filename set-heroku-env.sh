@@ -8,8 +8,8 @@ if [ -z "$APP_NAME" ]; then
   exit 1
 fi
 
-if [ ! -f ".env" ]; then
-  echo ".env file not found"
+if [ ! -f ".env.heroku" ]; then
+  echo ".env.heroku file not found"
   exit 1
 fi
 
@@ -17,4 +17,4 @@ while read -r line; do
   if [[ -n "$line" ]]; then
     heroku config:set -a "$APP_NAME" "$line"
   fi
-done < .env
+done < .env.heroku
