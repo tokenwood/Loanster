@@ -26,6 +26,9 @@ export class DatabaseTestModule implements OnModuleInit {
         database: parsedUrl.pathname.slice(1),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: true, // Use false in production: this creates tables and columns automatically
+        ssl: {
+          rejectUnauthorized: false
+        }
       });
         console.log('Database connection successful');
     } catch (error) {

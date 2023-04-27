@@ -32,6 +32,9 @@ const url = require('url');
           database: parsedUrl.pathname.slice(1),
           entities: [__dirname + '/**/*.entity{.ts,.js}'],
           synchronize: true, // Use false in production: this creates tables and columns automatically
+          ssl: {
+            rejectUnauthorized: false
+          }
         };
       },
     }),
