@@ -7,11 +7,6 @@ WORKDIR /app
 # Copy code to the container
 COPY backend /app/backend
 
-# Copy code of dependencies to the container (TODO: remove this when we have a proper package manager)
-COPY chain /app/chain
-COPY webapp /app/webapp 
-COPY unilib /app/unilib
-
 # Change the working directory to the backend folder
 WORKDIR /app/backend
 

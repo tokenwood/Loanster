@@ -13,6 +13,11 @@ if [ ! -f ".env.heroku" ]; then
   exit 1
 fi
 
+for var in $(heroku config --app "$APP_NAME" | awk -F ':' '{ print $1 }' | sed '1d')
+do
+  heroku config:unset "$var" --app "$APP_NAME"
+done
+
 while read -r line; do
   if [[ -n "$line" ]]; then
     heroku config:set -a "$APP_NAME" "$line"

@@ -33,6 +33,7 @@ describe('OfferService', () => {
   it('should create an offer and store it in the database', async () => {
     const testOffer: CreateOfferDto = {
       key: 'some_key',
+      chainId: 31337,
       offerId: 1,
       owner: '0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266',
       signature: 'some_signature',

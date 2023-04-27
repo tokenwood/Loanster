@@ -84,19 +84,8 @@ start_backend_bg:
 	npm run start:dev &
 
 start_backend_docker:
-	if [ -z "${DATABASE_URL}" ]; then \
-		echo "DATABASE_URL is not set"; \
-		exit 1; \
-	else \
-		export DB_PORT=`echo ${DATABASE_URL} | awk -F ':' '{print $$NF}' | awk -F '/' '{print $$1}'` && \
-		export DB_DATABASE=`echo ${DATABASE_URL} | awk -F '/' '{print $$NF}'` && \
-		export DB_USERNAME=`echo ${DATABASE_URL} | awk -F ':' '{print $$2}' | awk -F '/' '{print $$NF}'` && \
-		export DB_PASSWORD=`echo ${DATABASE_URL} | awk -F ':' '{print $$3}' | awk -F '@' '{print $$1}'` && \
-		export DB_HOST=`echo ${DATABASE_URL} | awk -F '@' '{print $$2}' | awk -F ':' '{print $$1}'` && \
-		cd ${PROJECT_FOLDER} && \
-		docker-compose up -d backend ; \
-	fi
-
+	cd ${PROJECT_FOLDER} && echo ${BACKEND_PORT} && \
+	docker-compose up -d backend
 
 stop_backend_docker:
 	cd ${PROJECT_FOLDER} && \
@@ -153,22 +142,36 @@ test:
 heroku_deploy_webapp_dev: heroku_login
 	make _heroku-set-buildpack APP_NAME=loanster-webapp-dev
 	make _heroku-add-remote REMOTE_NAME=heroku-webapp-dev APP_NAME=loanster-webapp-dev
+	# Upload environmental variables to Heroku
 	./set-heroku-env.sh loanster-webapp-dev
+	# Prepare branch dev-webapp that contains only webapp folder
+	if git show-ref --quiet --verify "refs/heads/dev-webapp"; then \
+		git branch -D dev-webapp; \
+	fi
 	git subtree split --prefix webapp -b dev-webapp
+	# Deploy code to Heroku
 	git push -f heroku-webapp-dev dev-webapp:main
 
 heroku_deploy_backend_dev: heroku_login
 	make _heroku-set-buildpack APP_NAME=loanster-backend-dev
 	make _heroku-add-remote REMOTE_NAME=heroku-backend-dev APP_NAME=loanster-backend-dev
+	# Upload environmental variables to Heroku
 	./set-heroku-env.sh loanster-backend-dev
+	DATABASE_URL=$(heroku config:get DATABASE_URL --app loanster-backend-dev) && \
+	heroku config:set --app loanster-backend-dev DATABASE_URL=$(DATABASE_URL)
+	# Prepare branch dev-backend that contains only backend folder
+	if git show-ref --quiet --verify "refs/heads/dev-backend"; then \
+		git branch -D dev-backend; \
+	fi
 	git subtree split --prefix backend -b dev-backend
+	# Deploy code to Heroku
 	git push -f heroku-backend-dev dev-backend:main
 
 heroku_debug: heroku_login
 	heroku local loanster-webapp-dev --port 5001
-	heroku logs -a loanster-webapp-dev --tail
+	heroku logs --app loanster-webapp-dev --tail
 	heroku local loanster-backend-dev --port 5002
-	heroku logs -a loanster-backend-dev --tail
+	heroku logs --app loanster-backend-dev --tail
 
 heroku_login:
 	@if ! heroku whoami >/dev/null 2>&1; then \
@@ -178,8 +181,8 @@ heroku_login:
 	fi
 
 _heroku-set-buildpack:
-	@if ! heroku buildpacks -a $(APP_NAME) | grep -q 'heroku/nodejs'; then \
-		heroku buildpacks:add -a $(APP_NAME) heroku/nodejs; \
+	@if ! heroku buildpacks --app $(APP_NAME) | grep -q 'heroku/nodejs'; then \
+		heroku buildpacks:add --app $(APP_NAME) heroku/nodejs; \
 		echo "Buildpack heroku/nodejs added"; \
 	else \
 		echo "Buildpack heroku/nodejs already set"; \

@@ -12,7 +12,7 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
     ports:
-      - ${DB_PORT}:${DB_PORT}
+      - ${DB_PORT:-5432}:${DB_PORT:-5432}
     networks:
       - network
 
@@ -23,23 +23,13 @@ services:
     container_name: backend
     restart: always
     environment:
-      DB_HOST: loanster_db
-      DB_PORT: ${DB_PORT}
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
-      DB_DATABASE: ${DB_DATABASE}
-      BACKEND_PORT: ${BACKEND_PORT}
+      DATABASE_URL: ${DATABASE_URL}
     volumes:
       - ./backend:/app/backend
-      - ./chain:/app/chain
-      - ./unilib:/app/unilib
-      - ./webapp:/app/webapp
     ports:
       - ${BACKEND_PORT}:${BACKEND_PORT}
     networks:
       - network
-    depends_on:
-      - loanster_db
 
 networks:
   network:

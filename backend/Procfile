@@ -1,1 +1,1 @@
-web: DATABASE_URL=$(heroku config:get DATABASE_URL -a loanster-backend-dev) npm run start
+web: npm run start
