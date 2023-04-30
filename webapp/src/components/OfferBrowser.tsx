@@ -121,8 +121,8 @@ const BorrowModal = (props: BorrowModalProps) => {
   const updateNewHealthFactor = async (amount: BigNumber) => {
     const healthFactor = await getNewHealthFactor(
       provider,
-      props.account,
       props.token.address as Address,
+      props.account,
       undefined,
       undefined,
       amount

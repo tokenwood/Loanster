@@ -21,7 +21,7 @@ import { Token } from "@uniswap/sdk-core";
 
 interface TokenAmountInputProps {
   token: Token;
-  balance: BigNumber;
+  balance?: BigNumber;
   text?: string;
   defaultValue?: string;
   buttonText?: string;
@@ -34,7 +34,7 @@ export function TokenAmountInput(props: TokenAmountInputProps) {
   const onMaxClicked = () => {
     const newValueString =
       props.buttonValue ??
-      ethers.utils.formatUnits(props.balance, props.token.decimals);
+      ethers.utils.formatUnits(props.balance ?? 0, props.token.decimals);
 
     // Round the value to the token's decimals
     const newValueRounded = ethers.utils.parseUnits(

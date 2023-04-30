@@ -44,6 +44,7 @@ import { TABLE_ROW_WIDTH_PCT } from "./DataViews";
 
 interface BasePageProps {
   width?: string;
+  disconnectedText?: string;
 }
 
 export function BasePage(props: PropsWithChildren<BasePageProps>) {
@@ -51,23 +52,18 @@ export function BasePage(props: PropsWithChildren<BasePageProps>) {
   const provider = useProvider();
   return (
     <VStack>
-      <Box
-        p={4}
-        w={props.width ? props.width : "100%"}
-        layerStyle={"level1"}
-        key={provider.network.name + (account ? account : "")}
-      >
-        <ClientOnly>
-          {account ? (
-            props.children
-          ) : (
-            <Box>
-              <Box hidden={!isConnecting}>connecting...</Box>
-              <Box hidden={!isDisconnected}>Disconnected</Box>
+      <ClientOnly>
+        {account ? (
+          props.children
+        ) : (
+          <Box>
+            <Box hidden={!isConnecting}>connecting...</Box>
+            <Box hidden={!isDisconnected}>
+              {props.disconnectedText ?? "Disconnected"}
             </Box>
-          )}
-        </ClientOnly>
-      </Box>
+          </Box>
+        )}
+      </ClientOnly>
     </VStack>
   );
 }
@@ -254,7 +250,7 @@ export function BaseView<T>(props: BaseViewProps<T>) {
         });
       }
     };
-  }, []);
+  });
 
   return (
     <DataLoader

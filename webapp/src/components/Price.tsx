@@ -9,7 +9,7 @@ import { DataLoader } from "./DataLoaders";
 
 interface PriceProps {
   token: Token;
-  amount: BigNumber;
+  amount?: BigNumber;
   textAlign?: "left" | "right" | "center";
   textStyle?: string;
   w?: string;
@@ -30,7 +30,7 @@ export default function Price(props: PriceProps) {
             textStyle={props.textStyle}
             w={props.w ?? undefined}
           >
-            {dollarString(childProps.data)}
+            {childProps.data == undefined ? "-" : dollarString(childProps.data)}
           </Text>
         );
       }}

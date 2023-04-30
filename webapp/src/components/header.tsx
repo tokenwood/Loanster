@@ -90,8 +90,9 @@ export default function Header() {
           buttonText="Governance"
         ></HeaderButton>
         <Spacer />
-        <Select
+        <Select // todo show network names when account not connected
           w="4xs"
+          key={provider.network.chainId}
           padding={2}
           onChange={(event) => {
             changeNetwork(parseInt(event.target.value));

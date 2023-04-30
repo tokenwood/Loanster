@@ -76,7 +76,7 @@ export function HealthFactor(props: HealthFactorProps) {
             ? props.healthFactor == Number.POSITIVE_INFINITY
               ? "∞"
               : props.healthFactor.toFixed(2)
-            : "undefined"}
+            : "-"}
         </Text>
         <Text>{"->"}</Text>
         {props.newHealthFactor != undefined ? (
@@ -89,7 +89,7 @@ export function HealthFactor(props: HealthFactorProps) {
               : props.newHealthFactor.toFixed(2)}
           </Text>
         ) : (
-          <Text>{"?"}</Text>
+          <Text>{"-"}</Text>
         )}
       </HStack>
     </Flex>
@@ -97,7 +97,7 @@ export function HealthFactor(props: HealthFactorProps) {
 }
 
 export interface DepositInputsProps {
-  account: Address;
+  account?: Address;
   balanceData: TokenDepositInfo;
   callback: () => any;
   type: "deposit" | "withdraw";
@@ -112,9 +112,9 @@ export function CollateralInputs(props: DepositInputsProps) {
   const { data: allowance, refetch: allowanceRefetch } = useContractRead({
     address: props.balanceData.token.address as Address,
     abi: erc20ABI,
-    enabled: props.type == "deposit",
+    enabled: props.type == "deposit" && props.account != undefined,
     functionName: "allowance",
-    args: [props.account, getTroveManagerAddress(provider)],
+    args: [props.account!, getTroveManagerAddress(provider)],
   });
 
   const updateHealthFactor = async () => {
@@ -125,8 +125,8 @@ export function CollateralInputs(props: DepositInputsProps) {
   const updateNewHealthFactor = async () => {
     const healthFactor = await getNewHealthFactor(
       provider,
-      props.account,
       props.balanceData.token.address as Address,
+      props.account,
       props.type == "deposit" ? amount : undefined,
       props.type == "withdraw" ? amount : undefined
     );
@@ -148,7 +148,9 @@ export function CollateralInputs(props: DepositInputsProps) {
   };
 
   const canConfirm = () => {
-    return props.type == "deposit"
+    return props.account &&
+      props.balanceData.wallet_amount &&
+      props.type == "deposit"
       ? BigNumber.from(0).lt(amount) &&
           amount.lte(props.balanceData.wallet_amount)
       : BigNumber.from(0).lt(amount);
@@ -255,8 +257,8 @@ export function RepayLoanInputs(props: RepayLoanInputs) {
   const updateNewHealthFactor = async (paymentInfo: BigNumber[]) => {
     const newHealthFactor = await getNewHealthFactor(
       provider,
-      props.account,
       props.loanInfo.token.address as Address,
+      props.account,
       undefined,
       undefined,
       undefined,
@@ -527,8 +529,8 @@ export function LoanOfferView(props: LoanOfferViewProps) {
   const updateNewHealthFactor = async (offer: [FullOfferInfo, BigNumber]) => {
     const healthFactor = await getNewHealthFactor(
       provider,
-      props.account,
       offer[0].token.address as Address,
+      props.account,
       undefined,
       undefined,
       offer[1]

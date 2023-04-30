@@ -6,7 +6,11 @@ import { FullOfferInfo } from "./backend";
 import { WETH_TOKEN, WETH_TOKEN_GOERLI } from "./constants";
 import { LoanStats } from "./types";
 
-export function bigNumberString(amount: BigNumber, token: Token) {
+export function bigNumberString(amount?: BigNumber, token?: Token) {
+  if (amount == undefined || token == undefined) {
+    return "-";
+  }
+
   if (ethers.constants.MaxUint256.eq(amount)) {
     return "∞";
   }

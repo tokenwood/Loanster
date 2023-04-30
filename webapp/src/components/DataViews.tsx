@@ -118,7 +118,16 @@ export function TableRowView(props: TableRowViewProps) {
             );
           } else if (isTokenAmount(props.colData[key])) {
             const tokenAmount = props.colData[key] as TokenAmount;
-            return (
+            return tokenAmount.amount == undefined ? (
+              <Box
+                key={key}
+                w={getWidth(key, props.colSpecs)}
+                textAlign={props.colSpecs[key].align ?? "left"}
+                textStyle={"tableRow"}
+              >
+                -
+              </Box>
+            ) : (
               <VStack
                 key={key + tokenAmount.amount.toString()}
                 w={getWidth(key, props.colSpecs)}

@@ -57,7 +57,7 @@ export interface FullLoanInfo {
 }
 
 export interface TokenAmount {
-  amount: BigNumber;
+  amount: BigNumber | undefined;
   token: Token;
 }
 
@@ -66,7 +66,7 @@ export interface Timestamp {
 }
 
 export interface TokenDepositInfo {
-  wallet_amount: BigNumber;
+  wallet_amount?: BigNumber;
   deposit_amount?: BigNumber;
   token: Token;
 }

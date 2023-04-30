@@ -146,8 +146,6 @@ export function DataLoader<T>(props: DataLoaderProps<T>) {
         if (props.dataLoaded !== undefined) {
           props.dataLoaded(tokens);
         }
-      } else {
-        setIsError(true);
       }
     } catch (error) {
       console.log(error);

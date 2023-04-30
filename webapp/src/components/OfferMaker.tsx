@@ -23,7 +23,6 @@ import {
 import { eventEmitter, EventType } from "libs/eventEmitter";
 import {
   getHealthFactor,
-  getNewHealthFactor,
   getOfferMessageToSign,
   getUnusedOfferId,
 } from "libs/fetchers";
@@ -51,7 +50,7 @@ import { submitOffer } from "libs/backend";
 
 interface OfferModalProps {
   balanceData: TokenAmount;
-  account: Address;
+  account?: Address;
 }
 
 export const OfferModal = (props: OfferModalProps) => {
@@ -73,7 +72,8 @@ export const OfferModal = (props: OfferModalProps) => {
   const [offer, setOffer] = useState<[LoanOfferType, string]>();
 
   const getOfferId = async () => {
-    if (!isLoadingOfferId) {
+    console.log("props.account" + props.account);
+    if (!isLoadingOfferId && props.account) {
       setIsLoadingOfferId(true);
       const offerId = await getUnusedOfferId(provider, props.account);
       setOfferId(offerId);
@@ -111,7 +111,8 @@ export const OfferModal = (props: OfferModalProps) => {
     address: props.balanceData.token.address as Address,
     abi: erc20ABI,
     functionName: "allowance",
-    args: [props.account, getSupplyAddress(provider)],
+    enabled: props.account != undefined,
+    args: [props.account!, getSupplyAddress(provider)],
   });
 
   const hasEnoughAllowance = (
@@ -124,6 +125,8 @@ export const OfferModal = (props: OfferModalProps) => {
   const canConfirm = () => {
     return (
       offerId != undefined &&
+      props.account &&
+      props.balanceData.amount &&
       BigNumber.from(0).lt(offerMaxAmount) &&
       offerMaxAmount.lte(props.balanceData.amount)
     );
@@ -160,6 +163,7 @@ export const OfferModal = (props: OfferModalProps) => {
         size={DEFAULT_SIZE}
         alignSelf="center"
         onClick={onOpen}
+        isDisabled={props.account == undefined}
       >
         Make Offer
       </Button>

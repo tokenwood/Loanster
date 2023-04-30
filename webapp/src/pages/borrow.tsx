@@ -86,12 +86,13 @@ export default function LoansPage() {
   const { address: account } = useAccount();
   const provider = useProvider();
   return (
-    <BasePage key={provider.network.chainId + (account ?? "")}>
+    <Box p={4} w={"100%"} layerStyle={"level1"} key={account}>
       <VStack align="left" spacing="4">
         <Box>
           <Heading as="h6" layerStyle={"onbg"} size="sm" mb="3">
             {"Account"}
           </Heading>
+
           <DataLoader
             fetcher={() => getDetailedHealthFactor(provider, account!)}
             reloadEvents={[
@@ -109,7 +110,10 @@ export default function LoansPage() {
                       fontSize={statFontSize}
                       color={healthFactorColor(childProps.data.healthFactor)}
                     >
-                      {childProps.data.healthFactor == Number.POSITIVE_INFINITY
+                      {childProps.data.healthFactor == undefined
+                        ? "-"
+                        : childProps.data.healthFactor ==
+                          Number.POSITIVE_INFINITY
                         ? "∞"
                         : childProps.data.healthFactor.toFixed(2)}
                     </StatNumber>
@@ -155,8 +159,9 @@ export default function LoansPage() {
           <Heading as="h6" layerStyle={"onbg"} size="sm" mb="3">
             {"Collateral Deposits"}
           </Heading>
+
           <ListLoader
-            fetchData={() => getCollateralDeposits(provider, account!)}
+            fetchData={() => getCollateralDeposits(provider, account)}
             makeHeader={() => (
               <TableHeaderView colSpecs={depositTableColdims}></TableHeaderView>
             )}
@@ -193,7 +198,7 @@ export default function LoansPage() {
                           Asset: data.token,
                           Deposited: {
                             token: data.token,
-                            amount: data.deposit_amount ?? BigNumber.from(0),
+                            amount: data.deposit_amount,
                           },
                           "In Wallet": {
                             token: data.token,
@@ -213,7 +218,7 @@ export default function LoansPage() {
                         return (
                           <CollateralInputs
                             key={"deposit" + data.token}
-                            account={account!}
+                            account={account}
                             balanceData={data}
                             type="deposit"
                             callback={() => {
@@ -232,7 +237,7 @@ export default function LoansPage() {
                         return (
                           <CollateralInputs
                             key={"withdraw" + data.token}
-                            account={account!}
+                            account={account}
                             balanceData={data}
                             type="withdraw"
                             callback={() => {
@@ -252,78 +257,81 @@ export default function LoansPage() {
           <Heading as="h6" layerStyle={"onbg"} size="sm" mb="3">
             {"Borrowed Assets"}
           </Heading>
-          <ListLoader
-            fetchData={() => getBorrowerLoanIds(provider, account!)}
-            makeHeader={() => (
-              <TableHeaderView
-                colSpecs={borrowedTableColdims}
-              ></TableHeaderView>
-            )}
-            placeholderText={"No loans"}
-            reloadEvents={[
-              { eventType: EventType.LOAN_CREATED },
-              { eventType: EventType.LOAN_REPAID },
-            ]}
-            makeListItem={(listItemProps) => {
-              return (
-                <BaseView
-                  level={2}
-                  key={"loan_" + listItemProps.id.toString()}
-                  fetcher={() => getFullLoanInfo(provider, listItemProps.id)}
-                  collapseEvents={[
-                    {
-                      eventType: EventType.LOAN_REPAID,
-                      suffix: listItemProps.id,
-                    },
-                  ]}
-                  dataView={(data) => {
-                    return (
-                      <TableRowView
-                        colSpecs={borrowedTableColdims}
-                        colData={{
-                          Asset: data.token,
-                          Debt: {
-                            amount: data.loan.amount.add(data.interest),
-                            token: data.token,
-                          },
-                          APY:
-                            (data.loan.interestRateBPS / 100).toFixed(2) + " %",
-                          Term: {
-                            timestamp: data.loan.expiration,
-                          },
-                        }}
-                      />
-                    );
-                  }}
-                  tabs={[
-                    {
-                      action: "Repay",
-                      onClickView: (
-                        data: FullLoanInfo,
-                        actionFinished: () => any
-                      ) => {
-                        return (
-                          <RepayLoanInputs
-                            account={account!}
-                            loanInfo={data}
-                            callback={() => {
-                              actionFinished();
-                            }}
-                          />
-                        );
+          <BasePage disconnectedText="Connect wallet to see your loans">
+            <ListLoader
+              fetchData={() => getBorrowerLoanIds(provider, account!)}
+              makeHeader={() => (
+                <TableHeaderView
+                  colSpecs={borrowedTableColdims}
+                ></TableHeaderView>
+              )}
+              placeholderText={"No loans"}
+              reloadEvents={[
+                { eventType: EventType.LOAN_CREATED },
+                { eventType: EventType.LOAN_REPAID },
+              ]}
+              makeListItem={(listItemProps) => {
+                return (
+                  <BaseView
+                    level={2}
+                    key={"loan_" + listItemProps.id.toString()}
+                    fetcher={() => getFullLoanInfo(provider, listItemProps.id)}
+                    collapseEvents={[
+                      {
+                        eventType: EventType.LOAN_REPAID,
+                        suffix: listItemProps.id,
                       },
-                    },
-                    {
-                      action: "Info",
-                      onClickView: (data: FullLoanInfo) => {
-                        return <LoanInfoView loanInfo={data}></LoanInfoView>;
+                    ]}
+                    dataView={(data) => {
+                      return (
+                        <TableRowView
+                          colSpecs={borrowedTableColdims}
+                          colData={{
+                            Asset: data.token,
+                            Debt: {
+                              amount: data.loan.amount.add(data.interest),
+                              token: data.token,
+                            },
+                            APY:
+                              (data.loan.interestRateBPS / 100).toFixed(2) +
+                              " %",
+                            Term: {
+                              timestamp: data.loan.expiration,
+                            },
+                          }}
+                        />
+                      );
+                    }}
+                    tabs={[
+                      {
+                        action: "Repay",
+                        onClickView: (
+                          data: FullLoanInfo,
+                          actionFinished: () => any
+                        ) => {
+                          return (
+                            <RepayLoanInputs
+                              account={account!}
+                              loanInfo={data}
+                              callback={() => {
+                                actionFinished();
+                              }}
+                            />
+                          );
+                        },
                       },
-                    },
-                  ]}
-                ></BaseView>
-              );
-            }}
-          ></ListLoader>
+                      {
+                        action: "Info",
+                        onClickView: (data: FullLoanInfo) => {
+                          return <LoanInfoView loanInfo={data}></LoanInfoView>;
+                        },
+                      },
+                    ]}
+                  ></BaseView>
+                );
+              }}
+            ></ListLoader>
+          </BasePage>
         </Box>
         <Box>
           <Heading as="h6" layerStyle={"onbg"} size="sm" mb="3">
@@ -393,6 +401,6 @@ export default function LoansPage() {
           ></ListLoader>
         </Box>
       </VStack>
-    </BasePage>
+    </Box>
   );
 }

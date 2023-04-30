@@ -59,10 +59,13 @@ export async function getNewAccountStats(
 
 export async function getHealthFactor(
   provider: Provider,
-  account: Address,
+  account?: Address,
   token?: Address,
   amount?: BigNumber
 ) {
+  if (account == undefined) {
+    return undefined;
+  }
   const contract = await getTroveManagerContract(provider);
   const healthFactor: BigNumber = await contract.getHealthFactorBPS(
     account,
@@ -79,8 +82,15 @@ export async function getHealthFactor(
 
 export async function getDetailedHealthFactor(
   provider: Provider,
-  account: Address
+  account?: Address
 ) {
+  if (account == undefined) {
+    return {
+      healthFactor: undefined,
+      collateralValueEth: undefined,
+      loanValueEth: undefined,
+    };
+  }
   const contract = await getTroveManagerContract(provider);
   let [collateralValue] = await contract.getAccountCollateralValueEth(account);
   let [loanValue] = await contract.getAccountLoansValueEth(account);
@@ -95,13 +105,16 @@ export async function getDetailedHealthFactor(
 
 export async function getNewHealthFactor(
   provider: Provider,
-  account: Address,
   token: Address,
+  account?: Address,
   addCollateral?: BigNumber,
   removeCollateral?: BigNumber,
   addLoan?: BigNumber,
   removeLoan?: BigNumber
 ) {
+  if (account == undefined) {
+    return undefined;
+  }
   const contract = await getTroveManagerContract(provider);
   let [, adjustedCollateralValue] = await contract.getAccountCollateralValueEth(
     account
@@ -145,8 +158,11 @@ export async function getNewHealthFactor(
 export async function getTokenPrice(
   provider: Provider,
   token: Address,
-  amount: BigNumber
-): Promise<number> {
+  amount?: BigNumber
+) {
+  if (amount == undefined) {
+    return undefined;
+  }
   const contract = await getTroveManagerContract(provider);
   const eth_value = await contract.getOracleValueEth(token, amount);
   const price = await getEthPrice();
@@ -178,17 +194,15 @@ export async function getToken(provider: Provider, tokenAddress: string) {
 export async function getTokenBalance(
   provider: Provider,
   tokenAddress: Address,
-  account: Address
+  account?: Address
 ): Promise<TokenAmount> {
   const token = await getToken(provider, tokenAddress);
   console.log("fetching token balance " + token.symbol);
 
   const tokenContract = new ethers.Contract(tokenAddress, erc20ABI, provider);
-  const balance: BigNumber = await tokenContract.balanceOf(account);
-
   return {
-    token: token,
-    amount: balance,
+    token,
+    amount: account ? await tokenContract.balanceOf(account) : undefined,
   };
 }
 
@@ -238,34 +252,47 @@ export async function getFullLoanInfo(
 
 export async function getCollateralDeposits(
   provider: Provider,
-  account: Address
+  account?: Address
 ): Promise<TokenDepositInfo[]> {
   const tokenAddresses = await getCollateralTokens(provider);
-  const tokenBalances = await Promise.all(
-    tokenAddresses.map((address) => getTokenBalance(provider, address, account))
-  );
-  let infoDict: { [key: string]: TokenDepositInfo } = Object.fromEntries(
-    tokenBalances.map((balanceInfo) => {
-      return [
-        balanceInfo.token.address,
-        {
-          token: balanceInfo.token,
-          wallet_amount: balanceInfo.amount,
-        },
-      ];
-    })
-  );
-  const troveManager = await getTroveManagerContract(provider);
-  const numDeposits = await troveManager.getNumDepositsForAccount(account);
-  for (let i = 0; i < numDeposits.toNumber(); i++) {
-    const [tokenAddress, amount] =
-      await troveManager.getDepositByIndexForAccount(account, i);
-    infoDict[tokenAddress] = {
-      ...infoDict[tokenAddress],
-      deposit_amount: amount,
-    };
+
+  if (account == undefined) {
+    const tokens = await Promise.all(
+      tokenAddresses.map((address) => getToken(provider, address))
+    );
+
+    return tokens.map((token) => {
+      return {
+        token: token,
+      };
+    });
+  } else {
+    const tokenBalances = await Promise.all(
+      tokenAddresses.map((address) =>
+        getTokenBalance(provider, address, account)
+      )
+    );
+    let infoDict: { [key: string]: TokenDepositInfo } = Object.fromEntries(
+      tokenBalances.map((balanceInfo) => {
+        return [
+          balanceInfo.token.address,
+          {
+            token: balanceInfo.token,
+            wallet_amount: balanceInfo.amount,
+            deposit_amount: BigNumber.from(0),
+          },
+        ];
+      })
+    );
+    const troveManager = await getTroveManagerContract(provider);
+    const numDeposits = await troveManager.getNumDepositsForAccount(account);
+    for (let i = 0; i < numDeposits.toNumber(); i++) {
+      const [tokenAddress, amount] =
+        await troveManager.getDepositByIndexForAccount(account, i);
+      infoDict[tokenAddress]["deposit_amount"] = amount;
+    }
+    return Object.values(infoDict);
   }
-  return Object.values(infoDict);
 }
 
 export async function getBorrowerLoanIds(
