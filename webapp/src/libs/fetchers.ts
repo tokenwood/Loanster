@@ -1,6 +1,6 @@
 import { Address } from "wagmi";
 import { erc20ABI, erc721ABI, Provider } from "@wagmi/core";
-import { ethers, utils } from "ethers";
+import { Contract, ethers, utils } from "ethers";
 import { BigNumber } from "ethers";
 import { UNI_TOKEN_GOERLI, WETH_TOKEN, WETH_TOKEN_GOERLI } from "./constants";
 import { getSupplyContract, getTroveManagerContract } from "./chainUtils";
@@ -17,6 +17,7 @@ import {
   LoanOfferType,
 } from "./types";
 import { getAllowedTokensFromEvents } from "./helperFunctions";
+import { hexZeroPad } from "ethers/lib/utils.js";
 
 export async function getNetwork(provider: Provider) {
   return (await provider.getNetwork()).name;
@@ -335,7 +336,8 @@ export async function getLenderLoanIds(
 
 export async function getAccounts(provider: Provider) {
   const troveManager = await getTroveManagerContract(provider);
-  const topics = [utils.id("NewLoan(address,uint256,uint256, address)")];
+
+  const topics = [utils.id("NewLoan(address,uint256,uint256,address)")];
 
   const events = await troveManager.queryFilter({ topics });
 
@@ -421,19 +423,26 @@ export async function getUnusedOfferId(provider: Provider, account: Address) {
     // You can return an error, throw an error, or use a default value depending on your use case
   }
 
-  const troveManager = await getTroveManagerContract(provider);
+  const troveManager = getTroveManagerContract(provider);
   const addressBytes32 = ethers.utils.hexZeroPad(account, 32);
+
   const topics = [
-    utils.id("NewLoan(address,uint256,uint256,uint256)"),
-    addressBytes32,
+    [
+      ethers.utils.id("NewLoan(address,uint256,uint256,address)"),
+      addressBytes32,
+    ],
   ];
   const newLoanEvents = await troveManager.queryFilter({ topics }); // should be cached
-
   const maxUsedId = newLoanEvents.reduce((acc: number, event) => {
-    const owner = event.args![0];
-    const offerId = event.args![1];
-    return Math.max(offerId, acc);
+    const decodedData = ethers.utils.defaultAbiCoder.decode(
+      ["address", "uint256", "uint256", "address"],
+      event.data
+    );
+    const offerId = decodedData[1];
+    return Math.max(offerId.toNumber(), acc);
   }, 0);
+
+  // console.log("max used id", maxUsedId, "max offer id", maxOfferId);
 
   return Math.max(maxUsedId, maxOfferId) + 1;
 }

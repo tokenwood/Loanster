@@ -4,7 +4,9 @@ import { concat } from "ethers/lib/utils.js";
 //this file contains shared classes between the front-end and back-end. Should be a module instead?
 
 export interface TokenOfferStatsResponse {
-  minAPY: number;
+  apy7d: number;
+  apy30d: number;
+  apy90d: number;
   total: BigNumber;
 }
 

@@ -77,7 +77,9 @@ const borrowedTableColdims: { [key: string]: ColSpecs } = {
 };
 const toBorrowTableColdims: { [key: string]: ColSpecs } = {
   Asset: { size: 0.3 },
-  "Lowest APY": { size: 1, align: "right" },
+  "APY (7d)": { size: 1, align: "right" },
+  "APY (30d)": { size: 1, align: "right" },
+  "APY (90d)": { size: 1, align: "right" },
   Available: { size: 1, align: "right" },
   " ": { size: 0.1 },
 };
@@ -356,9 +358,17 @@ export default function LoansPage() {
                         colSpecs={toBorrowTableColdims}
                         colData={{
                           Asset: data.token,
-                          "Lowest APY":
-                            data.minAPY != undefined
-                              ? (data.minAPY / 100).toFixed(2) + " %"
+                          "APY (7d)":
+                            data.apy7d != undefined
+                              ? (data.apy7d / 100).toFixed(2) + " %"
+                              : "-",
+                          "APY (30d)":
+                            data.apy30d != undefined
+                              ? (data.apy30d / 100).toFixed(2) + " %"
+                              : "-",
+                          "APY (90d)":
+                            data.apy90d != undefined
+                              ? (data.apy90d / 100).toFixed(2) + " %"
                               : "-",
                           Available: {
                             token: data.token,

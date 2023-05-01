@@ -49,22 +49,19 @@ interface BasePageProps {
 
 export function BasePage(props: PropsWithChildren<BasePageProps>) {
   const { address: account, isConnecting, isDisconnected } = useAccount();
-  const provider = useProvider();
   return (
-    <VStack>
-      <ClientOnly>
-        {account ? (
-          props.children
-        ) : (
-          <Box>
-            <Box hidden={!isConnecting}>connecting...</Box>
-            <Box hidden={!isDisconnected}>
-              {props.disconnectedText ?? "Disconnected"}
-            </Box>
+    <ClientOnly>
+      {account ? (
+        props.children
+      ) : (
+        <Box>
+          <Box hidden={!isConnecting}>connecting...</Box>
+          <Box hidden={!isDisconnected}>
+            {props.disconnectedText ?? "Disconnected"}
           </Box>
-        )}
-      </ClientOnly>
-    </VStack>
+        </Box>
+      )}
+    </ClientOnly>
   );
 }
 

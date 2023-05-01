@@ -3,7 +3,9 @@ import { BigNumber, ethers } from 'ethers';
 //this file contains shared classes between the front-end and back-end. Should be a module instead? TODO: Refactor
 
 export interface TokenOfferStatsResponse {
-  minAPY: number;
+  apy7d: number;
+  apy30d: number;
+  apy90d: number;
   total: BigNumber;
 }
 

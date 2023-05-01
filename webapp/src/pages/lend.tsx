@@ -63,9 +63,6 @@ const lentTableColdims: { [key: string]: ColSpecs } = {
 
 const toSupplyColDims: { [key: string]: ColSpecs } = {
   Asset: { size: 1, align: "left" },
-  "APY (7d)": { size: 1, align: "right" },
-  "APY (30d)": { size: 1, align: "right" },
-  "APY (90d)": { size: 1, align: "right" },
   "In Wallet": { size: 1, align: "right" },
   " ": { size: 0.05, align: "right" },
 };
@@ -189,7 +186,10 @@ export default function LendPage() {
           <Heading as="h6" size="sm" mb="3">
             {"Lent Assets"}
           </Heading>
-          <BasePage disconnectedText="Connect wallet to see your loans">
+          <BasePage
+            disconnectedText="Connect wallet to see your loans"
+            width="100%"
+          >
             <ListLoader
               fetchData={() => getOpenLoans(provider, account!)}
               makeHeader={() => (
