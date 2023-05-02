@@ -48,7 +48,7 @@ const offerTableColdims: { [key: string]: ColSpecs } = {
   Borrowed: { size: 1, align: "right" },
   "Max Borrowed": { size: 1, align: "right" },
   APY: { size: 0.6, align: "right" },
-  "Min Loan Amount": { size: 0.8, align: "right" },
+  // "Min Loan Amount": { size: 0.8, align: "right" },
   "Min/Max Duration": { size: 1, align: "center" },
   Expiration: { size: 1, align: "center" },
   Status: { size: 0.5, align: "center" },
@@ -112,10 +112,10 @@ export default function LendPage() {
                               token: data.token,
                             },
                             APY: data.offer.interestRateBPS / 100 + " %",
-                            "Min Loan Amount": {
-                              amount: data.offer.minLoanAmount,
-                              token: data.token,
-                            },
+                            // "Min Loan Amount": {
+                            //   amount: data.offer.minLoanAmount,
+                            //   token: data.token,
+                            // },
                             "Min/Max Duration":
                               data.offer.minLoanDuration / 3600 / 24 +
                               "d / " +
