@@ -1,7 +1,8 @@
 import { Token } from "@uniswap/sdk-core";
 import { BigNumber, ethers } from "ethers";
 import { Provider } from "react";
-import { Address } from "wagmi";
+import { Address, Chain } from "wagmi";
+import { mainnet, arbitrum, hardhat, goerli, localhost } from "wagmi/chains";
 import { FullOfferInfo } from "./backend";
 import { WETH_TOKEN, WETH_TOKEN_GOERLI } from "./constants";
 import { LoanStats } from "./types";
@@ -209,4 +210,25 @@ export function bigNumberMin(a: BigNumber, b: BigNumber) {
 
 export function bigNumberMax(a: BigNumber, b: BigNumber) {
   return a.gt(b) ? a : b;
+}
+
+export function getChains() {
+  if (process.env.NEXT_PUBLIC_CHAIN_IDS == undefined) {
+    throw Error("No chains specified");
+  }
+  const chainIds = process.env.NEXT_PUBLIC_CHAIN_IDS.split(",");
+
+  const chains: Chain[] = chainIds.map((chainId) => {
+    switch (chainId) {
+      case "1":
+        return mainnet;
+      case "5":
+        return goerli;
+      case "31337":
+        return hardhat;
+      default:
+        throw Error("Invalid chainId: " + chainId);
+    }
+  });
+  return chains;
 }

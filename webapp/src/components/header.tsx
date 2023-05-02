@@ -20,6 +20,7 @@ import { useEffect, useState } from "react";
 import { useProvider, useClient } from "wagmi";
 import ClientOnly from "./clientOnly";
 import { headerButtonBorderRadius, headerButtonHoverStyle } from "./Theme";
+import { getChains } from "libs/helperFunctions";
 
 interface Props {
   buttonText: string;
@@ -49,8 +50,7 @@ function HeaderButton(props: Props) {
 
 export default function Header() {
   const provider = useProvider();
-  const client = useClient();
-  const [chainId, setChainId] = useState<number>(provider.network.chainId);
+  const [chainId, setChainId] = useState<number>(getChains()[0].id);
 
   useEffect(() => {
     console.log("chainId changed to " + chainId);
@@ -101,7 +101,7 @@ export default function Header() {
           layerStyle={"level1"}
           borderRadius={headerButtonBorderRadius}
         >
-          {client.chains?.map((value) => {
+          {getChains().map((value) => {
             return (
               <option key={value.id} value={value.id}>
                 {value.name}
