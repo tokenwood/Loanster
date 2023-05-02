@@ -38,7 +38,7 @@ import { DataLoader } from "./DataLoaders";
 import { eventEmitter, EventId } from "libs/eventEmitter";
 import { verifyMessage } from "ethers/lib/utils.js";
 import { ethers } from "ethers";
-import { ChevronDownIcon, ChevronUpIcon } from "@chakra-ui/icons";
+import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "@chakra-ui/icons";
 import { bigNumberString } from "libs/helperFunctions";
 import { TABLE_ROW_WIDTH_PCT } from "./DataViews";
 
@@ -76,11 +76,13 @@ interface ContractCallButtonProps {
   callback: () => any;
   buttonText?: string;
   w?: string;
+  size?: string;
 }
 
 export function ContractCallButton(props: ContractCallButtonProps) {
   const toast = useToast();
   const [isSubmitted, setIsSubmitted] = useBoolean(false);
+  const [isDone, setIsDone] = useBoolean(props.done);
   const { data, config, isError } = usePrepareContractWrite({
     address: props.contractAddress,
     abi: props.abi,
@@ -105,8 +107,10 @@ export function ContractCallButton(props: ContractCallButtonProps) {
       });
       const confirmed = await result.wait();
       setIsSubmitted.off();
+
       props.callback();
       if (confirmed.status === 1) {
+        setIsDone.on();
         toast({
           title: "Transaction confirmed",
           description: undefined,
@@ -134,23 +138,40 @@ export function ContractCallButton(props: ContractCallButtonProps) {
     return !props.enabled || !writeAsync || isError || isSubmitted;
   }
 
+  function getState() {
+    if (isDone) {
+      return "done";
+    } else if (isDisabled()) {
+      return "disabled";
+    } else if (isSubmitted) {
+      return "loading";
+    } else {
+      return "enabled";
+    }
+  }
+
   return (
-    // <VStack>
-    <Button
+    <BaseButton
       w={props.w}
-      colorScheme={"green"}
-      borderRadius={defaultBorderRadius}
-      size={DEFAULT_SIZE}
-      hidden={props.hidden}
-      alignSelf="center"
-      // isActive={false}
-      isDisabled={isDisabled()}
+      state={getState()}
       onClick={onClick}
-      isLoading={isSubmitted}
-    >
-      {props.buttonText ?? "Confirm"}
-    </Button>
-    // </VStack>
+      size={props.size}
+      buttonText={props.buttonText ?? "Confirm"}
+    ></BaseButton>
+    // <Button
+    //   w={props.w}
+    //   colorScheme={"green"}
+    //   borderRadius={defaultBorderRadius}
+    //   size={DEFAULT_SIZE}
+    //   hidden={props.hidden}
+    //   alignSelf="center"
+    //   // isActive={false}
+    //   isDisabled={isDisabled()}
+    //   onClick={onClick}
+    //   isLoading={isSubmitted}
+    // >
+    //   {props.buttonText ?? "Confirm"}
+    // </Button>
   );
 }
 
@@ -171,6 +192,7 @@ interface SignButtonProps {
 
 export function SignButton(props: SignButtonProps) {
   const provider = useProvider();
+  const [isDone, setIsDone] = useBoolean(false);
 
   const {
     data: signature,
@@ -180,6 +202,7 @@ export function SignButton(props: SignButtonProps) {
   } = useSignMessage({
     onSuccess(data, variables) {
       const address = verifyMessage(variables.message, data);
+      setIsDone.on();
       props.callback(
         variables.message as string,
         data,
@@ -197,19 +220,39 @@ export function SignButton(props: SignButtonProps) {
     }
   }
 
+  function getState() {
+    if (isDone) {
+      return "done";
+    } else if (!props.enabled || isError) {
+      return "disabled";
+    } else if (isLoading) {
+      return "loading";
+    } else {
+      return "enabled";
+    }
+  }
+
   return (
-    <Button
+    <BaseButton
+      state={getState()}
       w={props.w}
-      colorScheme="green"
-      borderRadius={defaultBorderRadius}
-      size={DEFAULT_SIZE}
-      hidden={props.hidden}
-      alignSelf="center"
-      isDisabled={!props.enabled || isLoading || isError}
       onClick={onClick}
-    >
-      {props.buttonText ? props.buttonText : "Sign"}
-    </Button>
+      buttonText={
+        props.buttonText ? props.buttonText : isDone ? "Signed" : "Sign"
+      }
+    ></BaseButton>
+    // <Button
+    //   w={props.w}
+    //   colorScheme="green"
+    //   borderRadius={defaultBorderRadius}
+    //   size={DEFAULT_SIZE}
+    //   hidden={props.hidden}
+    //   alignSelf="center"
+    //   isDisabled={}
+    //   onClick={onClick}
+    // >
+    //   {props.buttonText ? props.buttonText : "Sign"}
+    // </Button>
   );
 }
 
@@ -334,5 +377,48 @@ export function SimpleView<T>(props: SimpleViewProps<T>) {
         );
       }}
     ></DataLoader>
+  );
+}
+
+export interface BaseButtonProps {
+  state: "disabled" | "enabled" | "loading" | "done";
+  onClick: () => any;
+  buttonText: string;
+  w?: string;
+  size?: string;
+}
+
+export function BaseButton(props: BaseButtonProps) {
+  const getColorScheme = () => {
+    switch (props.state) {
+      case "disabled":
+        return "green";
+      case "enabled":
+        return "green";
+      case "loading":
+        return "green";
+      case "done":
+        return "green";
+    }
+  };
+
+  return (
+    <Button
+      w={props.w}
+      colorScheme={getColorScheme()}
+      variant={props.state == "done" ? "outline" : undefined}
+      _hover={{ backgroundColor: props.state == "done" ? "white" : undefined }}
+      borderRadius={defaultBorderRadius}
+      cursor={props.state == "done" ? "default" : undefined}
+      size={props.size ?? DEFAULT_SIZE}
+      alignSelf="center"
+      // isActive={props.state != "done"}
+      isDisabled={props.state == "disabled"}
+      isLoading={props.state == "loading"}
+      onClick={props.state != "done" ? props.onClick : undefined}
+    >
+      {props.buttonText}
+      {props.state == "done" ? <CheckIcon marginLeft={2} /> : null}
+    </Button>
   );
 }

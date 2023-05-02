@@ -36,7 +36,7 @@ import {
   useContractRead,
   useProvider,
 } from "wagmi";
-import { ContractCallButton, SignButton } from "./BaseComponents";
+import { BaseButton, ContractCallButton, SignButton } from "./BaseComponents";
 import { SimpleRow } from "./DataViews";
 import { DateInput, MyNumberInput, TokenAmountInput } from "./InputFields";
 import { HealthFactor } from "./InputViews";
@@ -114,11 +114,11 @@ export const OfferModal = (props: OfferModalProps) => {
     args: [props.account!, getSupplyAddress(provider)],
   });
 
-  const hasEnoughAllowance = (
+  const hasApproved = (
     allowance: BigNumber | undefined,
     amountToDeposit: BigNumber
   ) => {
-    return allowance && allowance.gte(amountToDeposit);
+    return allowance && allowance.gte(amountToDeposit) && allowance.gt(0);
   };
 
   const canConfirm = () => {
@@ -127,7 +127,8 @@ export const OfferModal = (props: OfferModalProps) => {
       props.account &&
       props.balanceData.amount &&
       BigNumber.from(0).lt(offerMaxAmount) &&
-      offerMaxAmount.lte(props.balanceData.amount)
+      offerMaxAmount.lte(props.balanceData.amount) &&
+      maxDurationDays > 0
     );
   };
 
@@ -213,41 +214,42 @@ export const OfferModal = (props: OfferModalProps) => {
           </ModalBody>
 
           <ModalFooter>
-            <Flex w="100%" paddingTop={2}>
-              <Spacer></Spacer>
-              {hasEnoughAllowance(allowance, offerMaxAmount) ? (
-                <SignButton
-                  message={offer?.[1]!}
-                  callbackData={offer?.[0]}
-                  callback={(
-                    message,
-                    signature,
-                    account,
-                    data: LoanOfferType
-                  ) => {
-                    console.log("signed message " + message);
-                    if (account != props.account) {
-                      throw new Error("signed with different account");
-                    }
-                    sendOffer(data, signature);
-                  }}
-                  enabled={canConfirm()}
-                ></SignButton>
-              ) : (
-                <ContractCallButton
-                  contractAddress={props.balanceData.token.address as Address}
-                  abi={erc20ABI}
-                  functionName={"approve"}
-                  args={[
-                    getSupplyAddress(provider),
-                    ethers.constants.MaxUint256,
-                  ]}
-                  enabled={canConfirm()}
-                  callback={() => allowanceRefetch()}
-                  buttonText="Approve"
-                />
-              )}
-            </Flex>
+            <HStack w="100%">
+              <ContractCallButton
+                contractAddress={props.balanceData.token.address as Address}
+                abi={erc20ABI}
+                functionName={"approve"}
+                args={[getSupplyAddress(provider), ethers.constants.MaxUint256]}
+                enabled={true}
+                done={hasApproved(allowance, offerMaxAmount)}
+                callback={() => allowanceRefetch()}
+                buttonText={
+                  hasApproved(allowance, offerMaxAmount)
+                    ? "Approved"
+                    : "Approve"
+                }
+                w="50%"
+              />
+
+              <SignButton
+                w="50%"
+                message={offer?.[1]!}
+                callbackData={offer?.[0]}
+                callback={(
+                  message,
+                  signature,
+                  account,
+                  data: LoanOfferType
+                ) => {
+                  console.log("signed message " + message);
+                  if (account != props.account) {
+                    throw new Error("signed with different account");
+                  }
+                  sendOffer(data, signature);
+                }}
+                enabled={canConfirm()} //todo max days > 0
+              ></SignButton>
+            </HStack>
           </ModalFooter>
         </ModalContent>
       </Modal>
