@@ -50,21 +50,29 @@ function HeaderButton(props: Props) {
 
 export default function Header() {
   const provider = useProvider();
-  const [chainId, setChainId] = useState<number>(getChains()[0].id);
+  const [chainId, setChainId] = useState<number>(getDefaultChainId);
 
   useEffect(() => {
     console.log("chainId changed to " + chainId);
   }, [chainId]);
+
+  function getDefaultChainId() {
+    if (provider.network.chainId) {
+      return provider.network.chainId;
+    } else {
+      return getChains()[0].id;
+    }
+  }
 
   async function changeNetwork(chainId: number) {
     try {
       const chain = await switchNetwork({
         chainId: chainId,
       });
-      console.log("chain: " + chain);
+
       setChainId(chain.id);
     } catch (e) {
-      console.log("error switching network");
+      console.log("error switching network", e);
     }
   }
 

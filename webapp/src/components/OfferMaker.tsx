@@ -72,7 +72,6 @@ export const OfferModal = (props: OfferModalProps) => {
   const [offer, setOffer] = useState<[LoanOfferType, string]>();
 
   const getOfferId = async () => {
-    console.log("props.account" + props.account);
     if (!isLoadingOfferId && props.account) {
       setIsLoadingOfferId(true);
       const offerId = await getUnusedOfferId(provider, props.account);
