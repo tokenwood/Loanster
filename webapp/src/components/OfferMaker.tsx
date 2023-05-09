@@ -170,12 +170,15 @@ export const OfferModal = (props: OfferModalProps) => {
       <Modal isOpen={isOpen} onClose={onClose} size={"lg"}>
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>Make Offer</ModalHeader>
+          <ModalHeader>
+            Make {props.balanceData.token.symbol} Loan Offer
+          </ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             <VStack w="100%" spacing={0} layerStyle={"level3"} padding={3}>
               <TokenAmountInput
                 token={props.balanceData.token}
+                explainerText="Maximum amount of tokens to lend in one or multiple loans"
                 balance={props.balanceData.amount}
                 callback={(amount: BigNumber) => {
                   setOfferMaxAmount(amount);
@@ -184,12 +187,14 @@ export const OfferModal = (props: OfferModalProps) => {
               <MyNumberInput
                 name="Interest rate (%)"
                 precision={2}
+                explainerText="Yearly interest rate"
                 callback={(rate: number) => {
                   setInterestRatePCT(rate);
                 }}
               ></MyNumberInput>
               <MyNumberInput
                 name="Max duration (days)"
+                explainerText="Maximum loan duration in days"
                 precision={0}
                 placeHolder="0"
                 callback={(value: number) => {
@@ -198,8 +203,8 @@ export const OfferModal = (props: OfferModalProps) => {
               ></MyNumberInput>
               <MyNumberInput
                 name="Min duration (days)"
+                explainerText="Mininum loan duration in days"
                 precision={0}
-                optional={true}
                 placeHolder="0"
                 callback={(value: number) => {
                   setMinDuration(value);
@@ -207,6 +212,7 @@ export const OfferModal = (props: OfferModalProps) => {
               ></MyNumberInput>
               <DateInput
                 name="Expiration"
+                explainerText="Offer expiration date. No new loans can be opened after this date"
                 callback={(timestamp: number) => {
                   setExpirationDate(timestamp);
                 }}

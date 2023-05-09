@@ -8,6 +8,7 @@ import {
   NumberInputField,
   Spacer,
   Text,
+  Tooltip,
 } from "@chakra-ui/react";
 import { BigNumber } from "ethers";
 import { floatToBigNumber } from "libs/helperFunctions";
@@ -26,6 +27,7 @@ interface TokenAmountInputProps {
   defaultValue?: string;
   buttonText?: string;
   buttonValue?: string;
+  explainerText?: string;
   callback: (amount: BigNumber) => any;
 }
 
@@ -64,9 +66,11 @@ export function TokenAmountInput(props: TokenAmountInputProps) {
 
   return (
     <Flex w="100%">
-      <Text alignSelf={"center"} ml="0">
-        {props.text ? props.text : props.token.symbol + " Amount"}
-      </Text>
+      <Tooltip label={props.explainerText}>
+        <Text alignSelf={"center"} ml="0">
+          {props.text ? props.text : props.token.symbol + " Amount"}
+        </Text>
+      </Tooltip>
       <Button
         ml="10px"
         size={"xs"}
@@ -106,6 +110,7 @@ interface MyNumberInputProps {
   precision?: number;
   placeHolder?: string;
   optional?: boolean;
+  explainerText?: string;
 }
 
 export function MyNumberInput(props: MyNumberInputProps) {
@@ -128,11 +133,15 @@ export function MyNumberInput(props: MyNumberInputProps) {
     setValue(valueAsString);
   };
 
+  // isDisabled={props.explainerText == undefined}
   return (
     <Flex w="100%">
-      <Text alignSelf={"center"} ml="0">
-        {props.name}
-      </Text>
+      <Tooltip label={props.explainerText}>
+        <Text alignSelf={"center"} ml="0">
+          {props.name}
+        </Text>
+      </Tooltip>
+
       {/* <Spacer /> */}
       <Text
         alignSelf={"center"}
@@ -187,6 +196,7 @@ export function MyNumberInput(props: MyNumberInputProps) {
 
 interface DateInputProps {
   name: string;
+  explainerText?: string;
   callback: (timestamp: number) => any;
 }
 
@@ -202,7 +212,9 @@ export function DateInput(props: DateInputProps) {
 
   return (
     <Flex w="100%">
-      <Text alignSelf="center">{props.name}</Text>
+      <Tooltip label={props.explainerText}>
+        <Text alignSelf="center">{props.name}</Text>
+      </Tooltip>
       <Spacer />
 
       {/* <Input value={value}></Input> */}
