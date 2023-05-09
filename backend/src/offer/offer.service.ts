@@ -6,7 +6,11 @@ import { Offer } from './entities/offer.entity';
 import { CreateOfferDto } from './dto/create-offer.dto';
 import { BigNumber } from 'ethers';
 import { getOfferKey, TokenOfferStatsResponse } from '../sharedUtils';
-import { getOfferOnChainData } from '../helperFunctions';
+import {
+  bigNumberMin,
+  getCurrentTimestamp,
+  getOfferOnChainData,
+} from '../helperFunctions';
 import { OfferDto } from './dto/offer.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { take } from 'rxjs';
@@ -35,12 +39,7 @@ export class OfferService {
     offer.borrowed = borrowed.toHexString();
     offer.balance = balance.toHexString();
     offer.allowance = allowance.toHexString();
-    console.log(
-      'onChainNonce: ',
-      nonce.toNumber(),
-      'offerNonce: ',
-      offer.nonce,
-    );
+
     if (nonce.toNumber() > offer.nonce) {
       throw new HttpException('Nonce is too low', 400);
     }
@@ -90,7 +89,12 @@ export class OfferService {
 
     const tokenOffers = await this.findAllByToken(chainId, token);
     const total = tokenOffers
-      .map((x) => BigNumber.from(x.amount).sub(x.borrowed))
+      .map((x) =>
+        bigNumberMin(
+          BigNumber.from(x.allowance),
+          BigNumber.from(x.amount).sub(x.borrowed),
+        ),
+      )
       .reduce((a, b) => a.add(b), BigNumber.from(0));
 
     return {
@@ -105,9 +109,14 @@ export class OfferService {
   async refreshAllOffers() {
     console.log('refreshing all offers');
     const offers = await this.offerRepository.find();
+    const currentTime = await getCurrentTimestamp(5); // todo swith to mainnet or each chain's timestamp
 
-    //todo remove expired offers
     for (const offer of offers) {
+      if (offer.expiration < currentTime) {
+        console.log('removing expired offer');
+        await this.offerRepository.delete(offer);
+        continue;
+      }
       const [nonce, borrowed, balance, allowance] = await getOfferOnChainData(
         offer.owner,
         offer.token,

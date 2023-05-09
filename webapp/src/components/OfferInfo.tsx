@@ -25,8 +25,16 @@ export default function OfferInfo(props: OfferInfoProps) {
         <Check checked={offerHasEnoughAllowance(props.fullOfferInfo)}></Check>
         <Text>
           {"Allowance: " +
+            (offerHasEnoughAllowance(props.fullOfferInfo)
+              ? " > "
+              : bigNumberString(
+                  props.fullOfferInfo.allowance,
+                  props.fullOfferInfo.token
+                ) + " / ") +
             bigNumberString(
-              props.fullOfferInfo.allowance,
+              props.fullOfferInfo.offer.amount.sub(
+                props.fullOfferInfo.amountBorrowed
+              ),
               props.fullOfferInfo.token
             )}
         </Text>

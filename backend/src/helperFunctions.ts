@@ -100,6 +100,11 @@ export async function getERC20BalanceAndAllowance(
   return [balance, allowance];
 }
 
+export async function getCurrentTimestamp(chainId: number) {
+  const currentBlock = await getProvider(chainId).getBlockNumber();
+  return (await getProvider(chainId).getBlock(currentBlock)).timestamp;
+}
+
 export async function getOfferOnChainData(
   owner: string,
   token: string,
@@ -132,4 +137,12 @@ export function parseBigNumbers(response: CreateOfferDto): any {
     }
   }
   return response;
+}
+
+export function bigNumberMin(a: BigNumber, b: BigNumber) {
+  return a.lt(b) ? a : b;
+}
+
+export function bigNumberMax(a: BigNumber, b: BigNumber) {
+  return a.gt(b) ? a : b;
 }

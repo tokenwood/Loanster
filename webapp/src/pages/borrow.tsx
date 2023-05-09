@@ -64,8 +64,8 @@ import Price from "components/Price";
 
 const depositTableColdims: { [key: string]: ColSpecs } = {
   Asset: { size: 0.3 },
-  "In Wallet": { size: 0.7, align: "right" },
-  Deposited: { size: 1, align: "right" },
+  Deposited: { size: 0.7, align: "right" },
+  "In Wallet": { size: 1, align: "right" },
   " ": { size: 0.1 },
 };
 const borrowedTableColdims: { [key: string]: ColSpecs } = {
