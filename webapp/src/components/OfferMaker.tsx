@@ -199,6 +199,7 @@ export const OfferModal = (props: OfferModalProps) => {
               <MyNumberInput
                 name="Min duration (days)"
                 precision={0}
+                optional={true}
                 placeHolder="0"
                 callback={(value: number) => {
                   setMinDuration(value);

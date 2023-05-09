@@ -137,10 +137,6 @@ export async function getUnhealthyTroves(amount: number) {
   // todo return trove
 }
 
-export async function offerRevoked(data: FullOfferInfo) {
-  //todo: this should be done on backend by listening for nonce update events or checking nonce on-chain because may not get called
-}
-
 let eth_price_cached: number | undefined = undefined;
 export async function getEthPrice() {
   if (eth_price_cached == undefined) {

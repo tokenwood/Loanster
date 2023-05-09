@@ -18,7 +18,6 @@ import {
   FullOfferInfo,
   getOffersFrom,
   offerResponseToFullOfferInfo,
-  offerRevoked,
 } from "libs/backend";
 import { Flex, HStack, Spacer } from "@chakra-ui/react";
 import { BigNumber, ethers } from "ethers";
@@ -164,7 +163,6 @@ export default function LendPage() {
                                 enabled={true}
                                 callback={() => {
                                   actionFinished();
-                                  offerRevoked(data);
                                   eventEmitter.dispatch({
                                     eventType: EventType.SUPPLY_OFFER_CANCELLED,
                                   });

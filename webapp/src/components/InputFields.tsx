@@ -105,6 +105,7 @@ interface MyNumberInputProps {
   buttons?: [string, string][];
   precision?: number;
   placeHolder?: string;
+  optional?: boolean;
 }
 
 export function MyNumberInput(props: MyNumberInputProps) {
@@ -132,6 +133,18 @@ export function MyNumberInput(props: MyNumberInputProps) {
       <Text alignSelf={"center"} ml="0">
         {props.name}
       </Text>
+      {/* <Spacer /> */}
+      <Text
+        alignSelf={"center"}
+        fontSize={"xs"}
+        color={"gray.300"}
+        marginLeft="2"
+        as="i"
+        hidden={!props.optional}
+      >
+        {"optional"}
+      </Text>
+
       {props.buttons?.map(([name, value], index) => {
         return (
           <Button
