@@ -69,6 +69,7 @@ const toSupplyColDims: { [key: string]: ColSpecs } = {
 export default function LendPage() {
   const { address: account } = useAccount();
   const provider = useProvider();
+  console.log("test");
   return (
     <Box p={4} w={"100%"} layerStyle={"level1"} key={account}>
       <VStack align="left" spacing="4">
