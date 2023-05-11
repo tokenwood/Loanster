@@ -101,8 +101,6 @@ export const OfferModal = (props: OfferModalProps) => {
     setOffer(undefined); //does this work?
     const offer = makeOffer();
     const message = await getOfferMessageToSign(provider, offer);
-    console.log("offer: " + offer);
-    console.log("message: " + message);
     setOffer([offer, message]);
   };
 
@@ -128,7 +126,8 @@ export const OfferModal = (props: OfferModalProps) => {
       props.balanceData.amount &&
       BigNumber.from(0).lt(offerMaxAmount) &&
       offerMaxAmount.lte(props.balanceData.amount) &&
-      maxDurationDays > 0
+      maxDurationDays > 0 &&
+      hasApproved(allowance, offerMaxAmount)
     );
   };
 

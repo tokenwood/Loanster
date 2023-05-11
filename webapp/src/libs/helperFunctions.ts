@@ -232,3 +232,24 @@ export function getChains() {
   });
   return chains;
 }
+
+export function makeUniqueKey(object: any, suffix?: string) {
+  return suffix + JSON.stringify(object);
+}
+interface SortableObject {
+  [key: string]: string | number | BigNumber; // define the properties of the objects in the array
+}
+export function sortByAttribute(
+  arr: SortableObject[],
+  attr: string
+): SortableObject[] {
+  return arr.sort((a, b) => {
+    if (a[attr] < b[attr]) {
+      return -1;
+    } else if (a[attr] > b[attr]) {
+      return 1;
+    } else {
+      return 0;
+    }
+  });
+}

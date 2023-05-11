@@ -6,7 +6,11 @@ import {
   parseBigNumberInResponse,
   TokenOfferStatsResponse,
 } from "./sharedUtils";
-import { bigNumberMin, floatToBigNumber } from "./helperFunctions";
+import {
+  bigNumberMin,
+  floatToBigNumber,
+  sortByAttribute,
+} from "./helperFunctions";
 import { LoanOfferType, LoanParameters } from "./types";
 import { getERC20BalanceAndAllowance, getNetwork, getToken } from "./fetchers";
 import { getSupplyAddress, getSupplyContract } from "./chainUtils";
@@ -62,6 +66,8 @@ export async function getOffersFrom(provider: Provider, account: Address) {
       chain_id: provider.network.chainId.toString(),
     }
   );
+
+  sortByAttribute(response, "token");
   return response;
 }
 

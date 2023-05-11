@@ -26,6 +26,7 @@ import {
   BNToPrecision,
   formatDate,
   formatTimeRemaining,
+  makeUniqueKey,
 } from "libs/helperFunctions";
 import { FullLoanInfo, Timestamp, TokenAmount } from "libs/types";
 import { ReactNode, useEffect } from "react";
@@ -129,11 +130,12 @@ export function TableRowView(props: TableRowViewProps) {
               </Box>
             ) : (
               <VStack
-                key={key + tokenAmount.amount.toString()}
+                key={makeUniqueKey(tokenAmount, key)}
                 w={getWidth(key, props.colSpecs)}
                 spacing={0}
               >
                 <Text
+                  key={makeUniqueKey(tokenAmount, "amount")}
                   w={"100%"}
                   textAlign={props.colSpecs[key].align ?? "left"}
                   textStyle={"tableRow"}
@@ -141,7 +143,7 @@ export function TableRowView(props: TableRowViewProps) {
                   {bigNumberString(tokenAmount.amount, tokenAmount.token)}
                 </Text>
                 <Price
-                  key={tokenAmount.amount.toString()}
+                  key={makeUniqueKey(tokenAmount, "price")}
                   token={tokenAmount.token}
                   amount={tokenAmount.amount}
                   textAlign={props.colSpecs[key].align ?? "left"}

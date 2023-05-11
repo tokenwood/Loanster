@@ -144,7 +144,7 @@ export function CollateralInputs(props: DepositInputsProps) {
     allowance: BigNumber | undefined,
     amountToDeposit: BigNumber
   ) => {
-    return allowance && allowance.gte(amountToDeposit);
+    return allowance && allowance.gte(amountToDeposit) && allowance.gt(0);
   };
 
   const canConfirm = () => {
@@ -183,6 +183,7 @@ export function CollateralInputs(props: DepositInputsProps) {
         {props.type == "deposit" ? (
           hasEnoughAllowance(allowance, amount) ? (
             <ContractCallButton
+              key="deposit"
               contractAddress={getTroveManagerAddress(provider)}
               abi={getTroveManagerABI()}
               functionName={"deposit"}
@@ -198,6 +199,7 @@ export function CollateralInputs(props: DepositInputsProps) {
             ></ContractCallButton>
           ) : (
             <ContractCallButton
+              key="approve"
               contractAddress={props.balanceData.token.address as Address}
               abi={erc20ABI}
               functionName={"approve"}

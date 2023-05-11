@@ -20,7 +20,7 @@ const client = createClient(
 
 function MyApp({ Component, pageProps }: AppProps) {
   // console.log("infura id: ", process.env.NEXT_PUBLIC_REACT_APP_INFURA_ID);
-  console.log("chains: ", process.env.NEXT_PUBLIC_CHAIN_IDS?.split(","));
+  // console.log("chains: ", process.env.NEXT_PUBLIC_CHAIN_IDS?.split(","));
   return (
     <WagmiConfig client={client}>
       <ConnectKitProvider theme="soft">

@@ -26,6 +26,7 @@ import {
   bigNumberString,
   formatDate,
   isValidOffer,
+  makeUniqueKey,
 } from "libs/helperFunctions";
 import { getSupplyAddress, getSupplyABI } from "libs/chainUtils";
 import {
@@ -95,7 +96,7 @@ export default function LendPage() {
                       offerResponseToFullOfferInfo(provider, props.id)
                     }
                     level={2}
-                    key={"lending_offers_base" + props.index}
+                    key={"lending_offers_base" + makeUniqueKey(props.id)}
                     dataView={(data: FullOfferInfo) => {
                       return (
                         <TableRowView

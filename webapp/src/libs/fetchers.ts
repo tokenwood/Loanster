@@ -225,11 +225,15 @@ export async function getSupplyTokens(provider: Provider) {
 
 export async function getCollateralTokens(
   provider: Provider
-): Promise<Address[]> {
+): Promise<Token[]> {
   const troveManager = await getTroveManagerContract(provider);
   let eventFilter = troveManager.filters.CollateralTokenChange();
   let events = await troveManager.queryFilter(eventFilter);
-  return getAllowedTokensFromEvents(events);
+  const tokenAddresses = getAllowedTokensFromEvents(events);
+
+  return Promise.all(
+    tokenAddresses.map((address) => getToken(provider, address))
+  );
 }
 
 export async function getFullLoanInfo(
@@ -251,48 +255,40 @@ export async function getFullLoanInfo(
   };
 }
 
-export async function getCollateralDeposits(
+export async function getCollateralDeposit(
+  token: Token,
   provider: Provider,
   account?: Address
-): Promise<TokenDepositInfo[]> {
-  const tokenAddresses = await getCollateralTokens(provider);
+): Promise<TokenDepositInfo> {
+  // const tokenAddresses = await getCollateralTokens(provider);
 
   if (account == undefined) {
-    const tokens = await Promise.all(
-      tokenAddresses.map((address) => getToken(provider, address))
-    );
-
-    return tokens.map((token) => {
-      return {
-        token: token,
-      };
-    });
+    return {
+      token: token,
+    };
   } else {
-    const tokenBalances = await Promise.all(
-      tokenAddresses.map((address) =>
-        getTokenBalance(provider, address, account)
-      )
+    const tokenBalance = await getTokenBalance(
+      provider,
+      token.address as Address,
+      account
     );
-    let infoDict: { [key: string]: TokenDepositInfo } = Object.fromEntries(
-      tokenBalances.map((balanceInfo) => {
-        return [
-          balanceInfo.token.address,
-          {
-            token: balanceInfo.token,
-            wallet_amount: balanceInfo.amount,
-            deposit_amount: BigNumber.from(0),
-          },
-        ];
-      })
-    );
-    const troveManager = await getTroveManagerContract(provider);
+    const depositInfo = {
+      token: tokenBalance.token,
+      wallet_amount: tokenBalance.amount,
+      deposit_amount: BigNumber.from(0),
+    };
+
+    const troveManager = getTroveManagerContract(provider);
     const numDeposits = await troveManager.getNumDepositsForAccount(account);
     for (let i = 0; i < numDeposits.toNumber(); i++) {
       const [tokenAddress, amount] =
-        await troveManager.getDepositByIndexForAccount(account, i);
-      infoDict[tokenAddress]["deposit_amount"] = amount;
+        await troveManager.getDepositByIndexForAccount(account, i); //todo change to getDepositByTokenForAccount to avoid iterating over all deposits
+      if (tokenAddress == token.address) {
+        depositInfo.deposit_amount = amount;
+        break;
+      }
     }
-    return Object.values(infoDict);
+    return depositInfo;
   }
 }
 

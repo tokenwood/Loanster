@@ -223,7 +223,7 @@ export function SignButton(props: SignButtonProps) {
   function getState() {
     if (isDone) {
       return "done";
-    } else if (!props.enabled || isError) {
+    } else if (!props.enabled) {
       return "disabled";
     } else if (isLoading) {
       return "loading";
@@ -272,10 +272,12 @@ export interface BaseViewProps<T> {
 
 export function BaseView<T>(props: BaseViewProps<T>) {
   const [accordionIndex, setAccordionIndex] = useState(-1);
+  const [nonce, setNonce] = useState(0);
 
   useEffect(() => {
     const eventCallback = () => {
       console.log("setting expanded callback");
+      setNonce(nonce + 1);
       setAccordionIndex(-1);
     };
     if (props.collapseEvents !== undefined) {
@@ -329,7 +331,11 @@ export function BaseView<T>(props: BaseViewProps<T>) {
                   </TabList>
                   <TabPanels>
                     {props.tabs.map((tabProp: TabProp, index) => (
-                      <TabPanel key={index} paddingBottom={2} paddingX={2}>
+                      <TabPanel
+                        key={index + nonce}
+                        paddingBottom={2}
+                        paddingX={2}
+                      >
                         <Center>
                           {tabProp.onClickView(childProps.data, () => {
                             childProps.refetchData();

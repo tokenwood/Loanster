@@ -36,7 +36,7 @@ import {
   Th,
   Tr,
 } from "@chakra-ui/react";
-import { healthFactorColor } from "libs/helperFunctions";
+import { healthFactorColor, makeUniqueKey } from "libs/helperFunctions";
 import {
   actionInitColorScheme,
   defaultBorderRadius,
@@ -46,12 +46,13 @@ import {
 import { getSortedOffers, getTokenOfferStats } from "libs/backend";
 import {
   getHealthFactor,
-  getCollateralDeposits,
+  getCollateralDeposit,
   getBorrowerLoanIds,
   getFullLoanInfo,
   getSupplyTokens,
   getDetailedHealthFactor,
   getWethToken,
+  getCollateralTokens,
 } from "libs/fetchers";
 import {
   BNToPrecision,
@@ -163,38 +164,42 @@ export default function LoansPage() {
           </Heading>
 
           <ListLoader
-            fetchData={() => getCollateralDeposits(provider, account)}
+            fetchData={() => getCollateralTokens(provider)}
             makeHeader={() => (
               <TableHeaderView colSpecs={depositTableColdims}></TableHeaderView>
             )}
-            reloadEvents={[
-              { eventType: EventType.COLLATERAL_TOKEN_DEPOSITED },
-              { eventType: EventType.COLLATERAL_TOKEN_WITHDRAWN },
-            ]}
             makeListItem={(listItemProps) => {
               return (
                 <BaseView
                   level={2}
-                  key={"collateral_deposit_" + listItemProps.id.token.address}
-                  fetcher={() => Promise.resolve(listItemProps.id)}
+                  key={"collateral_deposit_" + listItemProps.id.address}
+                  fetcher={() =>
+                    getCollateralDeposit(listItemProps.id, provider, account)
+                  }
                   collapseEvents={[
                     {
                       eventType: EventType.COLLATERAL_TOKEN_DEPOSITED,
-                      suffix: listItemProps.id.token.address,
+                      suffix: listItemProps.id.address,
                     },
                     {
                       eventType: EventType.COLLATERAL_TOKEN_WITHDRAWN,
-                      suffix: listItemProps.id.token.address,
+                      suffix: listItemProps.id.address,
+                    },
+                  ]}
+                  reloadEvents={[
+                    {
+                      eventType: EventType.COLLATERAL_TOKEN_DEPOSITED,
+                      suffix: listItemProps.id.address,
+                    },
+                    {
+                      eventType: EventType.COLLATERAL_TOKEN_WITHDRAWN,
+                      suffix: listItemProps.id.address,
                     },
                   ]}
                   dataView={(data) => {
                     return (
                       <TableRowView
-                        key={
-                          "" +
-                          listItemProps.id.deposit_amount +
-                          listItemProps.id.wallet_amount
-                        }
+                        key={makeUniqueKey(data)}
                         colSpecs={depositTableColdims}
                         colData={{
                           Asset: data.token,
@@ -219,7 +224,7 @@ export default function LoansPage() {
                       ) => {
                         return (
                           <CollateralInputs
-                            key={"deposit" + data.token}
+                            key={makeUniqueKey(data, "deposit")}
                             account={account}
                             balanceData={data}
                             type="deposit"
